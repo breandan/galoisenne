@@ -697,3 +697,39 @@ class TermDict(
   fun encode(str: String) = str.tokenizeByWhitespace().map { revDict[it]!! }.joinToString("")
   fun encode(str: List<String>) = str.map { revDict[it]!! }.joinToString("")
 }
+
+data class GrammarEncoding(val flat: IntArray, val offsets: IntArray)
+
+val CFG.grammarEncoding: GrammarEncoding by cache {
+  val W = nonterminals.size
+  val ntIdx = bindex.ntIndices   // Map<Σᐩ, Int>
+
+  val counts = IntArray(W)
+  for ((lhs, rhs) in this) {
+    if (rhs.size != 2) continue
+    val a = ntIdx[lhs] ?: continue
+    val b = ntIdx[rhs[0]] ?: continue
+    val c = ntIdx[rhs[1]] ?: continue
+    counts[a] += 2
+  }
+
+  val offsets = IntArray(W + 1)
+  var acc = 0
+  for (i in 0 until W) { offsets[i] = acc; acc += counts[i] }
+  offsets[W] = acc
+
+  val flat = IntArray(acc)
+  val cur = offsets.copyOf()
+  for ((lhs, rhs) in this) {
+    if (rhs.size != 2) continue
+    val a = ntIdx[lhs] ?: continue
+    val b = ntIdx[rhs[0]] ?: continue
+    val c = ntIdx[rhs[1]] ?: continue
+    val p = cur[a]
+    flat[p] = b
+    flat[p + 1] = c
+    cur[a] = p + 2
+  }
+
+  GrammarEncoding(flat, offsets)
+}
