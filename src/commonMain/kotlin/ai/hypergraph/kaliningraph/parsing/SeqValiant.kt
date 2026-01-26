@@ -409,6 +409,10 @@ fun CFG.enumNTSmall(nt: String): Sequence<Σᐩ> =
       ?: emptySequence()
   })
 
+fun CFG.admitsPrefix(tokens: List<Σᐩ>): Boolean = language.let { l -> suffixCompletions(tokens).any { it in l } }
+fun CFG.enumSuffixes(tokens: List<Σᐩ>, toTake: Int): Sequence<Σᐩ> = suffixCompletions(tokens).flatMap { enumSeq(it) }.take(toTake).distinct()
+fun suffixCompletions(tokens: List<Σᐩ>, len: Int = 10): Sequence<List<Σᐩ>> = (1..len).asSequence().map { tokens + List(it) { "_" } }
+
 var maxTrees = 50_000
 // This should never return duplicates and is the second fastest.
 // Eventually, this will become the default method for sampling.

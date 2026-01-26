@@ -163,9 +163,9 @@
 
          \begin{scope}
            \clip (0,0) rectangle (6,6);
-           \clip (C) circle[radius=2.45]; % inside the wavy L(G) boundary (2.6)
+           \clip (C) circle[radius=2.6];
 
-           \foreach \k in {1,...,360}{
+           \foreach \k in {1,...,460}{
              \pgfmathsetmacro{\u}{max(rnd,1e-6)}
              \pgfmathsetmacro{\r}{sqrt(-2*ln(\u))}
              \pgfmathsetmacro{\t}{360*rnd}
@@ -218,7 +218,7 @@
        % keep dots comfortably inside the jagged boundary
          \pgfmathsetseed{20260101}
          \begin{scope}
-           \clip (C) circle[radius=1.45];
+           \clip (C) circle[radius=1.5];
            \foreach \k in {1,...,80}{
              \pgfmathsetmacro{\rr}{sqrt(rnd)*1.45}
              \pgfmathsetmacro{\tt}{rnd*360}

@@ -466,18 +466,18 @@ fun <T> levenshteinAlign(a: List<T>, b: List<T>): List<Pair<T?, T?>> {
   var i = a.size
   var j = b.size
   while (i > 0 && j > 0) {
-    val temp = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
+    val matchCost = costs[i - 1][j - 1] + (if (a[i - 1] == b[j - 1]) 0 else 1)
     when (costs[i][j]) {
-      temp -> {
-        aPathRev.add(a[--i])
+      1 + costs[i][j-1] -> { // Insertion (preferred tie-breaker)
+        aPathRev.add(null)
         bPathRev.add(b[--j])
       }
-      1 + costs[i-1][j] -> {
+      1 + costs[i-1][j] -> { // Deletion
         aPathRev.add(a[--i])
         bPathRev.add(null)
       }
-      1 + costs[i][j-1] -> {
-        aPathRev.add(null)
+      matchCost -> { // Match/Substitution
+        aPathRev.add(a[--i])
         bPathRev.add(b[--j])
       }
     }
