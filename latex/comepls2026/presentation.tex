@@ -1,0 +1,1391 @@
+%! Author = breandan
+%! Date = 11/5/25
+
+\documentclass{beamer}
+
+% Basic fonts & symbols
+\usepackage[T1]{fontenc}
+\usepackage{tgcursor}
+\usepackage{booktabs}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}} % ✓
+\newcommand{\xmark}{\ding{55}} % ✗
+%\usepackage[mathrm=sym]{unicode-math}
+\usepackage{multicol}
+\usepackage[table]{xcolor}
+
+\usepackage{tikz-cd}
+\usepackage{adjustbox}
+
+\usepackage{txfonts}
+\usepackage{soul}
+\usepackage{mathtools}
+
+
+\usepackage[normalem]{ulem}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing,calc,automata,arrows}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+
+\definecolor{Light}{gray}{.90}
+\sethlcolor{Light}
+
+\newcommand{\codett}[1]{\texttt{\hl{#1}}}
+\DeclareMathOperator*{\largecomma}{\mathop{\vcenter{\hbox{\Huge\texttt{,}}}}}
+\newcommand{\bycommas}{%
+  \mathop{\vphantom{\sum}\mathchoice{\Large ,}{,}{,}{,}}\displaylimits
+}
+\newcommand{\cev}[1]{\reflectbox{\ensuremath{\vec{\reflectbox{\ensuremath{#1}}}}}}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{amssymb}
+\usepackage{centernot}
+\usepackage{bussproofs}
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n}
+\SetMathAlphabet{\mathcal}{bold}{OMS}{cmsy}{b}{n}
+
+\newcommand{\nt}[1]{\texttt{#1}}      % nonterminals
+\newcommand{\tok}[1]{\codett{#1}}     % terminals
+\newcommand{\gap}{\;\;}
+\newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
+
+\newcommand{\bs}{\blacksquare}
+\newcommand{\ws}{\square}
+
+\newcommand{\T}{\mathbb{T}}
+\newcommand{\ttlb}{\{}   % left brace token
+\newcommand{\ttrb}{\}}   % right brace token
+\newcommand{\ttus}{\_}   % underscore token (for f_*)
+
+\newcommand{\uses}[2]{\;\mid\; #1 \Rightarrow #2}
+
+% ---- Tunables ----
+\newcommand\SQlw  {0.70pt} % thickness
+\newcommand\SQamp {0.16ex} % wave height
+\newcommand\SQseg {0.95ex} % wavelength
+\newcommand\SQyoff{-0.22ex}% vertical offset below baseline
+\newcommand\SQslab{0.90ex} % clip depth below baseline (>= amp + margin)
+
+% Thick squiggly underline (no plateau, no end caps)
+\newcommand{\sqUL}[2]{% #1=color, #2=text
+  \tikz[baseline=(t.base)]{
+    \node[inner sep=0pt, outer sep=0pt, anchor=base] (t) {#2};
+    \begin{scope}
+    % clip to hide overshoot so the snake never ends flat
+    \clip ($(t.south west)+(0,-\SQslab)$)
+    rectangle ($(t.south east)+(0,0.25ex)$);
+    \draw[#1, line width=\SQlw, line cap=round,
+      decorate, decoration={
+        snake,
+        amplitude=\SQamp,
+        segment length=\SQseg,
+        pre length=0pt, post length=0pt}]
+    ($(t.south west)+(-.8ex,\SQyoff)$) --
+    ($(t.south east)+(.8ex,\SQyoff)$);
+    \end{scope}
+  }%
+}
+
+% Metadata
+\title{Bounded Resources as Languages:\\\small{A Grammatical Embedding of Substructural Constraints}}
+\author{Breandan Mark Considine}
+\date{\today}
+
+\begin{document}
+
+% -------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+% -------------------------------------------------
+
+\begin{frame}{Langauge theory and type theory}
+  \vspace{-0.3cm}
+    \[
+      \underbrace{\sigma \in \mathcal{L}(G) \Leftrightarrow  \exists S.\ (S \Rightarrow_G^{\!*} \sigma)}_{\text{membership / parse tree}}
+      \qquad\leftrightsquigarrow\qquad
+      \underbrace{\exists \tau .\ (\Gamma \vdash e : \tau)}_{\text{type checking / proof tree}}
+    \]
+\vspace{0.2cm}
+    \begin{prooftree}
+      \AxiomC{$\Gamma \vdash x : X$}
+      \AxiomC{$\Gamma \vdash z : Z$}
+      \LeftLabel{$\smash{\underbrace{(W\rightarrow X Z)\in P}_{\text{grammar production}}}\hspace{0.8cm}\leftrightsquigarrow\hspace{1cm}$}
+      \BinaryInfC{$\underbrace{\hspace{1cm}\Gamma \vdash xz: W\hspace{1cm}}_{\text{typing judgment}}$}
+    \end{prooftree}
+
+    \[
+      \underbrace{\mathcal{L}(G) \neq \varnothing \Leftrightarrow \exists \sigma.\ (S \Rightarrow_G^{\!*} \sigma)}_{\text{non-emptiness / generation}}
+      \qquad\leftrightsquigarrow\qquad
+      \underbrace{\exists e .\ (\Gamma \vdash e : \tau)}_{\text{type inhabitation / synthesis}}
+    \]
+
+  \vspace{0.3cm}
+      \textbf{Goal}: Given a set of typing judgments and a typing context ($\Gamma$), design a grammar, $G$, s.t. $\forall \sigma\in\Sigma^{<n} \exists \tau\ .\ \sigma \in \mathcal{L}(G)\Longleftrightarrow\Gamma\vdash\sigma:\tau$.
+\end{frame}
+
+\begin{frame}{Linear logic (LL) and langauge theory (LT)}
+  \vspace{-0.3cm}
+  \begin{center}
+    \begin{tabular}{l c c c}
+      \toprule
+       & \textbf{LL} & \textbf{LT} & \textbf{Interpretation} \\
+      \midrule
+
+      \textbf{Conjunction} & $A \otimes B$ & $A\cdot B$ & Concatenation$^1$ \\
+      \small{(Multiplicative)} &          & & $\{a\cdot b \mid a \in \mathcal{L}_A \land b \in \mathcal{L}_B\}$ \\
+      \hline
+
+      \textbf{Unit} & $1$ & $\varepsilon$ & Empty string \\
+      \hline
+
+      \textbf{Disjunction} & $A \oplus B$ & $A \vee B$ & Union \\
+      \small{(Additive)} &        & & $\mathcal{L}_A \cup \mathcal{L}_B$ \\
+      \hline
+
+      \textbf{Conjunction} & $A \ \& \ B$ & $A \land B$ & Intersection \\
+      \small{(Additive)} &        & & $\mathcal{L}_A \cap \mathcal{L}_B$ \\
+      \hline
+
+      \textbf{Iteration} & $!A$ & $A^*$ & Kleene Star \\
+      \small{(Exponential)} &             & & $\mathcal{L}(A^0 \cup A^1 \cup A^2 \cup \cdots)$ \\
+      \hline
+
+      \textbf{Implication} & $A \multimap B$ & $A \backslash B$ & Left Quotient \\
+      \small{(Residual)} &         & & $\{b \mid \mathcal{L}_A\cdot b \cap \mathcal{L}_B \neq \varnothing\}$ \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  $^1$\footnotesize{\textit{n.b.: We do not assume commutativity $(A \otimes B \neq B \otimes A)$ in formal languages.}}
+\end{frame}
+
+\begin{frame}{Programming language [in]approximability}
+  \begin{columns}[T,onlytextwidth]
+    \hspace{-0.5cm}\begin{column}{0.5\textwidth}
+         \begin{itemize}
+           \item<1-> $\Sigma^*$: all words over $\Sigma$
+           \item<2-> $\mathcal{L}(G)$: syntactically valid
+           \item<3-> Most LLMs: $\sigma \leftsquigarrow \Sigma^*$
+           \item<4-> Guidance: $\sigma \leftsquigarrow \mathcal{L}(G)$
+           \only<5->{\item $\mathcal{L}(\downarrow)$: halting programs}
+           \item<6-> Tighter approximations require ever-increasing expressive power
+           \item<7-> $\mathcal{L}(\Gamma)$: type-safe programs
+           \item<8-> Typesafe: $\sigma \leftsquigarrow \mathcal{L}(\Gamma)$
+         \end{itemize}
+    \end{column}
+
+    \begin{column}{0.5\textwidth}
+      \centering
+      \hspace{-0.3cm}\begin{tikzpicture}[scale=0.94, >=latex]
+       %-----------------------------
+       % Universe: Σ^* (square)
+       %-----------------------------
+       \coordinate (C) at (3,3);
+
+       \only<1->{
+         \draw[thick] (0,0) rectangle (6,6);
+         \node at ($(C)+(-2.5,2.5)$) {$\Sigma^*$};
+       }
+
+      %----------------------------------------
+      % Slide 3: LLM splatter over Σ* (square only)
+      %----------------------------------------
+       \only<3>{
+         \pgfmathsetseed{20260111}
+
+         \def\muX{3}
+         \def\muY{3}
+         \def\sigma{1.05}
+
+         \begin{scope}
+           \clip (0,0) rectangle (6,6); % ONLY square cutoff
+
+           \foreach \k in {1,...,460}{
+             % Box–Muller for 2D normal
+             \pgfmathsetmacro{\u}{max(rnd,1e-6)}
+             \pgfmathsetmacro{\r}{sqrt(-2*ln(\u))}
+             \pgfmathsetmacro{\t}{360*rnd}
+
+             \pgfmathsetmacro{\x}{\muX + \sigma*\r*cos(\t)}
+             \pgfmathsetmacro{\y}{\muY + \sigma*\r*sin(\t)}
+
+             \fill[red] (\x,\y) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+
+       %----------------------------------------
+       % Slide 4: Guidance = delete samples outside L(G)
+       %----------------------------------------
+       \only<4>{
+         \pgfmathsetseed{20260111}
+
+         \def\muX{3}
+         \def\muY{3}
+         \def\sigma{1.05}
+
+         \begin{scope}
+           \clip (0,0) rectangle (6,6);
+           \clip (C) circle[radius=2.6];
+
+           \foreach \k in {1,...,460}{
+             \pgfmathsetmacro{\u}{max(rnd,1e-6)}
+             \pgfmathsetmacro{\r}{sqrt(-2*ln(\u))}
+             \pgfmathsetmacro{\t}{360*rnd}
+
+             \pgfmathsetmacro{\x}{\muX + \sigma*\r*cos(\t)}
+             \pgfmathsetmacro{\y}{\muY + \sigma*\r*sin(\t)}
+
+             \fill[red] (\x,\y) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+
+       %-----------------------------
+       % Outer curve: L(G) (slightly wavy)
+       %-----------------------------
+       \only<2->{
+         \pgfmathsetseed{12310}
+         \begin{scope}[decoration={random steps,segment length=2pt,amplitude=1.02pt}]
+           \draw[thick,decorate] (C) circle [radius=2.6];
+         \end{scope}
+         \node at ($(C)+(-1.5,1.5)$) {$\mathcal{L}(G)$};
+       }
+
+       %-----------------------------
+       % Middle curve: L(Γ) (jagged)
+       %-----------------------------
+       \only<7->{
+         \begin{scope}[decoration={random steps,segment length=4pt,amplitude=4pt}]
+           \draw[thick,decorate] (C) circle [radius=1.65];
+         \end{scope}
+         \node at ($(C)+(-0.87,0.87)$) {$\mathcal{L}(\Gamma)$};
+       }
+
+       %-----------------------------
+       % Inner curve: L(⇓) (very jagged) -- slide 4 only
+       %-----------------------------
+       \only<5-7>{
+         \pgfmathsetseed{11313}
+         \begin{scope}[decoration={random steps,segment length=0.6pt,amplitude=5pt}]
+           \draw[thick,decorate,black!50] (C) circle [radius=0.7];
+         \end{scope}
+         \node at (C) {$\mathcal{L}(\downarrow)$};
+       }
+
+       %-----------------------------
+       % Slide 5: spray sparse uniform samples inside L(Γ)
+       % (remove innermost jagged circle by not showing it on <5>)
+       %-----------------------------
+       \only<8->{
+       % keep dots comfortably inside the jagged boundary
+         \pgfmathsetseed{20260101}
+         \begin{scope}
+           \clip (C) circle[radius=1.5];
+           \foreach \k in {1,...,80}{
+             \pgfmathsetmacro{\rr}{sqrt(rnd)*1.45}
+             \pgfmathsetmacro{\tt}{rnd*360}
+             \fill[red] ($(C)+(\tt:\rr)$) circle[radius=0.032];
+           }
+         \end{scope}
+       }
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Stratified sampling with finite model theory}
+  \begin{columns}[T,onlytextwidth]
+    %-------------------- LEFT: bullets --------------------
+    \hspace{-0.5cm}
+    \begin{column}{0.5\textwidth}
+      \vspace{0.6cm}
+      \begin{itemize}
+        \item But $\mathcal{L}(\Gamma)$ is infinite
+        \item Consider finite models
+        \item Isolate key complexity parameters of interest
+        \item Embed description into a context-free grammar
+        \item Disintegrate into fixed-\\parameter tractable slices
+        \item Sample uniformly from the exact conditional distribution
+      \end{itemize}
+    \end{column}
+
+    %-------------------- RIGHT: figure --------------------
+    \begin{column}{0.5\textwidth}
+      \vspace{-0.5cm}
+      \hspace{-3cm}
+      \hfill % push to the right edge of the column
+      \begin{tikzpicture}
+        \begin{axis}[
+          view={25}{14},
+          width=9.2cm,
+          height=10cm,
+          xmin=-10, xmax=10,
+          ymin=-10, ymax=10,
+          zmin=0, zmax=8,
+          hide axis,
+          grid=none,
+        ]
+
+          % Paraboloid z = r^2 up to z=8
+          \pgfmathsetmacro\R{sqrt(8)}
+          \addplot3[
+          surf,
+          shader=interp,
+          opacity=0.3,
+          colormap/viridis,
+          domain=0:360,
+          y domain=0:\R,
+          samples=55,
+          samples y=25
+          ] ({y*cos(x)}, {y*sin(x)}, {y^2});
+
+          % Draw jagged level sets at z = 1,3,5,7
+          \pgfmathsetseed{12310}
+          \foreach \z [count=\i] in {1,3,5,7}{
+            % Inner jagged circle
+            \pgfmathsetmacro\rinner{sqrt(\z/0.9)}
+            \def\innerpoints{}
+            \foreach \sample in {1,...,20}{
+              \pgfmathsetmacro\ang{360*\sample/20}
+              \pgfmathsetmacro\noise{0.4 * rand}
+              \pgfmathsetmacro\x{ (\rinner + \noise) * cos(\ang) }
+              \pgfmathsetmacro\y{ (\rinner + \noise) * sin(\ang) }
+              \xdef\innerpoints{\innerpoints (\x,\y,\z)}
+            }
+            \addplot3[black, thick] coordinates {\innerpoints} --cycle;
+
+            % Sample points inside the innermost level set
+            \pgfmathsetseed{20260101 + \i}
+            \def\dotpoints{}
+            \pgfmathsetmacro\numdots{3*\i}
+            \foreach \k in {1,...,\numdots}{
+              \pgfmathsetmacro\rr{sqrt(rnd)*\rinner*0.9}
+              \pgfmathsetmacro\tt{rnd*360}
+              \pgfmathsetmacro\x{\rr * cos(\tt)}
+              \pgfmathsetmacro\y{\rr * sin(\tt)}
+              \xdef\dotpoints{\dotpoints (\x,\y,\z)}
+            }
+            \addplot3[red, only marks, mark=*, mark size=1] coordinates {\dotpoints};
+
+            % Middle jagged circle
+            \pgfmathsetmacro\r{sqrt(\z/0.2)}
+            \def\middlepoints{}
+            \foreach \sample in {1,...,40}{
+              \pgfmathsetmacro\ang{360*\sample/40}
+              \pgfmathsetmacro\noise{0.3 * rand}
+              \pgfmathsetmacro\x{ (\r + \noise) * cos(\ang) }
+              \pgfmathsetmacro\y{ (\r + \noise) * sin(\ang) }
+              \xdef\middlepoints{\middlepoints (\x,\y,\z)}
+            }
+            \addplot3[black, thick] coordinates {\middlepoints} --cycle;
+
+            % Outer bounding square
+            \pgfmathsetmacro\h{sqrt(\z / 0.1)}
+            \addplot3[black, thick] coordinates { (-\h, -\h, \z) (-\h, \h, \z) };
+            \addplot3[black, thick] coordinates { (\h, -\h, \z) (\h, \h, \z) };
+            \addplot3[black, thick] coordinates { (-\h, -\h, \z) (\h, -\h, \z) };
+            \addplot3[black, thick] coordinates { (-\h, \h, \z) (\h, \h, \z) };
+          }
+
+        \end{axis}
+        \path (current bounding box.north east) coordinate (plotNE);
+
+        % Labels
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-0.6, -1.3)$) {$\Sigma^{<80}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-0.9,-2.9)$)  {$\Sigma^{<60}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-1.5,-4.5)$)  {$\Sigma^{<40}$};
+        \node[font=\scriptsize, anchor=north west, inner sep=1pt] at ($(plotNE)+(-2.2,-5.9)$)  {$\Sigma^{<20}$};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{High-level grammar embedding recipe}
+
+  \begin{itemize}\setlength\itemsep{0.35em}
+  \item Fix a finite type universe $\mathbb{T}$ and an ambient global context $\Gamma$
+  \item Decorate vanilla nonterminals with a typing annotation, $\nt{E}[\tau]$
+  \item Each typing judgment becomes a schema for constructing a family of synthetic productions, each instantiated with $\tau : \mathbb{T}$
+  \item Syntax decorators, $\Phi_{p, \tau}:(P \times \mathbb{T}) \rightarrow \mathbb{T}^+ \rightarrow (V \cup \Sigma)^+$
+  \end{itemize}
+  \vspace{-0.2cm}
+  \hspace{-0.3cm}\begin{align*}
+    \textbf{Syntax:}&\quad
+    \frac{\Gamma \vdash \nt{E}_i:\tau_i \qquad p=\big(\nt{E} \rightarrow (\Sigma^*\:\nt{E}_i\:\Sigma^*)^{m_{\geq 1}}\big) \in P}{\big(\nt{E}[\tau]\,\rightarrow\, \Phi_{p,\tau}(\tau_1,\ \ldots,\tau_m)\big)\in P_\Gamma}\\\\
+    \textbf{Names:}&\quad
+    \Gamma \vdash e:\tau \;\Rightarrow\; \big(\nt{E}[\tau]\,\rightarrow\,\tok{e}\big)\in P_\Gamma\\\\
+    \textbf{Functions:}&\quad
+    \frac{\Gamma \vdash f:(\tau_1,\ \ldots, \tau_k) \rightarrow \tau}{\big(\nt{E}[\tau_1]\,\rightarrow\,\tok{f}\gap\tok{(}\gap\nt{E}[\tau_1]\gap\tok{,}\gap \ldots\gap\tok{,}\gap\nt{E}[\tau_k]\gap\tok{)} \big)\in P_\Gamma}
+  \end{align*}
+  \begin{itemize}\setlength\itemsep{0.25em}
+  \end{itemize}
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Example language: simply typed function syntax}
+  \vspace{-0.25cm}
+
+  \[
+    \hspace{-0.1cm}\begin{array}{ccl}
+     \nt{FUN} & ::= & \tok{fun}\gap \tok{f0}\gap \tok{(}\gap \nt{PRM}\gap \tok{)}\gap \tok{:}\gap \mathbb{T} \gap \tok{=}\gap \nt{EXP} \\
+     \nt{PRM} & ::= & \nt{PID}\gap \tok{:}\gap \mathbb{T} \;\mid\; \nt{PRM}\gap \tok{,}\gap \nt{PID}\gap \tok{:}\gap \mathbb{T} \\
+     \nt{EXP} & ::= & \ulcorner\mathbb{N}\lrcorner \;\mid\; \ulcorner\mathbb{B}\lrcorner \;\mid\; \nt{PID} \;\mid\; \nt{INV} \;\mid\; \nt{IFE} \;\mid\; \nt{OPX}\\
+     \nt{OPX} & ::= & \codett{(}\gap\nt{EXP}\gap \nt{OPR}\gap \nt{EXP}\gap\codett{)} \\
+     \nt{IFE} & ::= & \tok{if}\gap \nt{EXP}\gap \tok{\{}\gap \nt{EXP}\gap \tok{\}}\gap
+     \tok{else}\gap \tok{\{}\gap \nt{EXP}\gap \tok{\}} \\
+     \nt{INV} & ::= & \nt{FID}\gap \tok{(}\gap \nt{ARG}\gap \tok{)} \\
+     \nt{ARG} & ::= & \nt{EXP} \;\mid\; \nt{ARG}\gap \tok{,}\gap \nt{EXP} \\
+     \nt{OPR} & ::= & \tok{+} \;\mid\; \tok{*} \;\mid\; \tok{<} \;\mid\; \tok{==} \\
+     \nt{PID} & ::= & \tok{p1} \;\mid\; \ldots \;\mid\; \tok{pk} \\
+     \nt{FID} & ::= & \tok{f0} \;\mid\; \tok{f1} \;\mid\; \ldots \;\mid\; \tok{fn}\\
+     \ulcorner\mathbb{B}\lrcorner & ::= & \tok{true} \;\mid\; \tok{false}\\
+     \ulcorner\mathbb{N}\lrcorner & ::= & \tok{1} \;\mid\; \tok{2} \;\mid\; \tok{3} \;\mid\; \ldots
+    \end{array}
+  \]
+
+  \vspace{0.3cm}
+  \textbf{Type universe:} Finite $\T$ with two primitive types (e.g., $\mathbb{B},\mathbb{N},\ldots$)\\\vspace{1em}
+  \textbf{Ambient context:} $\Gamma$ maps $\tok{f\ttus}:(\tau_1,\ldots,\tau_m)\to\tau$.
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Expression fragment: static semantics}
+  \vspace{-0.3cm}
+  \begin{center}
+    \begin{prooftree}
+      \hskip -1em
+      \AxiomC{$\Gamma \vdash e_c: \mathbb{B}$}
+      \AxiomC{$\Gamma \vdash e_\top: \tau$}
+      \AxiomC{$\Gamma \vdash e_\bot: \tau$}
+      \RightLabel{\texttt{IFE}}
+      \TrinaryInfC{$\Gamma \vdash \tok{if}\; e_c\; \tok{\ttlb}\; e_\top\; \tok{\ttrb}\; \tok{else}\; \tok{\ttlb}\; e_\bot\; \tok{\ttrb} : \tau$}
+\DisplayProof\vskip 2em\hskip -1em
+      \hskip -1em
+      \AxiomC{$\Gamma \vdash \tok{f\ttus}: (\tau_1,\ldots,\tau_m)\rightarrow\tau$}
+      \AxiomC{$\Gamma \vdash e_i:\tau_i\;\;\forall i\in[1,m]$}
+      \RightLabel{\texttt{INV}}
+      \BinaryInfC{$\Gamma \vdash \tok{f\ttus}\;\tok{(}\; e_1\;\tok{,}\;\ldots\;\tok{,}\;e_m\;\tok{)}:\tau$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+      \AxiomC{$\Gamma \vdash e_1:\tau$}
+      \AxiomC{$\Gamma \vdash e_2:\tau'$}
+      \RightLabel{\texttt{OPX}}
+      \TrinaryInfC{$\Gamma \vdash \tok{(}\; e_1\; \odot\; e_2\; \tok{)} : \hat\tau$}
+    \end{prooftree}
+  \end{center}
+
+  \vspace{0.1cm}
+
+  \hspace{-0.5em}Where the operator typing function $\delta_{\texttt{OPR}}: \Sigma_{\texttt{OPR}} \times \mathbb{T} \times \mathbb{T} \rightharpoonup \mathbb{T}$ returns:
+
+  \[
+    \hspace{-3em}\delta_{\texttt{OPR}}(\odot,\tau,\tau')=
+    \begin{cases}
+      \mathbb{B} & \odot=\tok{<},\ \tau=\tau'=\mathbb{B}\\
+      \mathbb{N} & \odot\in\{\tok{+},\tok{*}\},\ \tau=\tau'=\mathbb{N}\\
+      \mathbb{B} & \odot=\tok{==},\ \tau=\tau'
+    \end{cases}
+  \]
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Embedding the type checker (I)}
+  \vspace{-0.45cm}
+  \[
+    \textbf{Grammar:}\quad \langle \Sigma, V, P \textcolor{gray}{\ \subset V\times (V \cup \Sigma)^*}, S \textcolor{gray}{\ \in V}\rangle \Rightarrow \langle \Sigma_\Gamma, V_\Gamma, P_\Gamma, V_\Gamma, S_\Gamma\rangle\\\vspace{-0.5em}
+    \textbf{Decorated nonterminals:}\quad \nt{EXP}[\tau,\pi] \qquad \big(\tau\in\T,\;\pi\equiv(\vec\tau\rightarrow\dot\tau)\big)\\\vspace{0.5em}
+    \textbf{Provide:} \quad $k$ \text{, the maximum arity, and } $\mathbb{T}$ \text{, the type universe}.
+  \]
+\vspace{-1.6cm}
+  \begin{center}
+    \begin{prooftree}
+      \AxiomC{$\langle\vec\tau,\dot\tau\rangle \in \T^{0..k}\times\T$}
+      \AxiomC{$\vec\tau_{0..|\vec\tau|} \in \vec\tau$}
+      \RightLabel{$\texttt{FUN}_{\varphi}$}
+      \BinaryInfC{$\Big(S_\Gamma \rightarrow
+      \tok{fun}\;\tok{f0}\;
+      \tok{(}\;\cjoin{i=1}{|\vec\tau|}\big(p_i\;\tok{:}\;\vec\tau_i\big)\;\tok{)}\;
+      \tok{:}\;\dot\tau\;\tok{=}\;\nt{EXP}[\dot\tau,\vec\tau\rightarrow\dot\tau]
+      \Big)\in P_\Gamma$}
+\DisplayProof\vskip 1.5em\hskip -1em
+      \AxiomC{$\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau] \in V_\Gamma$}
+      \AxiomC{$\tau=\dot\tau$}
+      \AxiomC{$\vec\tau_{0..|\vec\tau|}\in\vec\tau$}
+      \RightLabel{$\texttt{REC}_{\varphi}$}
+      \TrinaryInfC{$\big(\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau] \rightarrow
+      \tok{f0}\;\tok{(}\;\cjoin{i=1}{|\vec\tau|}\nt{EXP}[\vec\tau_i,\vec\tau\rightarrow\dot\tau]\;\tok{)}
+      \big)\in P_\Gamma$}
+\DisplayProof\vskip 1.5em\hskip -0.1em
+      \AxiomC{$\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau]\in V_\Gamma\;\;\exists i.\ \vec\tau_i=\tau$}
+      \RightLabel{$\texttt{PID}_{\varphi}$}
+      \UnaryInfC{$\big(\nt{EXP}[\tau,\vec\tau\rightarrow\dot\tau]\rightarrow\tok{pi}\big)\in P_\Gamma$}
+      \DisplayProof\hskip 9.9em
+      \AxiomC{$\nt{EXP}[\tau,\pi]\in V_\Gamma\;\;\tok{\ttus}: \mathbb{B} \mid \mathbb{N}$}
+      \RightLabel{$\ulcorner\T\lrcorner_{\varphi}$}
+      \UnaryInfC{$\big(\nt{EXP}[\tau,\pi]\rightarrow\tok{\ttus}\big)\in P_\Gamma$}\hskip -9.9em
+    \end{prooftree}
+  \end{center}
+\end{frame}
+
+% -------------------------------------------------
+\begin{frame}{Embedding the type checker (II)}
+  \vspace{-0.35cm}
+  \begin{center}
+    \begin{prooftree}
+      \vskip -1em\hskip -0.6cm
+      \AxiomC{$\nt{EXP}[\tau,\pi] \in V_\Gamma$}
+      \AxiomC{$\Gamma \vdash \tok{f\ttus}:(\tau_1,\ldots,\tau_m)\rightarrow\tau$}
+      \RightLabel{$\texttt{INV}_{\varphi}$}
+      \BinaryInfC{$\big(\nt{EXP}[\tau,\pi] \rightarrow
+      \tok{f\ttus}\;\tok{(}\;\cjoin{i=1}{m}\nt{EXP}[\tau_i,\pi]\;\tok{)}
+      \big)\in P_\Gamma$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\nt{EXP}[\tau,\pi]\in V_\Gamma$}
+      \AxiomC{$\tau=\tau'$}
+      \AxiomC{$\tau,\tau'\in\T$}
+      \RightLabel{$\texttt{IFE}_{\varphi}$}
+      \TrinaryInfC{$\Big(
+      \nt{EXP}[\tau,\pi] \rightarrow
+      \tok{if}\;\nt{EXP}[\mathbb{B},\pi]\;\tok{\ttlb}\;\nt{EXP}[\tau,\pi]\;\tok{\ttrb}\;
+      \tok{else}\;\tok{\ttlb}\;\nt{EXP}[\tau',\pi]\;\tok{\ttrb}
+      \Big)\in P_\Gamma$}
+\DisplayProof\vskip 2em\hskip -1em
+      \AxiomC{$\nt{EXP}[\hat\tau,\pi]\in V_\Gamma$}
+      \AxiomC{$\delta_{\texttt{OPR}}(\odot,\tau,\tau')=\hat\tau$}
+      \AxiomC{$\odot\in\{\tok{==},\tok{<},\tok{+},\tok{*}\}$}
+      \RightLabel{$\texttt{OPX}_{\varphi}$}
+      \TrinaryInfC{$\Big(
+      \nt{EXP}[\hat\tau,\pi] \rightarrow
+      \tok{(}\;\nt{EXP}[\tau,\pi]\;\odot\;\nt{EXP}[\tau',\pi]\;\tok{)}
+      \Big)\in P_\Gamma$}
+    \end{prooftree}
+  \end{center}
+\vspace{1em}
+  Finally, we normalize to Chomsky Normal Form (CNF), rewriting all productions to either \textbf{(1)} $(w \rightarrow x z): V\times V^2$ or \textbf{(2)} $(w \rightarrow t): V\times\Sigma$.
+\end{frame}
+
+\begin{frame}{Addendum: CFG $\cap$ NFA closure and $G_\cap$ construction}
+  \textbf{Bar-Hillel (1961)}: For any CFG $G$, and NFA
+  $A=\langle Q,\Sigma,\delta,q_\alpha,F\rangle$, $\exists G_\cap$ s.t.
+  $\mathcal{L}(G_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)$. Salomaa's (1973) construction:
+
+  \vspace{-0.1cm}
+  \begin{center}
+    \begin{prooftree}
+      \AxiomC{$q_\omega \in F$}
+      \RightLabel{$\mathcal{S}$}
+      \UnaryInfC{$\big(S_\cap \rightarrow q_\alpha\, S\, q_\omega\big)\in P_\cap$}
+      \DisplayProof\hspace{0.5em}
+      \AxiomC{$(W\rightarrow a)\in P$}
+      \AxiomC{$(p\overset{a}{\rightarrow}r)\in\delta$}
+      \RightLabel{$\uparrow$}
+      \BinaryInfC{$\big(pWr\rightarrow a\big)\in P_\cap$}
+      \DisplayProof\vskip1em
+      \AxiomC{$(W\rightarrow XZ)\in P$}
+      \AxiomC{$p,q,r\in Q$}
+      \RightLabel{$\Join$}
+      \BinaryInfC{$\big(pWr\rightarrow (pXq)\,(qZr)\big)\in P_\cap$}
+    \end{prooftree}
+  \end{center}
+
+  \vspace{0.1cm}
+  but, there is a \textit{much} more efficient construction. Intuition: want to show $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
+  \begin{enumerate}\setlength\itemsep{0.25em}
+    \item $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
+    \item $\exists q, x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Finite intersection as matrix exponentiation on $(2^V,\oplus,\otimes)$}
+  Let $M \in (2^V)^{|Q|\times|Q|}$, with entries $M[r,c]\subseteq V$ (a set of nonterminals),
+  \vspace{-0.35cm}
+  \[
+    \text{and let } X \oplus Z = X\cup Z ,
+    X \otimes Z=\Big\{\, w \ \Big|\ \exists x\in X,\ z\in Z.\ (w\rightarrow xz)\in P \Big\}.
+  \]
+
+  \vspace{-0.25cm}
+  \[
+    M_0[r,c] \;=\; \bigcup_{a\in\Sigma}\Big\{\, w \ \Big|\ (w\rightarrow a)\in P \ \wedge\ (q_r \overset{a}{\rightarrow} q_c)\in\delta \Big\}.
+  \]
+
+  We will define the matrix exponential in the standard manner:
+
+  \vspace{-0.35cm}
+  \begin{align*}
+    e^{M_0}&=\sum_{i=0}^{\infty} M_0^i \;=\;\sum_{i=0}^{|Q|} M_0^i \quad\text{($\alpha_\varnothing \Leftrightarrow $ S.U.T. $\Rightarrow$ nilpotent).}\\
+ T(2n)&=\sum_{i=0}^{2n}M_0^i = \begin{cases} M_0, & n=1,\\
+      T(n)\ \oplus\ \big(T(n)\cdot T(n)\big), & \text{otherwise}.
+    \end{cases}
+  \end{align*}
+
+  The following proposition decides nonemptiness:
+
+  \[
+    \Big[\ \bigvee_{q_\omega\in F}\ S\in e^{M_0}[q_\alpha,q_\omega]\ \Big]  \Longleftrightarrow \mathcal{L}(G)\cap \mathcal{L}(\alpha_\cap) \neq \varnothing
+  \]
+\end{frame}
+
+\begin{frame}{Repair example: Simple Levenshtein automaton}
+  Suppose we have the string, $\sigma=\tok{(}\;\tok{)}\;\tok{)}$ and wish to balance the parentheses. Assume we have the Chomsky Normal Form CFG, $G'= \big\{S \rightarrow L R, S \rightarrow L F, S \rightarrow S S, F \rightarrow S R, L \rightarrow \hspace{-0.05cm}\texttt{(}, R \rightarrow\hspace{-0.05cm}\texttt{)}\big\}$ and let us impose an ordering of $S, F, L, R$ on $V$.
+  We will initially have the Levenshtein automaton, $\alpha_\varnothing$, depicted below:
+
+  \vspace{0.6cm}
+  \centering
+  \begin{adjustbox}{max size={0.95\textwidth}{0.62\textheight},center}
+    \begin{tikzpicture}[
+%->, % makes the edges directed
+  >=stealth',
+  node distance=2.5cm, % specifies the minimum distance between two nodes. Change if necessary.
+%  every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+  initial text=$ $, % sets the text that appears on the start arrow
+]
+  \node[state, initial]                (00) {$q_{0,0}$};
+  \node[state, right of=00]            (10) {$q_{1,0}$};
+  \node[accepting, state, right of=10] (20) {$q_{2,0}$};
+  \node[accepting, state, right of=20] (30) {$q_{3,0}$};
+
+  \node[state, above of=00, shift={(-2cm,0cm)}] (01) {$q_{0,1}$};
+  \node[state, right of=01]                     (11) {$q_{1,1}$};
+  \node[state, right of=11]                     (21) {$q_{2,1}$};
+  \node[accepting, state, right of=21]          (31) {$q_{3,1}$};
+
+  \draw [->] (00) edge[below] node{{$\texttt{(}$}} (10);
+  \draw [->] (10) edge[below] node{{$\texttt{)}$}} (20);
+  \draw [->] (20) edge[below] node{{$\texttt{)}$}} (30);
+
+  \draw [->] (01) edge[below] node{{$\texttt{(}$}}                       (11);
+  \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{{$\texttt{)}$}} (21);
+  \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{{$\texttt{)}$}} (31);
+
+  \draw [->] (00) edge[left] node{{$\texttt{)}$}} (11);
+  \draw [->] (10) edge[left] node{{$\texttt{(}$}} (21);
+  \draw [->] (20) edge[left] node{{$\texttt{(}$}} (31);
+
+  \draw [->] (00) edge[bend left=10, left] node{{$\texttt{)}$}} (01);
+  \draw [->] (10) edge[bend left=10, left] node{{$\texttt{(}$}} (11);
+  \draw [->] (20) edge[bend left=10, left] node{{$\texttt{(}$}} (21);
+  \draw [->] (30) edge[bend left=10, left] node{{$\texttt{)|(}$}} (31);
+
+  \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{{$\texttt{)}$}}    (21);
+  \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{{$\texttt{)}$}}    (31);
+\end{tikzpicture}
+  \end{adjustbox}
+  \phantom{.}\\
+  n.b. acyclic, therefor has strictly upper triangular adjacency matrix.
+\end{frame}
+
+%\begin{frame}{Pairing function over $L(\sigma:\Sigma^3,1)$}
+%  \centering
+%  \begin{adjustbox}{max size={1.98\textwidth}{0.88\textheight},center}
+%    \input{../../popl2026/figures/partial_order}
+%  \end{adjustbox}
+%\end{frame}
+%
+%\begin{frame}{Adjacency and reachability matrix}
+%  \centering
+%  \begin{adjustbox}{max size={1.98\textwidth}{0.88\textheight},center}
+%    \input{../../popl2026/figures/adj_mat}
+%  \end{adjustbox}
+%\end{frame}
+
+\begin{frame}{Repair example: Initial parse chart ($M_0$)}
+  \centering
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \input{../popl2026/figures/pc_init}
+  \end{adjustbox}
+  Initial configuration, after filling all unit productions.
+\end{frame}
+
+\begin{frame}{Repair example: Final parse chart ($e^{M_0}$)}
+  \centering
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \input{../popl2026/figures/pc_final}
+  \end{adjustbox}
+  Final configuration, after matrix fixpoint is reached.
+\end{frame}
+
+\begin{frame}{Repair example: Regex denoting $\mathcal{L}(G) \cap \mathcal{L}(\alpha_\varnothing)$}
+  \centering
+  \Big(\tok{a} \tok{b} \tok{a} \tok{b} | \big(\tok{a} \tok{b} | \tok{a} \tok{a} \tok{b} \tok{b}\big)\Big) \big| \big(\tok{a} \tok{b} \tok{a} \tok{b} | \tok{a} \tok{a} \tok{b} \tok{b}\big)
+  \vspace{0.5cm}
+  \begin{adjustbox}{max size={0.98\textwidth}{0.88\textheight},center}
+    \includegraphics{../popl2026/figures/gre}
+  \end{adjustbox}
+  \phantom{.}\\
+  \vspace{-1cm}
+  Regular expression reconstructed from the final parse chart.
+\end{frame}
+
+\begin{frame}{Enumerative tree sampling}
+  \vspace{-0.3cm}
+
+  Let \( e: E \) be an SFRE with two connectives: $ e \rightarrow \Sigma \mid e \cdot e \mid e \lor e $.
+
+  \begin{theorem}[Uniform tree enumeration]
+    To sample parse trees, take a PRNG and feed it into \texttt{enum}:
+    \begin{equation*}
+      \texttt{enum}\,(e, n) = \begin{cases}
+        e &\text{if } e \in \Sigma \\
+        \texttt{enum}\,\big(x, \lfloor \frac{n}{|z|} \rfloor\big) \cdot \texttt{enum}\,\big(z,\, n \bmod |z|\big)  &\text{if } e = x \cdot z \\
+        \texttt{enum}\,\big((x, z)_{\min(1, \lfloor\frac{n}{|x|}\rfloor)}, n-|x|\min(1, \lfloor\frac{n}{|x|}\rfloor)\big) &\text{if } e = x \vee z
+      \end{cases}
+    \end{equation*}
+
+    Where the number of parse trees in a SFRE we abbreviate as $|e|$:
+
+    \begin{equation*}
+      |e|: E \rightarrow \mathbb{N} = \begin{cases}
+        1           & \text{if } e \in \Sigma \\
+        x \times z  & \text{if } e = x \cdot z \\
+        x + z       & \text{if } e = x \vee z
+      \end{cases}
+    \end{equation*}
+
+    n.b. we may need to disambiguate to guarantee $\mathcal{L}(e)$ uniformity.
+  \end{theorem}
+\end{frame}
+
+\begin{frame}{Autoregressive Brzozowski sampling}
+
+%  \begin{multicols}{2}
+%    \begin{eqnarray*}
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\\\[-0.5cm]
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\\\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
+%      \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
+%    \end{eqnarray*} \break\vspace{-0.45cm}
+%    \begin{eqnarray*}
+%      \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
+%      \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\\\[-0.5cm]
+%      \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\\\
+%      \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
+%      \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
+%      \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
+%    \end{eqnarray*}
+%  \end{multicols}
+
+  Now, for any SFRE, \(e\), $\texttt{choose}\,(e)$ witnesses $\sigma \in \mathcal{L}(e)$:
+  \begin{equation*}
+    \texttt{follow}\,(e) = \begin{cases}
+           \{e\}                                        &\hspace{1.3cm}\text{ if } e \in \Sigma \\
+           \texttt{follow}\,(x)                         &\hspace{1.3cm}\text{ if } e = x \cdot z\\
+           \texttt{follow}\,(x)\cup\texttt{follow}\,(z) &\hspace{1.3cm}\text{ if } e = x \lor z
+    \end{cases}
+  \end{equation*}
+  \begin{equation*}\label{eq:choose}
+    \texttt{choose}\,(e) = \begin{cases}
+         e &\text{ if } e \in \Sigma \\
+         \big(s \leftsquigarrow \texttt{follow}\,(e)\big)\cdot \texttt{choose}\,(\partial_s e) &\text{ if } e = x \cdot z\\
+         \texttt{choose}\,\big(e' \leftsquigarrow \{x, z\}\big) &\text{ if } e = x \lor z
+    \end{cases}
+  \end{equation*}
+\vspace{0.2cm}
+
+  where $\delta_s e$ is the Brzozowskian derivative (1973) and $\leftsquigarrow$ denotes probabilistic choice from a small finite set. This may be augmented with a weighted choice operator, $\sigma \leftsquigarrow P_\theta\,(\sigma_{n} \mid  \sigma_{n-1}, \cdots, \sigma_{n - k})$.
+\end{frame}
+
+\begin{frame}{Boltzmann Sampling I: From Grammar to Equations}
+  \begin{block}{Symbolic Method}
+    First map the structural specification (i.e., the CFG) to a system of equations $\mathbf{y}(x) = \Phi(\mathbf{y}(x), x)$.
+
+    \vspace{0.5em}
+    \textbf{Translation:}
+    \begin{itemize}
+      \item \textbf{Union} ($\mathcal{A} \cong \mathcal{B} + \mathcal{C}$) $\to$ Sum $\big(A(x) = B(x) + C(x)\big)$
+      \item \textbf{Product} ($\mathcal{A} \cong \mathcal{B} \times \mathcal{C}$) $\to$ Product $\big(A(x) = B(x) \cdot C(x)\big)$
+      \item \textbf{Atom} ($\mathcal{A} \cong \mathcal{Z}$) $\to$ Variable $\big(A(x) = x\big)$
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Example}
+    A system with non-terminals $\nt{U}, \nt{V}$ yields $\mathbf{y} = \big[U(x), V(x)\big]^T$:
+    $$
+    \begin{aligned}
+      &\nt{U} \to \tok{a} ~ \nt{V} ~ \nt{U} \mid \tok{b} ~ \nt{V} \mid \tok{c} \\
+      &\nt{V} \to \tok{d} ~ \nt{U} ~ \nt{U} \mid \tok{e}
+    \end{aligned}
+    \quad \Rightarrow \quad
+    \begin{cases}
+      U(x) = x V(x) U(x) + x V(x) + x \\
+      V(x) = x U(x)^2 + x
+    \end{cases}
+    $$
+  \end{block}
+\end{frame}
+
+\begin{frame}{Boltzmann Sampling II: Tuning the Mean Size}
+  \textbf{Objective:} For nonterminal $C$, target mean size $n$ by tuning $x$:
+  $$ \mathbb{E}_x[\text{Size}] = \frac{x \cdot C'(x)}{C(x)} = n $$
+
+  \textbf{Newton Iteration:}
+  Find oracle weights $\mathbf{y}$ by solving:
+
+  $$\mathbf{F}(\mathbf{y}) = \mathbf{y} - \Phi(\mathbf{y}, x) = \mathbf{0}$$
+
+  \begin{itemize}
+    \item \textbf{Jacobian:} Compute $\mathbf{J} = \mathbf{I} - \frac{\partial \Phi}{\partial \mathbf{y}}$ (e.g., via AD, SD, or FD).
+    \item \textbf{Update step:} Iterate until convergence:
+    $$ \mathbf{y}_{k+1} = \mathbf{y}_k - \mathbf{J}^{-1} \mathbf{F}(\mathbf{y}_k) $$
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textit{This will converge quadratically and we obtain $C(x)$ and $C'(x)$.}
+\end{frame}
+
+\begin{frame}{Boltzmann Sampling III: Recursive Generation}
+  A Boltzmann sampler $\Gamma C(x)$ draws $\gamma \in \mathcal{C}$ with $\mathbb{P}_x(\gamma) = x^{|\gamma|} / C(x)$
+  i.e., roll a weighted die, pick a branch according to $\mathbf{y}$.
+
+\vspace{0.5em}
+
+\textbf{Algorithm} (class $\mathcal{A} = \mathcal{B}_1 + \mathcal{B}_2 + \dots$):
+\begin{enumerate}
+\item \textbf{Local Weights:} Retrieve value $A(x)$ from $\mathbf{y}$. The probability of choosing rule $k$ is its share of the total weight:
+$$ \pi_k = \frac{B_k(x)}{A(x)} $$
+\item \textbf{Choice:} Pick rule $k$ with probability $\pi_k$.
+\item \textbf{Recurse:} If rule $k$ is a product, e.g., $\mathcal{C} \times \mathcal{D}$, each component $\mathcal{C}$ and $\mathcal{D}$ can be generated independently.
+\end{enumerate}
+
+  \vspace{0.5em}
+  \textit{Note: Pre-calculating $\mathbf{y}(x)$ ensures $\mathcal{O}(1)$ cost per node generated.}
+\end{frame}
+
+\begin{frame}{Evaluation benchmarks}
+  \begin{columns}[T,onlytextwidth]
+% ===================== Left: text =====================
+    \begin{column}{0.53\textwidth}
+      \vspace{0.2cm}
+      \small
+      \textbf{Experimental Setup}
+      \begin{itemize}
+        \item Arity: $k\in\{1,2,3\}$\\Fixed: $|\Gamma|=18,\ |\mathbb{T}|=7$
+        \item CNF grammar sizes: $|G'_\Gamma|\in[1.9\times10^4,\ 9.9\times10^5]$
+        \item Apple M4 (16\,GB RAM)
+      \end{itemize}
+
+      \vspace{0.1cm}
+      \textbf{Benchmarks}
+      \begin{itemize}
+        \item \textbf{Slicing}: $\sigma \leftsquigarrow \mathcal{L}(G'_\Gamma)\cap \Sigma^n$
+        \item \textbf{Type inference}: reuse random functions from slice sampling,
+        replace $(\tok{:}\ \tau\ \tok{=})$ with $(\tok{:}\ \Sigma\ \tok{=})$, and
+        $\sigma' \leftsquigarrow \mathcal{L}(G'_\Gamma)\cap(\ldots\tok{:}\:\Sigma\:\tok{=}\ldots)$
+        \item \textbf{Bounded delay}: $1786 \pm 817 $ ns
+        \item \textbf{Throughput}: $\sim 2.2 \times 10^7$ tok/s
+      \end{itemize}
+    \end{column}
+
+% ===================== Right: stacked plots =====================
+    \begin{column}{0.46\textwidth}
+      \vspace{-1cm}
+      \begin{minipage}{\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{plot1.pdf}\vspace{-0.3cm}
+        \includegraphics[width=\linewidth]{plot2.png}
+      \end{minipage}
+      \end{column}
+  \end{columns}
+  \vspace{-0.15cm}
+\end{frame}
+
+\begin{frame}{$\mathcal{L}(G) \cap \mathcal{L}(\alpha_\varnothing)$ instances feasible in under $16$ GB}
+\noindent\hspace{-0.7cm}
+\begin{tikzpicture}
+\begin{semilogyaxis}[
+    xlabel={$|Q|$ (states)},
+    ylabel={$|V|$ (nonterminals)},
+    xmin=0, xmax=1000,
+    ymin=10, ymax=1000000,
+    ytick={10,100,1000,10000,100000,1000000},
+    width=11.5cm,
+    height=8cm,
+    grid=major,
+    legend pos=south east,
+]
+
+\pgfmathsetmacro{\xminSixteen}{sqrt(17179869184/1000000)}
+\addplot[name path=upper, domain=0.01:1000, samples=200, forget plot, no marks] {min(17179869184 / x^2, 1000000)};
+\addplot[name path=bottom, domain=0:1000, forget plot] {1};
+\addplot[gray, opacity=0.5, forget plot] fill between[of=bottom and upper];
+
+\addplot[domain=\xminSixteen:1000, samples=200, thick, blue, no marks] {17179869184 / x^2};
+
+\pgfmathsetmacro{\xminEight}{sqrt(8589934592/1000000)}
+\addplot[domain=\xminEight:1000, samples=200, thick, green, no marks] {8589934592 / x^2};
+
+\pgfmathsetmacro{\xminFour}{sqrt(4294967296/1000000)}
+\addplot[domain=\xminFour:1000, samples=200, thick, orange, no marks] {4294967296 / x^2};
+
+\pgfmathsetmacro{\xminTwo}{sqrt(2147483648/1000000)}
+\addplot[domain=\xminTwo:1000, samples=200, thick, red, no marks] {2147483648 / x^2};
+
+\legend{16 GB, 8 GB, 4 GB, 2 GB}
+
+\node[anchor=north east, align=right,
+  fill=white, fill opacity=0.85, text opacity=1,
+  inner sep=2pt, rounded corners]
+at (rel axis cs:1,1) {$\text{Space: } 4\text{B}|V||Q|^2/2 < n$GB};
+
+
+\end{semilogyaxis}
+\end{tikzpicture}
+\end{frame}
+
+
+\begin{frame}{$\mu$Rust: Syntax and semantics}
+  Consider a singly-typed language with the following terms:
+  \[
+    \hspace{-0.1cm}\begin{array}{ccl}
+     \nt{FUN} & ::= & \tok{fn}\gap \tok{f0}\gap \tok{(}\gap \nt{PRM}\gap \tok{)}\gap \tok{->}\gap \mathbb{T} \gap \tok{\{}\gap \nt{BDY} \gap \tok{\}}\\
+     \nt{PRM} & ::= & \nt{PID}\gap \tok{:}\gap \mathbb{T} \;\mid\; \nt{PRM}\gap \tok{,}\gap \nt{PID}\gap \tok{:}\gap \mathbb{T} \\
+     \nt{BDY} & ::= & \nt{INV}\;\mid\; \nt{STM} \gap \nt{BDY}\\
+     \nt{STM} & ::= & \codett{let}\gap\nt{PID}\gap \codett{=}\gap \nt{INV}\gap\codett{;}\\
+     \nt{INV} & ::= & \nt{FID}\gap \tok{(}\gap \nt{ARG}\gap \tok{)} \\
+     \nt{ARG} & ::= & \nt{PID} \;\mid\; \nt{ARG}\gap \tok{,}\gap \nt{ARG} \\
+     \nt{PID} & ::= & \tok{p1} \;\mid\; \ldots \;\mid\; \tok{pk} \\
+     \nt{FID} & ::= & \tok{f0} \;\mid\; \tok{f1} \;\mid\; \ldots \;\mid\; \tok{fm}\\
+    \end{array}
+  \]
+
+  \noindent Assume an ambient context, $\Gamma$, consisting of \texttt{f1}, \ldots, \texttt{fm}:
+  \[
+    \begin{array}{rcl}
+      \Gamma & ::= & \varnothing \texttt{ }\mid \texttt{ }\Gamma,\;\codett{f\_} : (\tau_{1}, \ldots, \tau_{k}) \rightarrow \tau
+    \end{array}
+  \]
+  The unrestricted semantics are conventional.
+\end{frame}
+
+\begin{frame}{$\mu$Rust: Examples}
+  \hspace{-0.2cm}This admits straight line programs (SLPs) of the following shape,\vspace{0.5cm}
+  \begin{small}
+  \begin{columns}[T,onlytextwidth]
+    \hspace{2.6cm}\begin{column}{0.53\textwidth}
+       \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{p1} : \textcolor{cyan}{T}, \textcolor{gray}{p2} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{brown}{p3} = \textcolor{brown}{mul}(\textcolor{gray}{p1}, \textcolor{gray}{p2});}\\[0.18cm]
+       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \ero{\textcolor{brown}{p4}} = \textcolor{brown}{add}(\textcolor{gray}{p1}, \textcolor{gray}{p1});}\\[0.18cm]
+       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{brown}{p5} = \textcolor{brown}{mul}(\textcolor{gray}{p1}, \textcolor{gray}{p3});}\\[0.18cm]
+       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \ero{\textcolor{brown}{p6}} = \textcolor{brown}{add}(\textcolor{gray}{p3}, \textcolor{gray}{p1});}\\[0.18cm]
+       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{brown}{add}(\textcolor{gray}{p3}, \textcolor{gray}{p5})}\\[0.18cm]
+       \texttt{\:\}}\\[0.18cm]\\[0.18cm]
+       \texttt{\frenchspacing\:> Warning: \ero{\textcolor{brown}{p4}}, \ero{\textcolor{brown}{p6}} are unused!}
+    \end{column}
+%    \hspace{0.2cm}\begin{column}{0.53\textwidth}
+%       \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{p1} : \textcolor{cyan}{T}, \textcolor{gray}{p2} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+%       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{brown}{p3} = \textcolor{brown}{mul}(\textcolor{gray}{p1}, \textcolor{gray}{p2});}\\[0.18cm]
+%       \texttt{\frenchspacing\:\gap\gap\gap\ero{\textcolor{gray}{p3}} = \textcolor{brown}{mul}(\textcolor{gray}{p3}, \textcolor{gray}{p2});}\\[0.18cm]
+%       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{brown}{u} = \textcolor{brown}{add}(\textcolor{gray}{p1}, \textcolor{gray}{p2});}\\[0.18cm]
+%       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \ero{\textcolor{brown}{v}} = \textcolor{brown}{mul}(\textcolor{gray}{u}, \textcolor{gray}{p1});}\\[0.18cm]
+%       \texttt{\frenchspacing\:\gap\gap\gap\textcolor{brown}{add}(\textcolor{gray}{u}, \textcolor{gray}{p1})}\\[0.18cm]
+%       \texttt{\:\}}\\[0.18cm]\\[0.18cm]
+%       \texttt{\frenchspacing\:> Warning: \ero{\textcolor{brown}{p3}}, \ero{\textcolor{brown}{v}} are unused!}
+%    \end{column}
+  \end{columns}
+  \end{small}\vspace{0.5cm}
+  \hspace{-0.2cm}however unused resources, i.e., names may remain after returning.
+\end{frame}
+
+\begin{frame}{Ambient context}
+  \hspace{-0.2cm}Now, let us interpolate \texttt{\textcolor{brown}{f0}} as a string inside the following context:\\\vspace{0.3cm}
+
+\texttt{\frenchspacing\:\textcolor{yellow}{#}[\textcolor{orange}{forbid}(\textcolor{blue}{unused\_variables})]}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{yellow}{#}[\textcolor{orange}{derive}(\textcolor{blue}{Clone}, \textcolor{blue}{Copy}, \textcolor{blue}{Debug})]}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{yellow}{#}[\textcolor{orange}{must\_use}]}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{magenta}{pub} \textcolor{magenta}{struct} \textcolor{cyan}{T}(\textcolor{cyan}{i128});}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{magenta}{fn}  \textcolor{brown}{add}(\textcolor{gray}{\_} : \textcolor{cyan}{T}, \textcolor{gray}{\_} : \textcolor{cyan}{T}) -> \:\textcolor{cyan}{T} \{ \textcolor{cyan}{T}(\textcolor{gray}{0}) \}}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{magenta}{fn}  \textcolor{brown}{mul}(\textcolor{gray}{\_} : \textcolor{cyan}{T}, \textcolor{gray}{\_} : \textcolor{cyan}{T}) -> \:\textcolor{cyan}{T} \{ \textcolor{cyan}{T}(\textcolor{gray}{0}) \}}\\\vspace{0.2cm}
+%  \texttt{\frenchspacing\:\textcolor{magenta}{fn}  \textcolor{brown}{pos}(\textcolor{gray}{x} : \textcolor{cyan}{T}) -> \:\textcolor{cyan}{bool} \{ \textcolor{gray}{x}.\textcolor{gray}{0} > \textcolor{gray}{0} \}}\\\vspace{0.2cm}
+\texttt{...}\\\vspace{0.2cm}
+\texttt{\frenchspacing\:\textcolor{magenta}{fn}  \textcolor{brown}{f0}(\textcolor{gray}{p1} : \textcolor{cyan}{T}, ..., \textcolor{gray}{pk} : \textcolor{cyan}{T}) -> \:\textcolor{cyan}{T} \{ \hl{<\ldots>} \}}\\\vspace{0.2cm}
+\end{frame}
+
+\begin{frame}{$\mu$Rust$_{\textsc{SL}}$: Relevance semantics}
+
+%  \vspace{4pt}
+  \textbf{Obligations.} For \texttt{f0} with parameters $p_1:\tau_1,\ldots,p_k:\tau_k$,
+  initialize $\Phi=\{p_1,\ldots,p_k\}$. Each bound name must be used \emph{at least once}. Locals introduced by \texttt{let} also carry obligations. Body is well-typed iff all obligations are discharged, i.e., $\Gamma,\Delta \vdash \mathtt{BDY}:\tau \uses{\Phi}{\varnothing}$.
+  \[
+    \text{Judgments:}\quad \Gamma,\Delta \;\vdash\; t:\tau \uses{\Phi}{\Phi'}.
+  \]
+
+%  ``Under context $\Gamma$, term $t:\tau$ \textit{transforms} input obligations $\Phi$ into $\Phi'$.''
+
+  \scriptsize
+  \begin{center}
+    \begin{minipage}{0.98\linewidth}
+      \begin{prooftree}
+        \AxiomC{$p:\tau \in \Gamma$}
+        \AxiomC{$p \in \Phi$}
+        \RightLabel{\scriptsize(VAR)}
+        \BinaryInfC{$\Gamma,\Delta \vdash p:\tau \uses{\Phi}{\Phi\setminus\{p\}}$}
+        \DisplayProof
+        \hspace{1cm}
+        \AxiomC{$p:\tau \in \Gamma$}
+        \AxiomC{$p \notin \Phi$}
+        \RightLabel{\scriptsize(VAR$_\notin$)}
+        \BinaryInfC{$\Gamma,\Delta \vdash p:\tau \uses{\Phi}{\Phi}$}
+      \end{prooftree}
+
+      \begin{prooftree}
+        \AxiomC{$\Gamma \vdash \tok{f\_}:(\tau_1,\ldots,\tau_m)\to\tau$}
+        \AxiomC{$\Gamma,\Delta \vdash e_i:\tau_i \uses{\Phi_{i-1}}{\Phi_i}\:\forall i \in [1, m]$}
+        \RightLabel{\scriptsize(INV)}
+        \BinaryInfC{$\Gamma,\Delta \vdash \tok{f\_}\;\tok{(}\;e_1\;\tok{,}\;\ldots\tok{,}\;e_m\;\tok{)}:\tau \uses{\Phi_0}{\Phi_m}$}
+      \end{prooftree}
+
+      \begin{prooftree}
+        \AxiomC{$\Gamma,\Delta \vdash s_1:\mathtt{unit} \uses{\Phi_0}{\Phi_1}$}
+        \AxiomC{$\Gamma,\Delta \vdash s_2:\mathtt{unit} \uses{\Phi_1}{\Phi_2}$}
+        \RightLabel{\scriptsize(SEQ)}
+        \BinaryInfC{$\Gamma,\Delta \vdash s_1\;\tok{;}\;\,s_2:\mathtt{unit} \uses{\Phi_0}{\Phi_2}$}
+      \end{prooftree}
+
+      \begin{prooftree}
+        \AxiomC{$\Gamma,\Delta \vdash e: \tau\uses{\Phi_0}{\Phi_1}$}
+        \AxiomC{$\Gamma,\Delta \vdash x:\tau \uses{\Phi_1\cup\{x\}}{\Phi_2}$}
+        \RightLabel{\scriptsize(LET)}
+        \BinaryInfC{$\Gamma,\Delta \vdash \tok{let}\;x\;\tok{=}\;e : \mathtt{unit} \uses{\Phi_0}{\Phi_2}$}
+      \end{prooftree}
+%
+%      \begin{prooftree}
+%        % -------------------- BODY (statements then final invocation) --
+%        \AxiomC{$\Delta_0=\{p_1:\tau_1,\ldots,p_k:\tau_k\}$\kern-2em}
+%        \AxiomC{$\Gamma,\Delta_0 \vdash s:\mathtt{unit} \uses{\Phi_0}{\Phi_1}$\kern-2em}
+%        \AxiomC{$\Gamma,\Delta_0 \vdash \mathtt{inv}:\dot\tau \uses{\Phi_1}{\Phi_2}$}
+%        \RightLabel{\footnotesize(BDY)}
+%        \TrinaryInfC{$\Gamma,\Delta_0 \vdash s;\,\mathtt{inv}:\dot\tau \uses{\Phi_0}{\Phi_2}$}
+%      \end{prooftree}
+    \end{minipage}
+  \end{center}
+\end{frame}
+
+\begin{frame}{CFG embedding: intution}
+  To express all $\Phi \Rightarrow \Phi'$ possible transitions, we must construct a Hasse digram, $H_k$, e.g., for $k=3$ parameters $\{x, y, z\}$,
+  \begin{figure}
+  \includegraphics[width=0.5\textwidth]{lattice} % qlmanage -t -s 5000 -o . lattice.svg
+  \end{figure}\vspace{-1.5cm}
+
+  for all relevant productions. This will be tractable for $k \lesssim 10$.
+
+  \[
+    \big|\{v, v' \in H_k \mid v\subset v'\}\big|
+    = \sum_{i=0}^k \binom{k}{i}\bigl(2^{\,k-i}-1\bigr)
+    = 3^k - 2^k.
+  \]
+\end{frame}
+
+\begin{frame}{Path enumeration}%xyz
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      anchor=center,
+      inner sep=0pt,
+      xshift=-3.5cm,
+      yshift=-1.5cm
+    ] at (current page.east) {%
+      \includegraphics[width=0.53\textwidth]{xyz.png}%
+    };
+  \end{tikzpicture}
+% ------------------------------------------------------
+
+  \hspace{-0.2cm}Our grammar will need to express all possible transition paths, e.g.,\vspace{0.5cm}
+  \begin{small}
+    \begin{columns}[T,onlytextwidth]
+      % LHS text / SLP
+      \hspace{-0.3cm}\begin{column}{0.59\textwidth}
+             \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{x} : \textcolor{cyan}{T}, \textcolor{gray}{y} : \textcolor{cyan}{T}, \textcolor{gray}{z} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{x,y,z\}}}\\[0.18cm]
+             \texttt{\:\}}
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{y}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x,z\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{add}(\textcolor{black}{y}, \textcolor{black}{z});\gap\textcolor{gray}{// \{x\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{z}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{x}, \textcolor{black}{z});\gap\textcolor{gray}{// \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\:\}}}
+      \end{column}
+      % RHS column: leave empty or add annotations;
+      % image is already behind this region
+      \begin{column}{0.53\textwidth}
+        % (optional overlay text/labels)
+      \end{column}
+    \end{columns}
+  \end{small}
+\end{frame}
+
+\begin{frame}{Path enumeration}%xz
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      anchor=center,
+      inner sep=0pt,
+      xshift=-3.5cm,
+      yshift=-1.5cm
+    ] at (current page.east) {%
+      \includegraphics[width=0.53\textwidth]{xz.png}%
+    };
+  \end{tikzpicture}
+% ------------------------------------------------------
+
+  \hspace{-0.2cm}Our grammar will need to express all possible transition paths, e.g.,\vspace{0.5cm}
+  \begin{small}
+    \begin{columns}[T,onlytextwidth]
+      % LHS text / SLP
+      \hspace{-0.3cm}\begin{column}{0.59\textwidth}
+             \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{x} : \textcolor{cyan}{T}, \textcolor{black}{y} : \textcolor{cyan}{T}, \textcolor{gray}{z} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{y}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x,z\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{//  BDY | \{x,y,z\} => \{x,z\}}}\\[0.18cm]
+             \texttt{\:\}}
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{add}(\textcolor{black}{y}, \textcolor{black}{z});\gap\textcolor{gray}{// \{x\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{z}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{x}, \textcolor{black}{z});\gap\textcolor{gray}{// \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\:\}}}
+      \end{column}
+      % RHS column: leave empty or add annotations;
+      % image is already behind this region
+      \begin{column}{0.53\textwidth}
+        % (optional overlay text/labels)
+      \end{column}
+    \end{columns}
+  \end{small}
+\end{frame}
+
+\begin{frame}{Path enumeration}%x1
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      anchor=center,
+      inner sep=0pt,
+      xshift=-3.5cm,
+      yshift=-1.5cm
+    ] at (current page.east) {%
+      \includegraphics[width=0.53\textwidth]{x.png}%
+    };
+  \end{tikzpicture}
+% ------------------------------------------------------
+
+  \hspace{-0.2cm}Our grammar will need to express all possible transition paths, e.g.,\vspace{0.5cm}
+  \begin{small}
+    \begin{columns}[T,onlytextwidth]
+      % LHS text / SLP
+      \hspace{-0.3cm}\begin{column}{0.59\textwidth}
+             \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{x} : \textcolor{cyan}{T}, \textcolor{black}{y} : \textcolor{cyan}{T}, \textcolor{black}{z} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{y}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x,z\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{add}(\textcolor{black}{y}, \textcolor{black}{z});\gap\textcolor{gray}{// \{x\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{//  BDY | \{x,y,z\}=>\{x\}}}\\[0.18cm]
+             \texttt{\:\}}
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{z}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{x}, \textcolor{black}{z});\gap\textcolor{gray}{// \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\:\}}}
+      \end{column}
+      % RHS column: leave empty or add annotations;
+      % image is already behind this region
+      \begin{column}{0.53\textwidth}
+        % (optional overlay text/labels)
+      \end{column}
+    \end{columns}
+  \end{small}
+\end{frame}
+
+\begin{frame}{Path enumeration}%x2
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      anchor=center,
+      inner sep=0pt,
+      xshift=-3.5cm,
+      yshift=-1.5cm
+    ] at (current page.east) {%
+      \includegraphics[width=0.53\textwidth]{x}%
+    };
+  \end{tikzpicture}
+% ------------------------------------------------------
+
+  \hspace{-0.2cm}Our grammar will need to express all possible transition paths, e.g.,\vspace{0.5cm}
+  \begin{small}
+    \begin{columns}[T,onlytextwidth]
+      % LHS text / SLP
+      \hspace{-0.3cm}\begin{column}{0.59\textwidth}
+             \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{gray}{x} : \textcolor{cyan}{T}, \textcolor{black}{y} : \textcolor{cyan}{T}, \textcolor{black}{z} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{y}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x,z\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{add}(\textcolor{black}{y}, \textcolor{black}{z});\gap\textcolor{gray}{// \{x\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{z}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{//  BDY | \{x,y,z\}=>\{x\}}}\\[0.18cm]
+             \texttt{\:\}}
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{x}, \textcolor{black}{z});\gap\textcolor{gray}{// \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\:\}}}
+      \end{column}
+      % RHS column: leave empty or add annotations;
+      % image is already behind this region
+      \begin{column}{0.53\textwidth}
+        % (optional overlay text/labels)
+      \end{column}
+    \end{columns}
+  \end{small}
+\end{frame}
+
+\begin{frame}{Path enumeration}%null
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[
+      anchor=center,
+      inner sep=0pt,
+      xshift=-3.5cm,
+      yshift=-1.5cm
+    ] at (current page.east) {%
+      \includegraphics[width=0.53\textwidth]{null.png}%
+    };
+  \end{tikzpicture}
+% ------------------------------------------------------
+
+  \hspace{-0.2cm}Our grammar will need to express all possible transition paths, e.g.,\vspace{0.5cm}
+  \begin{small}
+    \begin{columns}[T,onlytextwidth]
+      % LHS text / SLP
+      \hspace{-0.3cm}\begin{column}{0.59\textwidth}
+             \texttt{\frenchspacing\:\textcolor{magenta}{fn} \textcolor{brown}{f0}(\textcolor{black}{x} : \textcolor{cyan}{T}, \textcolor{black}{y} : \textcolor{cyan}{T}, \textcolor{black}{z} : \textcolor{cyan}{T}) -> \textcolor{cyan}{T} \{}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{y}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x,z\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{add}(\textcolor{black}{y}, \textcolor{black}{z});\gap\textcolor{gray}{// \{x\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{z}, \textcolor{black}{y});\gap\textcolor{gray}{// \{x\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{orange}{let} \textcolor{gray}{\_} = \textcolor{brown}{mul}(\textcolor{black}{x}, \textcolor{black}{z});\gap\textcolor{gray}{// \{\}}}\\[0.18cm]
+             \texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{//  BDY | \{x,y,z\}=>\{\}}}\\[0.18cm]
+             \texttt{\:\}}
+             \phantom{\texttt{\frenchspacing\:\gap\gap\gap\textcolor{gray}{// Unused: \{\}}}}\\[0.18cm]
+             \phantom{\texttt{\:\}}}
+      \end{column}
+      % RHS column: leave empty or add annotations;
+      % image is already behind this region
+      \begin{column}{0.53\textwidth}
+        % (optional overlay text/labels)
+      \end{column}
+    \end{columns}
+  \end{small}
+\end{frame}
+
+\begin{frame}{CFG embedding}
+  We want to permit only functions with no outstanding obligations. Construct a CFG, $G_\Gamma = \langle \Sigma, V_\Gamma, P_\Gamma,S_\Gamma\rangle$:\vspace{-0.5cm}
+\begin{prooftree}
+  \AxiomC{$\vec\tau: \mathbb{T}^{0..k}$}
+  \AxiomC{$\Phi \Rightarrow \Phi' = \{p_i, \ldots, p_k\}\Rightarrow \varnothing$}
+  \RightLabel{$\texttt{FUN}_{\varphi}$}
+  \BinaryInfC{$\Big(S_\Gamma \rightarrow
+  \tok{fn}\gap \tok{f0}\gap
+  \tok{(}\cjoin{i=1}{|\vec\tau|}\big(p_i \gap\tok:\gap \vec\tau_{i}\big)\:\tok{)}\gap
+  \tok:\gap \tau \gap \tok{=}\gap \texttt{BDY}[\tau, \Phi \Rightarrow \Phi']
+  \Big)\in P_\Gamma$}
+\end{prooftree}
+We will decorate nonterminals with a pair of (1) the expression's local return type $(\tau)$, and (2) relevance obligations $(\Phi\Rightarrow\Phi')$:\vspace{-0.5cm}
+\begin{prooftree}
+  \AxiomC{$\Gamma \vdash \codett{f\_} : (\tau_{1}, \ldots, \tau_{m}) \rightarrow \tau$}
+  \AxiomC{$\Phi' \subseteq \Phi$}
+  \AxiomC{$\Phi \setminus \Phi' = \bigcup_{i=1}^m\{p_i\}$}
+  \RightLabel{$\texttt{INV}_{\varphi}$}
+  \TrinaryInfC{$\big(\nt{INV}[\tau,\Phi \Rightarrow \Phi'] \;\rightarrow\; \tok{f\_}\gap \tok{(} \cjoin{i=1}{m}p_i \:\tok{)}\big)\in P_\Gamma$}
+\end{prooftree}
+
+  \noindent where $\cjoin{}{} (\cdot)$ denotes a macro for a comma-separated list, i.e.,\vspace{-0.2cm}
+  \[
+  \cjoin{i=1}{m}(x_i)\;:=\; x_1 \gap \codett{,} \gap \ldots \gap x_m \text{ if } m > 1 \text{ else } x_1 \text{ if } m = 1 \text{ else } \varepsilon
+  \]
+\end{frame}
+
+\begin{frame}{$\mu$Rust$_{\textsc{SL}}$: sequencing and binding}
+  \textbf{Sequencing.} A sequence $s_1 \;\tok{;}\; s_2$ composes obligation contexts:
+  \[
+    \llbracket s_1 \;\tok{;}\; s_2 \rrbracket \;=\; \llbracket s_2 \rrbracket \circ \llbracket s_1 \rrbracket.
+  \]
+  \vspace{-1cm}\hspace{0.2cm}\begin{prooftree}\hspace{-0.33cm}
+    \AxiomC{$\Gamma,\Delta \vdash s_1:\mathtt{unit} \uses{\Phi_0}{\Phi_1}$}
+    \AxiomC{$\Gamma,\Delta \vdash s_2:\mathtt{unit} \uses{\Phi_1}{\Phi_2}$}
+    \RightLabel{\scriptsize(SEQ)}
+    \BinaryInfC{$\Gamma,\Delta \vdash s_1\;\tok{;}\;s_2:\mathtt{unit} \uses{\Phi_0}{\Phi_2}$}
+  \end{prooftree}
+
+  \medskip
+  \textbf{Let-binding.} A local binding introduces a fresh obligation that must be subsequently discharged:
+  \[
+    \Gamma,\Delta \vdash \tok{let}\;x = e
+    \quad\text{acts as}\quad
+    \Phi_0 \xrightarrow{e} \Phi_1 \xrightarrow{\;\cup\{x\}\;} \Phi_2
+  \]
+  \vspace{-0.5cm}\hspace{0.2cm}\begin{prooftree}
+    \hspace{-0.48cm}
+      \AxiomC{$\Gamma,\Delta \vdash e: \tau\uses{\Phi_0}{\Phi_1}$}
+      \AxiomC{$\Gamma,\Delta \vdash x:\tau \uses{\Phi_1\cup\{x\}}{\Phi_2}$}
+      \RightLabel{\scriptsize(LET)}
+      \BinaryInfC{$\Gamma,\Delta \vdash \tok{let}\;x\;\tok{=}\;e : \mathtt{unit} \uses{\Phi_0}{\Phi_2}$}
+  \end{prooftree}
+\end{frame}
+
+\begin{frame}{$\mu$Rust$_{\textsc{SL}}$ embedding: sequencing and binding}
+  \textbf{Sequencing.} Recall the (SEQ) rule, which $\nt{BDY}_\varphi$ will mirror:\vspace{-0.3cm}
+
+  \[
+    \begin{array}{ll}
+      \big(\nt{BDY}[\tau,\Phi_0 \Rightarrow \Phi_2] \;\rightarrow\; \nt{STM}[\mathtt{unit},\Phi_0 \Rightarrow \Phi_1]\;\tok{;}\;\nt{BDY}[\tau,\Phi_1 \Rightarrow \Phi_2]\big)\in P_\Gamma,\\[0.2cm]
+      \big(\nt{BDY}[\tau,\Phi \Rightarrow \varnothing] \;\rightarrow\; \nt{INV}[\tau,\Phi \Rightarrow \varnothing]\big)\in P_\Gamma
+    \end{array}
+  \]
+
+  for all possible obligation states $\Phi_0,\Phi_1,\Phi_2$, s.t. $\Phi_2 \subseteq \Phi_1 \subseteq \Phi_0$.
+
+  \medskip
+  \textbf{Let-binding.} $\nt{STM}_\varphi$ generates a set of $\nt{STM}$ productions. Whenever,
+  \[
+    \Gamma,\Delta \vdash e:\tau \uses{\Phi_0}{\Phi_1}
+    \quad\text{and}\quad
+    \Gamma,\Delta \vdash x:\tau \uses{\Phi_1\cup\{x\}}{\Phi_2},
+  \]
+  we will add the corresponding production:
+  \[
+%    \textbf{(LET$_\varphi$)}\qquad
+    \Big(
+    \nt{STM}[\mathtt{unit},\Phi_0 \Rightarrow \Phi_2] \;\rightarrow\;
+    \tok{let}\;x\;\tok{=}\;
+    \nt{INV}[\tau,\Phi_0 \Rightarrow \Phi_1]
+    \Big)\in P_\Gamma,
+  \]
+
+  These rules ensure every word $\sigma \in \mathcal{L}(\nt{BDY}[\tau,\Phi \Rightarrow \varnothing])$ corresponds to a well-typed relevant $\mu\text{Rust}_{\textsc{sl}}$ fragment.
+\end{frame}
+
+\begin{frame}{Future work}
+  \begin{itemize}
+    \item Formalize edit calculus using DiLL (\textit{Ehrhard \& Regnier}, 2003)
+    \item Understand the connection to CMTT (\textit{Nanevski et. al.}, 2007)
+    \item Incrementalization and coalgebraic langauge intersection
+    \item More compact embeddings and asymptotic complexity
+    \item Lazily materialize CFG during intersection or sampling
+    \item Extend to richer type systems, e.g., polymorphism, higher-order functions, subtyping, nested scope
+    \item \href{https://arxiv.org/pdf/2408.01849}{``A Tree Sampler for Bounded CFLs''} (Considine, 2024) describes a uniform sampler for finite CFL intersections
+    \item \href{https://arxiv.org/pdf/2512.01036}{``A Word Sampler for Well-Typed Functions''} (Considine, 2025) describes an embedding for simply-typed first-order functions
+    \item Applications to proof search and property-based testing
+    \item Try it yourself at: \href{https://tidyparse.github.io}{https://tidyparse.github.io}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Acknowledgements}
+  \Large{Thank you to the following people for inspiration!}\vspace{0.5cm}
+  \begin{columns}
+  \begin{column}{0.5\textwidth}
+  \begin{itemize}
+    \item Ori Roth
+    \item Chuta Sano
+    \item Brigitte Pientka
+  \end{itemize}
+  \end{column}
+  \begin{column}{0.5\textwidth}
+    \begin{itemize}
+      \item David Bieber
+      \item Margaret Considine
+      \item Mark Considine
+    \end{itemize}
+  \end{column}
+  \end{columns}\vspace{1cm}
+  \Large{Enfin, merci \'a Antoine Gaulin pour l'organisation !}\vspace{0.5cm}
+\end{frame}
+\end{document}
