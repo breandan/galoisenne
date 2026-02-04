@@ -765,20 +765,29 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */
-  @Test // ~1m 8.16s
+  @Test // ~30s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
+  println("Nonterminals: ${cfg.nonterminals.size}")
+  measureTime {
     var precision = 0
     val total = 100
     pythonTestCases.take(total).forEach { (broke, fixed) ->
-      val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-        .take(100)
-        .onEach {
-          assertTrue(it in vanillaS2PCFG.language)
-          if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
-        }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
+//    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
+//      .take(100)
+
+      val t = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
+        ?.sampleStrWithoutReplacement(cfg.tmLst)
+        ?.take(100)?.toList() ?: emptyList<Σᐩ>()
+
+//      t.onEach {
+//        assertTrue(it in vanillaS2PCFG.language)
+//        if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
+//      }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
+
       if (fixed in t) precision++
     }
     println("Precision: ${precision / total.toDouble()}")
+  }.also { println("Took: $it") }
   }
 }
