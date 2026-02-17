@@ -105,21 +105,10 @@ kotlin {
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.12.1")
 
-//  https://arxiv.org/pdf/1908.10693.pdf
-//  implementation("com.datadoghq:sketches-java:0.7.0")
-
-        // Cache PMF/CDF lookups for common queries
-
         // Updating to 9.0 requires updating MarkovChain
         implementation("org.apache.datasketches:datasketches-java:8.0.0")
 
-//  implementation("com.github.analog-garage:dimple:master-SNAPSHOT")
-
-//  implementation("com.github.TUK-CPS:jAADD:-SNAPSHOT")
         implementation("ca.umontreal.iro.simul:ssj:3.3.2")
-
-        // MPJ (required for Poon's SPN)
-//  implementation(files("$projectDir/libs/mpj-0.44.jar"))
 
         implementation(files("$projectDir/jautomata-0.0.1-SNAPSHOT.jar"))
         implementation("dk.brics:automaton:1.12-4")
@@ -150,12 +139,6 @@ kotlin {
         implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:26.0.2-1")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
-
-        // http://www.ti.inf.uni-due.de/fileadmin/public/tools/grez/grez-manual.pdf
-        // implementation(files("$projectDir/libs/grez.jar"))
-
-        // http://www.informatik.uni-bremen.de/agbkb/lehre/rbs/seminar/AGG-ShortManual.pdf
-        // implementation(files("$projectDir/libs/aggEngine_V21_classes.jar"))
 
         // https://github.com/jgralab/jgralab/wiki
         // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
@@ -231,9 +214,7 @@ kotlin {
 //  }
 }
 
-data class TestDuration(val name: String, val duration: Duration) {
-  override fun toString() = "$name: $duration"
-}
+data class TestDuration(val name: String, val duration: Duration) { override fun toString() = "$name: $duration" }
 
 val testDurations = mutableListOf<TestDuration>()
 
@@ -282,7 +263,5 @@ tasks {
    * ./gradlew [build publishToMavenLocal] jupyterRun -x test
    */
 
-  val jupyterRun by registering(Exec::class) {
-    commandLine("jupyter", "notebook", "--notebook-dir=notebooks")
-  }
+  val jupyterRun by registering(Exec::class) { commandLine("jupyter", "notebook", "--notebook-dir=notebooks") }
 }

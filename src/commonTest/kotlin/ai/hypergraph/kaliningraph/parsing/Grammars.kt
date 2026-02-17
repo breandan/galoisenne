@@ -1,4 +1,4 @@
-import ai.hypergraph.kaliningraph.parsing.*
+package ai.hypergraph.kaliningraph.parsing
 
 object Grammars {
   val sss by lazy {
@@ -118,7 +118,7 @@ object Grammars {
 
 //  https://aclanthology.org/2020.conll-1.41.pdf#page=12
   val hardestCFL: CFG by lazy { """
-    S' -> R ${'$'} Q S L ;
+    S' -> R $ Q S L ;
     L -> L' , U
     L' -> , V L'
     L' -> ε
@@ -133,7 +133,7 @@ object Grammars {
     W -> )
     W -> [
     W -> ]
-    W -> ${'$'}
+    W -> $
     Q -> L ; R
     Q -> ε
     S -> S Q T
@@ -146,7 +146,7 @@ object Grammars {
 
   val shortS2PParikhMap by lazy { ParikhMap(seq2parsePythonCFG, 20) }
   val seq2parsePythonCFGStr by lazy { """
-    START -> Stmts_Or_Newlines
+    START -> Stmts_Or_Newlines | BOS Stmts_Or_Newlines EOS
     Stmts_Or_Newlines -> Stmt_Or_Newline | Stmt_Or_Newline Stmts_Or_Newlines
     Stmt_Or_Newline -> Stmt | Newline
 
@@ -313,7 +313,7 @@ object Grammars {
     Or_Bool_Op -> or
     And_Bool_Op -> and
     Not_Bool_Op -> not
-    Comp_Op -> < | > | == | >= | <= | <> | != | in | not_in | is | is_not
+    Comp_Op -> < | > | == | >= | <= | <> | != | in | not in | is | is not
     Or_Op -> OR
     Xor_Op -> ^
     And_Op -> &

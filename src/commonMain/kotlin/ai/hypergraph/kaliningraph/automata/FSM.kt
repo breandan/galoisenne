@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.KBitSet
-import ai.hypergraph.kaliningraph.automata.GRE.*
 import ai.hypergraph.kaliningraph.sampling.longLFSRSequence
 import ai.hypergraph.kaliningraph.types.filter
+import kotlin.time.TimeSource
 
 // Alternate to FSA; bypasses graph subtyping, basically just record types
 class DFSM(
@@ -280,89 +280,111 @@ fun NFSM.toDFSM(width: Int): DFSM {
   return DFSM(Qd, deltaMap, "q0", finals, width)
 }
 
-fun GRE.toDFSM(terms: List<String>): DFSM = toNFSM().toDFSM(terms.size)
+fun GRE.toDFSM(terms: List<String>): DFSM {
+  var timer = TimeSource.Monotonic.markNow()
+  val nfsm = toNFSM()
+  println("NFSM construction took: ${timer.elapsedNow()}")
+  timer = TimeSource.Monotonic.markNow()
+  val dfsm = nfsm.toDFSM(terms.size)
+  println("DFSM construction took: ${timer.elapsedNow()}")
+  return dfsm
+}
 
 fun GRE.toNFSM(): NFSM {
-  var stateCounter = 0
-  fun freshState(): String = "q${stateCounter++}"
+  // 1. Flatten the GRE tree to identify "leaf" (SET) positions
+  // We strictly enforce order so index 'i' always refers to the same leaf
+  val leaves = mutableListOf<GRE.SET>()
+  fun collectLeaves(g: GRE) {
+    when (g) {
+      is GRE.SET -> leaves.add(g)
+      is GRE.CUP -> g.args.forEach { collectLeaves(it) }
+      is GRE.CAT -> { collectLeaves(g.l); collectLeaves(g.r) }
+      is GRE.EPS -> {}
+    }
+  }
+  collectLeaves(this)
 
-  fun buildNFSM(g: GRE): NFSM = when (g) {
-    is EPS -> {
-      // NFA accepting only the empty string
-      val q0 = freshState()
-      NFSM(
-        Q = setOf(q0),
-        delta = emptySet(),
-        q_alpha = q0,
-        F = setOf(q0)
+  val n = leaves.size
+  val follow = Array(n) { mutableSetOf<Int>() }
+
+  // 2. Compute Nullable, First, and Last sets for every node
+  data class Info(
+    val nullable: Boolean,
+    val first: Set<Int>, // Indices of leaves that can start this sub-expression
+    val last: Set<Int>   // Indices of leaves that can end this sub-expression
+  )
+
+  var leafCounter = 0
+  fun analyze(g: GRE): Info = when (g) {
+    is GRE.EPS -> Info(true, emptySet(), emptySet())
+    is GRE.SET -> {
+      val id = leafCounter++
+      val s = setOf(id)
+      Info(false, s, s)
+    }
+    is GRE.CUP -> {
+      // Union: Union of firsts, union of lasts, nullable if any is nullable
+      val infos = g.args.map { analyze(it) }
+      Info(
+        nullable = infos.any { it.nullable },
+        first = infos.flatMap { it.first }.toSet(),
+        last = infos.flatMap { it.last }.toSet()
       )
     }
-    is SET -> {
-      // NFA accepting single symbols whose indices are in s
-      val q_alpha = freshState()
-      val q_omega = freshState()
-      val transitions = g.s.toList().map { Triple(q_alpha, it, q_omega) }.toSet()
-      NFSM(
-        Q = setOf(q_alpha, q_omega),
-        delta = transitions,
-        q_alpha = q_alpha,
-        F = setOf(q_omega)
-      )
-    }
-    is CUP -> {
-      // Union of sub-expressions
-      val subNFAs = g.args.map { buildNFSM(it) }
-      val q_new = freshState()
-      val Q = subNFAs.flatMap { it.Q }.toSet() + q_new
-      val delta = subNFAs.flatMap { it.delta }.toSet()
-      val F = subNFAs.flatMap { it.F }.toSet()
-      val newTransitions = mutableSetOf<Triple<String, Int, String>>()
-      val allSigma = subNFAs.flatMap { it.delta.map { t -> t.second } }.toSet()
-      for (σ in allSigma) {
-        val targets = subNFAs.flatMap { nfa ->
-          nfa.delta.filter { it.first == nfa.q_alpha && it.second == σ }.map { it.third }
-        }
-        for (target in targets) newTransitions.add(Triple(q_new, σ, target))
+    is GRE.CAT -> {
+      // Concatenation: Connect left.last to right.first
+      val l = analyze(g.l)
+      val r = analyze(g.r)
+
+      for (i in l.last) {
+        follow[i].addAll(r.first)
       }
-      NFSM(
-        Q = Q,
-        delta = delta + newTransitions,
-        q_alpha = q_new,
-        F = F
-      )
-    }
-    is CAT -> {
-      // Concatenation of l and r
-      val nfaL = buildNFSM(g.l)
-      val nfaR = buildNFSM(g.r)
-      val q_new = freshState()
-      val Q = nfaL.Q + nfaR.Q + q_new
-      val delta = nfaL.delta + nfaR.delta
-      val newTransitions = mutableSetOf<Triple<String, Int, String>>()
-      val allSigma = (nfaL.delta + nfaR.delta).map { it.second }.toSet()
-      // Initial transitions from q_new
-      for (σ in allSigma) {
-        val S = mutableSetOf<String>()
-        S.addAll(nfaL.delta.filter { it.first == nfaL.q_alpha && it.second == σ }.map { it.third })
-        if (g.l.nullable) S.addAll(nfaR.delta.filter { it.first == nfaR.q_alpha && it.second == σ }.map { it.third })
-        for (target in S) newTransitions.add(Triple(q_new, σ, target))
-      }
-      // Transitions from final states of l to states reachable from r's initial state
-      for (f in nfaL.F)
-        for (trans in nfaR.delta.filter { it.first == nfaR.q_alpha })
-          newTransitions.add(Triple(f, trans.second, trans.third))
-      // Final states
-      val F = if (g.r.nullable) nfaL.F + nfaR.F else nfaR.F
-      val finalF = if (g.l.nullable && g.r.nullable) F + q_new else F
-      NFSM(
-        Q = Q,
-        delta = delta + newTransitions,
-        q_alpha = q_new,
-        F = finalF
+
+      Info(
+        nullable = l.nullable && r.nullable,
+        first = l.first + if (l.nullable) r.first else emptySet(),
+        last = r.last + if (r.nullable) l.last else emptySet()
       )
     }
   }
-  return buildNFSM(this)
+
+  val rootInfo = analyze(this)
+
+  // 3. Build the NFSM directly
+  val qStart = "q0"
+  fun qName(i: Int) = "q${i + 1}" // State name for leaf i
+
+  val Q = mutableSetOf(qStart)
+  for (i in 0 until n) Q.add(qName(i))
+
+  val F = mutableSetOf<String>()
+  if (rootInfo.nullable) F.add(qStart)
+  for (i in rootInfo.last) F.add(qName(i))
+
+  val delta = mutableSetOf<Triple<String, Int, String>>()
+
+  // Transitions from Start State -> First positions
+  for (i in rootInfo.first) {
+    val leaf = leaves[i]
+    // leaf.s is KBitSet; convert to list to iterate symbols
+    for (sym in leaf.s.toList()) {
+      delta.add(Triple(qStart, sym, qName(i)))
+    }
+  }
+
+  // Transitions between positions (Follow sets)
+  for (i in 0 until n) {
+    val source = qName(i)
+    for (j in follow[i]) {
+      val targetLeaf = leaves[j]
+      val target = qName(j)
+      for (sym in targetLeaf.s.toList()) {
+        delta.add(Triple(source, sym, target))
+      }
+    }
+  }
+
+  return NFSM(Q, delta, qStart, F)
 }
 
 fun DFSM.printAdjMatrixPowers() {
@@ -501,6 +523,7 @@ fun DFSM.sampleUniformly(tmLst: List<String>): Sequence<String> = sequence {
 }
 
 fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
+  val timer = TimeSource.Monotonic.markNow()
   val sigma = tmLst.size                // real alphabet size
   val END = sigma                       // internal endmarker symbol index
 
@@ -640,4 +663,111 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
 
   val Qd = subset2name.values.toSet()
   return DFSM(Qd, deltaMap, "q0", finals, sigma)
+    .also { println("Direct DFSM construction took: ${timer.elapsedNow()}") }
+}
+
+fun DFSM.minimize(): DFSM {
+  println("Size before minimization: ${Q.size}")
+  val timer = TimeSource.Monotonic.markNow()
+  // 1. Prune unreachable states using BFS
+  val reachable = mutableSetOf<String>()
+  val queue = ArrayDeque<String>()
+  if (q_alpha in Q) {
+    queue.add(q_alpha)
+    reachable.add(q_alpha)
+  }
+
+  while (queue.isNotEmpty()) {
+    val u = queue.removeFirst()
+    // deltaMap might be partial; ensure we only follow transitions to existing states
+    deltaMap[u]?.forEach { (_, v) ->
+      if (v !in reachable && v in Q) {
+        reachable.add(v)
+        queue.add(v)
+      }
+    }
+  }
+
+  // Filter Q, F, and Delta to only reachable states
+  val pQ = Q.intersect(reachable)
+  val pF = F.intersect(reachable)
+  val pDelta = deltaMap.filterKeys { it in pQ }
+    .mapValues { (_, trans) -> trans.filterValues { it in pQ } }
+
+  // 2. Initial Partition: Separate Final states from Non-Final states
+  // We use a List<Set<String>> to represent the partition blocks.
+  val initialPartitions = pQ.groupBy { it in pF }.values.map { it.toSet() }
+  var partitions = initialPartitions
+
+  // 3. Refine Partitions (Moore's Algorithm)
+  var changed = true
+  while (changed) {
+    changed = false
+    val newPartitions = mutableListOf<Set<String>>()
+
+    // Map every state to its current block index for O(1) lookups
+    val stateToBlockIndex = mutableMapOf<String, Int>()
+    partitions.forEachIndexed { idx, block ->
+      block.forEach { stateToBlockIndex[it] = idx }
+    }
+
+    for (block in partitions) {
+      // If a block has only 1 state, it cannot be split further
+      if (block.size <= 1) {
+        newPartitions.add(block)
+        continue
+      }
+
+      // Group states by their "transition signature"
+      // Signature key: Map<Symbol, TargetBlockIndex>
+      // Two states are equivalent iff for every symbol, they transition to the same block index.
+      // (Partial transitions are handled naturally: missing keys in the map are part of the signature)
+      val subGroups = block.groupBy { state ->
+        val transitions = pDelta[state] ?: emptyMap()
+        transitions.mapValues { (_, target) -> stateToBlockIndex[target]!! }
+      }
+
+      // If we found more than one group within this block, a split occurred
+      if (subGroups.size > 1) changed = true
+      newPartitions.addAll(subGroups.values.map { it.toSet() })
+    }
+    partitions = newPartitions
+  }
+
+  // 4. Construct the minimized DFSM
+  // Assign new names "q0", "q1"... to the partition blocks
+  val blockIndexToName = partitions.indices.associateWith { "q$it" }
+  val stateToNewName = mutableMapOf<String, String>()
+  partitions.forEachIndexed { idx, block ->
+    block.forEach { stateToNewName[it] = blockIndexToName[idx]!! }
+  }
+
+  val newStart = stateToNewName[q_alpha] ?: "q0" // Fallback if Q was empty
+  val newQ = blockIndexToName.values.toSet()
+
+  // A block is final if it contains any final states (all should be final due to initial split)
+  val newF = partitions.withIndex()
+    .filter { (_, block) -> block.any { it in pF } }
+    .map { blockIndexToName[it.index]!! }
+    .toSet()
+
+  val newDelta = mutableMapOf<String, Map<Int, String>>()
+
+  partitions.forEachIndexed { idx, block ->
+    val representative = block.first()
+    val sourceName = blockIndexToName[idx]!!
+    val originalTrans = pDelta[representative] ?: emptyMap()
+
+    val newTrans = originalTrans.mapValues { (_, target) ->
+      stateToNewName[target]!!
+    }
+
+    if (newTrans.isNotEmpty()) {
+      newDelta[sourceName] = newTrans
+    }
+  }
+
+  println("DFSM minimization took: ${timer.elapsedNow()}")
+  return DFSM(newQ, newDelta, newStart, newF, width)
+    .also { println("Size after minimization ${it.Q.size}") }
 }

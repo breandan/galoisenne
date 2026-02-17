@@ -1,7 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import Grammars
-import Grammars.toyArith
+import ai.hypergraph.kaliningraph.parsing.Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
@@ -24,7 +23,7 @@ class SetValiantTest {
 */
   @Test
   fun testCompleteness() {
-    val g = Grammars.toyArith
+    val g = toyArith
     val sols = g.enumSeq("_ + _".tokenizeByWhitespace()).toSet()
 
     val all = g.terminals.filter { it.all { it.isLetterOrDigit() && it.code < 128 } }

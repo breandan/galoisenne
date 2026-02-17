@@ -2464,3 +2464,12 @@ val dyck by lazy {
     R -> )
   """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
 }
+
+val simpleLang by lazy {
+  """
+    START -> START + START | START * START | START - START | START / START | ( START )
+    START -> N | V
+    N -> 0 | 1
+    V -> X | Y
+  """.trimIndent().parseCFG().noEpsilonOrNonterminalStubs
+}

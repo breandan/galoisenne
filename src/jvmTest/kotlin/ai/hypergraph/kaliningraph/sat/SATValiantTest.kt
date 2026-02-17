@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.sat
 
-import Grammars.arith
-import Grammars.evalArith
+import ai.hypergraph.kaliningraph.parsing.Grammars.arith
+import ai.hypergraph.kaliningraph.parsing.Grammars.evalArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.image.toHtmlPage
 import ai.hypergraph.kaliningraph.parsing.*

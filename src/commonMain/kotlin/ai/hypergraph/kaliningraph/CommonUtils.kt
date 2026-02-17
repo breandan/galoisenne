@@ -3,8 +3,9 @@ package ai.hypergraph.kaliningraph
 import ai.hypergraph.kaliningraph.sampling.randomVector
 import ai.hypergraph.kaliningraph.tensor.*
 import ai.hypergraph.kaliningraph.types.*
+import com.ionspin.kotlin.bignum.integer.*
 import kotlin.math.*
-import kotlin.random.*
+import kotlin.random.Random
 import kotlin.reflect.KClass
 
 fun <T, R : Ring<T>, M : Matrix<T, R, M>> Matrix<T, R, M>.elwise(op: (T) -> T): M =
@@ -256,4 +257,36 @@ class KBitSet(val n: Int) {
     count += (data[last] and lastMask).countOneBits()
     return count
   }
+}
+
+private const val WORD_BITS = 63
+private val WORD_MASK: ULong = (1UL shl WORD_BITS) - 1UL
+
+/** Uniform in [0, 2^bits). Equivalent to Java's BigInteger(bits, rnd). */
+@OptIn(ExperimentalUnsignedTypes::class)
+fun Random.nextBigInteger(bits: Int): BigInteger {
+  require(bits >= 0)
+  if (bits == 0) return BigInteger.ZERO
+
+  val words = (bits + WORD_BITS - 1) / WORD_BITS
+  val mag = ULongArray(words)
+
+  // Fill with uniform 63-bit words
+  for (i in 0 until words) {
+    mag[i] = this.nextLong().toULong() and WORD_MASK
+  }
+
+  // Mask off unused top bits in the most-significant word
+  val topBits = bits - (words - 1) * WORD_BITS  // in 1..63
+  val topMask = if (topBits == WORD_BITS) WORD_MASK else (1UL shl topBits) - 1UL
+  mag[words - 1] = mag[words - 1] and topMask
+
+  return BigInteger.createFromWordArray(mag, Sign.POSITIVE)
+}
+
+/** Uniform in [0, bound). Uses rejection sampling; expected ~1 iteration. */
+fun Random.nextBigInteger(bound: BigInteger): BigInteger {
+  require(bound > BigInteger.ZERO) { "bound must be > 0" }
+  val bits = bound.bitLength()
+  while (true) { val r = nextBigInteger(bits); if (r < bound) return r }
 }

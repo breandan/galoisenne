@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.parsing.Σᐩ
 import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
+import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_NEGATIVES
 import org.apache.datasketches.frequencies.ErrorType.NO_FALSE_POSITIVES
 import org.apache.datasketches.frequencies.ItemsSketch
 import org.jetbrains.kotlinx.multik.api.*
@@ -254,12 +255,16 @@ open class MarkovChain<T>(
       val memory: Int = lines.first().substringBefore(CSVSEP).split(" ").size
       val tokenSize = lines.flatMap { it.substringBefore(CSVSEP).split(" ") }
         .toSet().size.let { 2.pow(log2(it) + 2) }
-      val rawCounts = ItemsSketch<Σᐩ>(tokenSize)
       val ngramSize = 2.pow(log2(lines.size) + 2)
+      val rawCounts = ItemsSketch<Σᐩ>(tokenSize)
       val nrmCounts = ItemsSketch<List<Σᐩ?>>(ngramSize)
+      val memCounts = ItemsSketch<List<Σᐩ>>(ngramSize)
+
       var total = 0L
       lines.map { it.substringBefore(CSVSEP).split(" ") to it.substringAfter(CSVSEP).toLong() }
         .forEach { (ngram, count) ->
+          if (ngram.size == memory) memCounts.update(ngram, count)
+          else if (ngram.size > memory) ngram.windowed(memory, 1).forEach { memCounts.update(it, count) }
           val padding = List(memory - 1) { null }
           val windows = (padding + ngram + padding).windowed(memory, 1)
           total += count * windows.size
@@ -273,7 +278,8 @@ open class MarkovChain<T>(
           total = AtomicInteger(total.toInt()),
           memory = memory,
           rawCounts = rawCounts,
-          nrmCounts = nrmCounts
+          nrmCounts = nrmCounts,
+          memCounts = memCounts
         )
       )
     }
@@ -383,11 +389,8 @@ fun Stream<List<Int>>.computeCooccurrenceProbs(maxIdx: Int): List<List<Double>> 
   }
 }
 
-fun <T> List<Pair<T, Int>>.expandByFrequency(
-  maxExpansion: Int = 20,
-  range: IntRange = 1..maxExpansion,
-  extras: List<T> = emptyList(),
-  normalizingConstant: Int = sumOf { it.second },
-  scale: Double = (maxExpansion * size).toDouble() / normalizingConstant.toDouble()
-): List<T> = (this + (extras - map { it.first }.toSet()).map { it to 1 })
-  .flatMap { (t, count) -> List((count * scale).toInt().coerceIn(range)) { t } }
+fun <T> MarkovChain<T>.toNgramMap(): Map<List<String>, Double> {
+  val rows = counter.memCounts.getFrequentItems(NO_FALSE_NEGATIVES)
+  return if (rows.isNotEmpty()) rows.associate { row -> row.item.map { it.toString() } to row.estimate.toDouble() }
+  else emptyMap<List<String>, Double>().also { println("Warning: MarkovChain sketch is empty!") }
+}

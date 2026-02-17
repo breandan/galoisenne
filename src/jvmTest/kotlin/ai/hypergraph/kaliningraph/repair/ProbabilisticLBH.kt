@@ -1,9 +1,9 @@
 package ai.hypergraph.kaliningraph.repair
 
-import Grammars
+import ai.hypergraph.kaliningraph.parsing.Grammars
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.automata.toDFA
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.languages.Python
 import ai.hypergraph.kaliningraph.sat.summarizeT
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
@@ -11,11 +11,7 @@ import org.junit.jupiter.api.Test
 import org.kosat.round
 import java.io.File
 import java.util.stream.Collectors
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
-import kotlin.random.Random
 import kotlin.reflect.KFunction2
-import kotlin.system.measureTimeMillis
 import kotlin.test.*
 import kotlin.time.*
 import kotlin.time.Duration.Companion.seconds
@@ -25,19 +21,6 @@ import kotlin.time.Duration.Companion.seconds
 */
 class ProbabilisticLBH {
   init { LangCache.prepopPythonLangCache() }
-  val pythonTestCases by lazy {
-    invalidPythonStatements.lines().zip(validPythonStatements.lines())
-      // This ensures the LBH grammar is nonempty, otherwise extragrammatical symbols produce an error
-//    .map { it.first.tokenizeByWhitespace().map { if (it in vanillaS2PCFG.noEpsilonOrNonterminalStubs.terminals) it else "." }.joinToString(" ") to it.second }
-      .filter { it.first.tokenizeByWhitespace().all { it in vanillaS2PCFG.terminals } }
-      .shuffled(Random(seed = 1))
-//      .filter { (a, b) ->
-//        ("$a NEWLINE" !in vanillaS2PCFG.language).also { if (!it) println("Failed invalid") }
-//            && ("$b NEWLINE" in vanillaS2PCFG.language).also { if (!it) println("Failed valid") }
-//            && (levenshtein(a, b).also { if (it !in 1..3) println("Failed distance: $it") } in 1..3)
-//      }
-      .distinct().filter { it.first.tokenizeByWhitespace().size < 43 }
-  }
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSubgrammarEquivalence"
 */
@@ -92,7 +75,7 @@ class ProbabilisticLBH {
 
 //    fun Forest.summarize() = joinToString("\n") { it.root + "-[${it.children.joinToString(","){it.root}}]" }
 
-    pythonTestCases.forEach { (_, it) ->
+    Python.testCases.forEach { (_, it) ->
       val pp ="$it NEWLINE" .also { println(it) }
 
 //      val z1=  subgrammar.initialUTMatrix(pp.tokenizeByWhitespace()).seekFixpoint().diagonals
@@ -191,7 +174,7 @@ class ProbabilisticLBH {
       if (totalRepairs == -1) println("LBH yielded empty grammar: ${levenshteinAlign(broke, fixed).paintANSIColors()}\n")
       else println("# of unique repairs discovered: ${totalRepairs}\n")
     }
-    pythonTestCases.take(totalTrials).forEach { (broke, fixed) ->
+    Python.testCases.take(totalTrials).forEach { (broke, fixed) ->
       val clock = TimeSource.Monotonic.markNow()
       val origBroke = "$broke NEWLINE"
       val origFixed = "$fixed NEWLINE"
@@ -256,7 +239,7 @@ class ProbabilisticLBH {
 */
   @Test
   fun testTinyC() {
-    println(pythonTestCases.size)
+    println(Python.testCases.size)
   }
 
 /*
@@ -676,9 +659,9 @@ class ProbabilisticLBH {
     }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testTypeInferenceBenchmark"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testTypeInferenceBenchmark"
+*/
 
 //  @Test
   fun testTypeInferenceBenchmark() {
@@ -742,24 +725,29 @@ class ProbabilisticLBH {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPs"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPCompletion"
 */
 //  @Test // This test requires a lot of memory (more than GHCI can provide)
-  fun testSLPs() {
-//    val pt = k2.startPTree(List(35) { "_" })!!
+  fun testSLPCompletion() {
     val template = List(40) { "_" }
-    val pt = completeWithSparseGRE(template, k3)!!.sampleStrWithoutReplacement(k3.tmLst).take(1000)
-//  val pt = completeWithSparsePTree(template, k3)!!.sampleStrWithoutReplacement().take(1000)
-//  pt.sampleStrWithoutReplacement().take(1000)//.filter { it.length <= 80 }
+    val pt = completeWithSparseGRE(template, k3)!!
+      .sampleStrWithoutReplacement(k3.tmLst).take(1000)
+    pt.forEach { println("\\texttt{ " + it.replace("{", "\\{")
+      .replace("}", "\\}") + "}\\\\") }
+  }
 
-      pt.forEach { println("\\texttt{ " + it.replace("{", "\\{")
-        .replace("}", "\\}") + "}\\\\") }
-
-//    val broke = "fn f0 ( p1 : T , p2 : T ) -> T { let mut p3 = add ( p1 , p1 ) ; p3 = mul ( p1 , p1 ) ; p3 }"
-//
-//    println(broke in slp.language)
-//    initiateSerialRepair(broke.tokenizeByWhitespace(), slp).take(100)
-//      .forEach { println(levenshteinAlign(broke,it).paintANSIColors()) }
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testSLPRepair"
+*/
+  @Test
+  fun testSLPRepair() {
+    val broke = "fn f0 ( p1 : T , p2 : T ) -> T { let mut p3 = add ( p1 , p1 ) ; p3 = mul ( p1 , p1 ) ; p3 }"
+    println(broke in slp.language)
+    initiateSerialRepair(broke.tokenizeByWhitespace(), slp)
+      .take(100).onEach {
+        assertTrue { it in slp.language }
+        println(levenshteinAlign(broke, it).paintANSIColors())
+      }.toList().also { assertTrue(it.isNotEmpty()) }
   }
 
 /*
@@ -768,26 +756,70 @@ class ProbabilisticLBH {
   @Test // ~30s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
-  println("Nonterminals: ${cfg.nonterminals.size}")
-  measureTime {
-    var precision = 0
-    val total = 100
-    pythonTestCases.take(total).forEach { (broke, fixed) ->
+    println("Nonterminals: ${cfg.nonterminals.size}")
+    measureTime {
+      var precision = 0
+      val total = 100
+      Python.testCases.take(total).forEach { (broke, fixed) ->
+//    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
+        val t = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
+          ?.sampleStrWithoutReplacement(cfg.tmLst)
+          ?.take(1000)?.toList() ?: emptyList()
+
+//      t.take(100).onEach {
+//        assertTrue(it in vanillaS2PCFG.language)
+//        if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
+//      }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
+        println("Took: ${t.size}")
+
+        if (fixed in t) precision++
+      }
+      println("Precision: ${precision / total.toDouble()}")
+    }.also { println("Took: $it") }
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testCompactCircuitEquivalence"
+*/
+  @Test
+  fun testCompactCircuitEquivalence() {
+    val cfg = Grammars.seq2parsePythonCFG
+    measureTime {
+      Python.testCases.take(10).forEach { (broke, fixed) ->
 //    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
 //      .take(100)
 
-      val t = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
-        ?.sampleStrWithoutReplacement(cfg.tmLst)
-        ?.take(100)?.toList() ?: emptyList<Σᐩ>()
+        println(broke)
+        val gre0 = repairWithGRE(broke.tokenizeByWhitespace(), cfg)
+        val gre1 = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
+        val gre0_dfa0 = gre0!!.toDFSMDirect(cfg.tmLst)
+        val gre0_dfa1 = gre0!!.toDFSM(cfg.tmLst)
+        val gre1_dfa0 = gre1!!.toDFSMDirect(cfg.tmLst)
+        val gre1_dfa1 = gre1!!.toDFSM(cfg.tmLst)
+        val gre0_dfa0_min = gre0_dfa0!!.minimize()
+        val gre0_dfa1_min = gre0_dfa1!!.minimize()
+        val gre1_dfa0_min = gre1_dfa0!!.minimize()
+        val gre1_dfa1_min = gre1_dfa1!!.minimize()
+        println("    GRE0+DFA0 => |L|: ${gre0_dfa0.countWords()}")
+        println("    GRE0+DFA1 => |L|: ${gre0_dfa1.countWords()}")
+        println("    GRE1+DFA0 => |L|: ${gre1_dfa0.countWords()}")
+        println("    GRE1+DFA1 => |L|: ${gre1_dfa1.countWords()}")
+        println("GRE0+DFA0+MIN => |L|: ${gre0_dfa0_min.countWords()}")
+        println("GRE0+DFA1+MIN => |L|: ${gre0_dfa1_min.countWords()}")
+        println("GRE1+DFA0+MIN => |L|: ${gre1_dfa0_min.countWords()}")
+        println("GRE1+DFA1+MIN => |L|: ${gre1_dfa1_min.countWords()}")
+//      println("Min fast size: ${fastGRE.toDFSMDirect(cfg.tmLst).minimize().countWords()}")
+//      println("Min slow size: ${slowGRE.toDFSMDirect(cfg.tmLst).minimize().countWords()}")
+        val t = gre1
+          .also { gRE -> println("DFSM size: ${gRE.toDFSM(cfg.tmLst)?.minimize()?.Q?.size}") }
+          .sampleStrWithoutReplacement(cfg.tmLst)
+          .take(100).toList() ?: emptyList<Σᐩ>()
 
 //      t.onEach {
 //        assertTrue(it in vanillaS2PCFG.language)
 //        if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
 //      }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
-
-      if (fixed in t) precision++
-    }
-    println("Precision: ${precision / total.toDouble()}")
-  }.also { println("Took: $it") }
+      }
+    }.also { println("Took: $it") }
   }
 }

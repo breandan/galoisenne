@@ -1,10 +1,10 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import Grammars.arith
-import Grammars.evalArith
-import Grammars.seq2parsePythonVanillaCFG
-import Grammars.tinyC
-import Grammars.toyArith
+import ai.hypergraph.kaliningraph.parsing.Grammars.arith
+import ai.hypergraph.kaliningraph.parsing.Grammars.evalArith
+import ai.hypergraph.kaliningraph.parsing.Grammars.seq2parsePythonVanillaCFG
+import ai.hypergraph.kaliningraph.parsing.Grammars.tinyC
+import ai.hypergraph.kaliningraph.parsing.Grammars.toyArith
 import ai.hypergraph.kaliningraph.*
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import org.kosat.round

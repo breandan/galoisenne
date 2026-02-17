@@ -1,6 +1,5 @@
 package ai.hypergraph.kaliningraph.parsing
 
-import Grammars
 import ai.hypergraph.kaliningraph.automata.startGRE
 import ai.hypergraph.kaliningraph.types.*
 import kotlin.test.*

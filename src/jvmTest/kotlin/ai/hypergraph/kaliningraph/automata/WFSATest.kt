@@ -1,18 +1,16 @@
 package ai.hypergraph.kaliningraph.automata
 
-import Grammars
+import ai.hypergraph.kaliningraph.parsing.Grammars
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.languages.Python.P_BIFI_PY150
 import ai.hypergraph.kaliningraph.repair.LangCache
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFGWE
-import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton
 import dk.brics.automaton.RegExp
 import net.jhoogland.jautomata.*
 import net.jhoogland.jautomata.operations.Concatenation
 import net.jhoogland.jautomata.semirings.RealSemiring
-import java.io.File
 import kotlin.system.measureTimeMillis
 import kotlin.test.*
 import kotlin.test.Test
@@ -21,42 +19,20 @@ import kotlin.time.measureTimedValue
 
 class WFSATest {
   init { LangCache.prepopPythonLangCache() }
-  val MARKOV_MEMORY = 4
-  // Python3 snippets
-// https://github.com/michiyasunaga/BIFI?tab=readme-ov-file#about-the-github-python-dataset
-  val P_BIFI: MarkovChain<Σᐩ> by lazy {
-//  readBIFIContents()
-    val csv = File(File("").absolutePath + "/src/jvmTest/resources/ngrams_BIFI_$MARKOV_MEMORY.csv")
-    MarkovChain.deserialize(csv.readText())
-      .apply { scorePrefix = listOf("BOS", "NEWLINE"); scoreSuffix = listOf("EOS") }
-      .also { println("Loaded ${it.counter.total} BIFI $MARKOV_MEMORY-grams from ${csv.absolutePath}") }
-  }
-
-  // Python2 snippets, about ~20x longer on average than BIFI
-// https://www.sri.inf.ethz.ch/py150
-  val P_PY150: MarkovChain<Σᐩ> by lazy {
-    val csv = File(File("").absolutePath + "/src/jvmTest/resources/ngrams_PY150_$MARKOV_MEMORY.csv")
-    MarkovChain.deserialize(csv.readText())
-      .apply { scorePrefix = listOf("BOS", "NEWLINE"); scoreSuffix = listOf("EOS") }
-      .also { println("Loaded ${it.counter.total} PY150 $MARKOV_MEMORY-grams from ${csv.absolutePath}") }
-  }
-
-  val P_BIFI_PY150: MarkovChain<Σᐩ> by lazy { P_BIFI + P_PY150 }
-
   /*
   ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.automata.WFSATest.testWFSA"
   */
   @Test
   fun testWFSA() {
-    val a: JAutomaton<String, Double> =
-      EditableAutomaton<String, Double>(RealSemiring()).apply {
+    val a: JAutomaton<String, Double> = EditableAutomaton<String, Double>(RealSemiring()).apply {
         val s1: Int = addState(1.0, 0.0) // Create initial state (initial weight 1.0, final weight 0.0)
         val s2: Int = addState(0.0, 1.0) // Create final state (initial weight 0.0, final weight 1.0)
         addTransition(s1, s2, "b", 0.4) // Create transition from s1 to s2
         addTransition(s2, s2, "a", 0.6) // Create transition from s2 to s2
-      } // probabilistic semiring uses RealSemiring
+      }
 
     val aa = Concatenation(*Array(100) { a })
+    println(aa.toDot())
 
     for (i in 0 until 10000 step 1000)
       measureTimedValue { Automata.bestStrings(aa, i) }
