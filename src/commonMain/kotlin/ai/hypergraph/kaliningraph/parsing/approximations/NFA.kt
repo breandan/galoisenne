@@ -372,7 +372,7 @@ data class NFA(
       startStates = newStarts,
       finalStates = newFinals,
       transitions = newTransitions
-    ).also { println("Sliced NFA in ${timer.elapsedNow()}") }
+    )//.also { println("Sliced NFA in ${timer.elapsedNow()}") }
   }
 
   fun sampleAcyclic(): Sequence<String> {
@@ -1347,18 +1347,103 @@ data class NFA(
     }
 
     return NFA(newStarts, newFinals, transitions).trim()
-      .also { println("Removed factor of length ${factor.size} in ${timer.elapsedNow()}") }
+//      .also { println("Removed factor of length ${factor.size} in ${timer.elapsedNow()}") }
+  }
+
+  /**
+   * Normalizes the NFA by:
+   * 1. Pruning "dead ends" (states that cannot reach a final state).
+   * 2. Ensuring there is exactly one start state.
+   * - If multiple (or zero) valid start states exist, a new start state is created
+   * with epsilon transitions to the valid original starts.
+   */
+  fun normalize(): NFA {
+    // 1. Identify "Live" states (Co-reachability)
+    // A state is live if it can reach a final state.
+    val live = HashSet<Int>()
+    val queue = ArrayDeque<Int>()
+
+    // All final states are inherently live
+    live.addAll(finalStates)
+    queue.addAll(finalStates)
+
+    // Build reverse graph: Target -> List<Source> to propagate liveness backwards
+    val revTrans = HashMap<Int, ArrayList<Int>>()
+    var maxId = -1
+
+    for ((src, edges) in transitions) {
+      if (src > maxId) maxId = src
+      for (edge in edges) {
+        revTrans.getOrPut(edge.target) { ArrayList() }.add(src)
+        if (edge.target > maxId) maxId = edge.target
+      }
+    }
+
+    // Ensure maxId accounts for isolated start/final states
+    startStates.maxOrNull()?.let { if (it > maxId) maxId = it }
+    finalStates.maxOrNull()?.let { if (it > maxId) maxId = it }
+
+    // Backward BFS to find all live states
+    while (queue.isNotEmpty()) {
+      val u = queue.removeFirst()
+      revTrans[u]?.forEach { v ->
+        if (live.add(v)) {
+          queue.add(v)
+        }
+      }
+    }
+
+    // 2. Filter Transitions
+    // Keep transitions only if the target is live.
+    // (If target is live, source must be live (or dead start), so we filter sources too)
+    val newTransitions = HashMap<Int, MutableList<Edge>>()
+    for ((src, edges) in transitions) {
+      if (src in live) {
+        val validEdges = edges.filter { it.target in live }
+        if (validEdges.isNotEmpty()) {
+          newTransitions[src] = validEdges.toMutableList()
+        }
+      }
+    }
+
+    // 3. Unify Start State
+    // Only consider start states that can actually reach a final state
+    val liveStarts = startStates.filter { it in live }
+    val newStartStates: Set<Int>
+
+    // If we already have exactly one live start state, we can reuse it to keep IDs stable.
+    // Otherwise (0 or >1), we create a new single start state.
+    if (liveStarts.size == 1) {
+      newStartStates = setOf(liveStarts.first())
+    } else {
+      val newStart = maxId + 1
+      newStartStates = setOf(newStart)
+
+      // Add epsilon transitions from new start to all live old starts
+      if (liveStarts.isNotEmpty()) {
+        val startEdges = newTransitions.getOrPut(newStart) { ArrayList() }
+        for (s in liveStarts) {
+          startEdges.add(Edge(null, s))
+        }
+      }
+    }
+
+    // Final states must be live (which they are by definition, unless we filter for disjoint components later)
+    val newFinalStates = finalStates.intersect(live)
+
+    return NFA(newStartStates, newFinalStates, newTransitions)
   }
 }
 
 fun CFG.findShortestInvalidSubstrings(
   w: List<Σᐩ>,
-  maxLen: Int = 4,
+  minLen: Int = 5,
+  maxLen: Int = 10,
   padding: Int = 20,
   allNgrams: Set<List<Σᐩ>>? = null
 ): List<List<Σᐩ>> {
   val pad = List(padding) { "_" }
-  return (2..maxLen).asSequence()
+  return (minLen..maxLen).asSequence()
     .map { len -> w.windowed(len) }
     .map { substrings ->
       substrings.filter { sub -> if (allNgrams != null) sub !in allNgrams else !isValid(pad + sub + pad) }
@@ -1821,3 +1906,129 @@ fun CFG.extractSubwords(n: Int, startSymbol: String = "START"): Set<List<String>
   }
   return result
 }
+
+/**
+ * Exports the NFA to the SafeTensors format as a Byte array.
+ * This is pure Kotlin Common code (no JDK/java.io dependencies).
+ */
+fun NFA.toSafeTensors(): ByteArray {
+  // --- 1. Flatten the Graph ---
+  // We need a stable vocabulary (0 is reserved for Epsilon in our tensor representation)
+  val vocabSet = mutableSetOf<String>()
+  transitions.values.forEach { edges ->
+    edges.forEach { edge -> edge.label?.let { vocabSet.add(it) } }
+  }
+  val vocabList = vocabSet.sorted()
+  val vocabMap = vocabList.withIndex().associate { it.value to (it.index + 1) }
+
+  // Use generic Lists, not platform specific arrays
+  val sources = ArrayList<Int>()
+  val targets = ArrayList<Int>()
+  val labels = ArrayList<Int>()
+
+  // Sort by source state for deterministic output
+  val sortedStates = transitions.keys.sorted()
+  for (src in sortedStates) {
+    val edges = transitions[src] ?: continue
+    // Sort edges: Target then Label
+    val sortedEdges = edges.sortedWith(compareBy({ it.target }, { it.label ?: "" }))
+    for (edge in sortedEdges) {
+      sources.add(src)
+      targets.add(edge.target)
+      labels.add(if (edge.label == null) 0 else vocabMap[edge.label]!!)
+    }
+  }
+
+  val numEdges = sources.size
+  val intSize = 4
+  val floatSize = 4
+
+  // Calculate offsets for the data blob
+  // Data order: sources(I32) -> targets(I32) -> labels(I32) -> scores(F32)
+  val sourcesLen = numEdges * intSize
+  val targetsLen = numEdges * intSize
+  val labelsLen = numEdges * intSize
+  val scoresLen = numEdges * floatSize
+
+  val sourcesStart = 0
+  val targetsStart = sourcesStart + sourcesLen
+  val labelsStart = targetsStart + targetsLen
+  val scoresStart = labelsStart + labelsLen
+  val totalDataSize = scoresStart + scoresLen
+
+  // --- 2. Construct JSON Header ---
+  fun toJsonIntList(list: Collection<Int>) = list.joinToString(",", "[", "]")
+  fun toJsonStrList(list: List<String>) = list.joinToString(",", "[", "]") { "\"${it.escapeJson()}\"" }
+
+  // Manual JSON construction to avoid heavy dependencies
+  val metadata = """
+    "vocab":${toJsonStrList(vocabList)},
+    "start_states":${toJsonIntList(startStates)},
+    "final_states":${toJsonIntList(finalStates)}
+  """.trimIndent().replace("\n", "")
+
+  fun tensorJson(name: String, dtype: String, start: Int, end: Int): String {
+    return "\"$name\":{\"dtype\":\"$dtype\",\"shape\":[$numEdges],\"data_offsets\":[$start,$end]}"
+  }
+
+  val headerJson = """{
+    "__metadata__":{$metadata},
+    ${tensorJson("sources", "I32", sourcesStart, targetsStart)},
+    ${tensorJson("targets", "I32", targetsStart, labelsStart)},
+    ${tensorJson("labels", "I32", labelsStart, scoresStart)},
+    ${tensorJson("scores", "F32", scoresStart, totalDataSize)}
+  }""".trimIndent().replace("\n", "").replace(" ", "")
+
+  val headerBytes = headerJson.encodeToByteArray()
+  // SafeTensors spec: header length is an 8-byte unsigned integer (LE)
+  val headerLen = headerBytes.size.toLong()
+
+  // --- 3. Allocate and Fill Result Buffer ---
+  // Total size = 8 bytes (N) + N bytes (Header) + Data Blob
+  val totalSize = 8 + headerBytes.size + totalDataSize
+  val result = ByteArray(totalSize)
+  var pos = 0
+
+  // Helper: Little Endian writers
+  fun writeLongLE(v: Long) {
+    result[pos++] = (v and 0xFF).toByte()
+    result[pos++] = ((v ushr 8) and 0xFF).toByte()
+    result[pos++] = ((v ushr 16) and 0xFF).toByte()
+    result[pos++] = ((v ushr 24) and 0xFF).toByte()
+    result[pos++] = ((v ushr 32) and 0xFF).toByte()
+    result[pos++] = ((v ushr 40) and 0xFF).toByte()
+    result[pos++] = ((v ushr 48) and 0xFF).toByte()
+    result[pos++] = ((v ushr 56) and 0xFF).toByte()
+  }
+
+  fun writeIntLE(v: Int) {
+    result[pos++] = (v and 0xFF).toByte()
+    result[pos++] = ((v ushr 8) and 0xFF).toByte()
+    result[pos++] = ((v ushr 16) and 0xFF).toByte()
+    result[pos++] = ((v ushr 24) and 0xFF).toByte()
+  }
+
+  fun writeFloatLE(v: Float) {
+    writeIntLE(v.toBits()) // Kotlin generic support for float bits
+  }
+
+  // A. Write Header Size (u64)
+  writeLongLE(headerLen)
+
+  // B. Write Header JSON
+  headerBytes.copyInto(result, pos)
+  pos += headerBytes.size
+
+  // C. Write Data Tensors
+  sources.forEach { writeIntLE(it) }
+  targets.forEach { writeIntLE(it) }
+  labels.forEach { writeIntLE(it) }
+  // Initialize scores to 0.0 (Log-Space 1.0)
+  repeat(numEdges) { writeFloatLE(0.0f) }
+
+  return result
+}
+
+// Simple JSON string escaper
+private fun String.escapeJson(): String =
+  this.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r")

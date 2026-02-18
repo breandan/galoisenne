@@ -37,6 +37,8 @@ class DFSM(
 
     return countFrom(q_alpha)
   }
+
+  fun summarize() = "(states=${Q.size}, transitions=${deltaMap.values.sumOf { it.values.size }})"
 }
 
 open class NFSM(
@@ -667,7 +669,7 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
 }
 
 fun DFSM.minimize(): DFSM {
-  println("Size before minimization: ${Q.size}")
+//  println("Size before minimization: ${Q.size}")
   val timer = TimeSource.Monotonic.markNow()
   // 1. Prune unreachable states using BFS
   val reachable = mutableSetOf<String>()
@@ -767,7 +769,7 @@ fun DFSM.minimize(): DFSM {
     }
   }
 
-  println("DFSM minimization took: ${timer.elapsedNow()}")
+//  println("DFSM minimization took: ${timer.elapsedNow()}")
   return DFSM(newQ, newDelta, newStart, newF, width)
-    .also { println("Size after minimization ${it.Q.size}") }
+//    .also { println("Size after minimization ${it.Q.size}") }
 }

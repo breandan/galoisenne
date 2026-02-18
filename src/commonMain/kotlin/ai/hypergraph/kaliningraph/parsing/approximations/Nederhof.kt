@@ -10,14 +10,12 @@ import kotlin.time.TimeSource
 //  - historyDepth = d  => parameterized RTN method with |H| < d-1
 // ------------------------------------------------------------
 
-private const val EPS_SYM = "ε"
+internal const val EPS_SYM = "ε"
 
-private fun List<Σᐩ>.normalizeEpsilonRhs(): List<Σᐩ> =
-  if (size == 1 && this[0] == EPS_SYM) emptyList() else this
+private fun List<Σᐩ>.normalizeEpsilonRhs(): List<Σᐩ> = if (size == 1 && this[0] == EPS_SYM) emptyList() else this
 
-private fun CFG.sortedProductions(): List<Production> =
-  this.map { (lhs, rhs) -> lhs to rhs.normalizeEpsilonRhs() }
-    .sortedWith(compareBy<Production>({ it.LHS }, { it.RHS.joinToString("\u0001") }))
+private fun CFG.sortedProductions(): List<Production> = map { (lhs, rhs) -> lhs to rhs.normalizeEpsilonRhs() }
+    .sortedWith(compareBy({ it.LHS }, { it.RHS.joinToString("\u0001") }))
 
 data class ProdRec(val lhs: Σᐩ, val rhs: List<Σᐩ>)
 
@@ -63,7 +61,7 @@ private fun MutableMap<Int, MutableList<NFA.Edge>>.addEdge(src: Int, label: Σ�
 fun CFG.toNederhofNFA(
   startSymbol: Σᐩ = "START",
   historyDepth: Int = 1,
-  removeEpsilons: Boolean = false,
+  removeEpsilons: Boolean = true,
   trim: Boolean = true
 ): NFA {
   val timer = TimeSource.Monotonic.markNow()
@@ -146,9 +144,7 @@ fun CFG.toNederhofNFA(
         }
       }
 
-      is RTNStateKey.Exit -> {
-        // No intrinsic outgoing edges; callers add (q'_{B,H'} --ε--> q_{I',H})
-      }
+      is RTNStateKey.Exit -> {} // No intrinsic outgoing edges; callers add (q'_{B,H'} --ε--> q_{I',H})
     }
   }
 

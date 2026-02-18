@@ -202,6 +202,16 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 val vanillaS2PCFG by lazy { s2pCFGStr.parseCFG().noEpsilonOrNonterminalStubs.freeze() } // Without Epsilon
 val vanillaS2PCFGWE by lazy { s2pCFGStr.parseCFG().noNonterminalStubs.freeze() } // With Epsilon
 
+val toyPython: CFG by lazy {
+  """
+  START -> STMT | BOS STMT EOS
+  STMT -> NAME = EXPR | INV
+  EXPR -> NAME | NAME + EXPR | ( EXPR ) | INV
+  INV -> NAME ( ARGS )
+  ARGS -> EXPR | EXPR , ARGS
+  """.parseCFG().noEpsilonOrNonterminalStubs
+}
+
 // Only popular prods as filtered by PCFG occurrences > 10k
 val pythonStatementCNF: CFG by lazy {
   """

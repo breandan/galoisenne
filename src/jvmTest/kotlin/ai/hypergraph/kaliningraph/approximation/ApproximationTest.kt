@@ -1,16 +1,19 @@
 package ai.hypergraph.kaliningraph.approximation
 
-import ai.hypergraph.kaliningraph.parsing.Grammars
 import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.languages.Python
+import ai.hypergraph.kaliningraph.languages.Python.subwords
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
-import ai.hypergraph.kaliningraph.parsing.approximations.toNederhofNFA
+import ai.hypergraph.kaliningraph.parsing.approximations.*
+import ai.hypergraph.kaliningraph.repair.toyPython
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.mcmc.toNgramMap
 import org.junit.jupiter.api.Test
 import java.io.File
 import kotlin.time.measureTime
+
+fun NFA.save(name: String) = File(name).writeBytes(toSafeTensors())
 
 class ApproximationTest {
 /*
@@ -25,7 +28,7 @@ class ApproximationTest {
 //  File("python_subwords.txt").writeText(subwords.joinToString("\n"){ it.joinToString(" ")})
 //  throw Exception("asdf")
 
-    val approx = cfg.toNederhofNFA("START", 1).removeEpsilons()
+    val approx = cfg.toNederhofNFA(historyDepth = 2).removeEpsilons()
     println("Original NFA ${approx.summary()}")
 //    approx.sampleStrings(20).take(1000).filter { it in cfg.language }.forEach { println(it) }
 //    val compl = approx.slice(33)
@@ -60,8 +63,9 @@ class ApproximationTest {
 //        .also { if (it.isNotEmpty()) println("Found ${it.size} invalid substrings (len=${it.first().size}), ${it.joinToString(" :: "){ it.joinToString(" ")}}") }
 //        .forEach { itr = itr.removeFactor(it); println("Summary: ${itr.summary()}") }
 //      itr.let { if (i % 100 == 0) { println("Rate: $ratePer100"); ratePer100 = 0; it.minimize() } else it }
+//    println("Iteration: $i")
+//    if (i % 1_000 == 0) { println("Validating..."); validate(itr, cfg) }
 //    })
-//  }
 
   cfg.sliceSample(23).take(100_000)
     .sortedBy { Python.P_BIFI_PY150.score(it.tokenizeByWhitespace()) }
@@ -71,12 +75,23 @@ class ApproximationTest {
       val w = it.tokenizeByWhitespace();
       println("${ngramNFA.recognizes(w)} / ${approx.recognizes(w)} / ${minNFA.recognizes(w)} / ${minDFA.recognizes(w)} :: $it")
     }
+  }
 
-//  println()
-//  File("hello.dot").writeText(minNFA.toGraphviz())
+  fun validate(nfa: NFA, cfg: CFG, max: Int = 30) {
+    val sampleSize = 1_000
+    (5..max step 1).forEach {
+      val total = nfa.slice(it).sampleAcyclic().take(sampleSize).count { it in cfg.language }
+      println("$it, ${total / sampleSize.toDouble()}")
+    }
+  }
 
-//  println(cfg.toNederhofNFA_Lookahead("START").allStates.size)
-//  println("Nonterminals: ${cfg.nonterminals.size}")
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testWFA"
+*/
+  @Test
+  fun testWFA() {
+    val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
+    File("wfsa.dot").writeText(wfa.toGraphviz())
   }
 
   /*
