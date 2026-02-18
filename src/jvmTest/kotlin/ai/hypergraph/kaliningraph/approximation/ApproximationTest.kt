@@ -91,10 +91,10 @@ class ApproximationTest {
 */
   @Test
   fun testWFA() {
-//  val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
-  val wfa = makeWFA(vanillaS2PCFG, Python.P_BIFI_PY150.toNgramMap(), subwords)
-    File("wfa.safetensor").writeBytes(wfa.toSafeTensors())
-//    File("wfsa.dot").writeText(wfa.toGraphviz())
+  val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
+//  val wfa = makeWFA(vanillaS2PCFG, Python.P_BIFI_PY150.toNgramMap(), subwords)
+//    File("pdfa4.safetensor").writeBytes(wfa.toSafeTensors())
+    File("wfsa.dot").writeText(wfa.toGraphviz())
   }
 
   /*

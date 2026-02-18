@@ -538,7 +538,15 @@ fun WFA.toSafeTensors(): ByteArray {
   // --- 2. Construct JSON Header ---
   fun toJsonList(list: List<Any>): String = list.joinToString(",", "[", "]") {
     when (it) {
-      is String -> "\"${it.replace("\"", "\\\"")}\""
+      is String -> {
+        // CRITICAL: Escape backslashes first, then quotes, then controls
+        val escaped = it.replace("\\", "\\\\")
+          .replace("\"", "\\\"")
+          .replace("\n", "\\n")
+          .replace("\r", "\\r")
+          .replace("\t", "\\t")
+        "\"$escaped\""
+      }
       else -> it.toString()
     }
   }
@@ -623,6 +631,7 @@ fun ByteArray.toWFA(): WFA {
   // --- 1. Byte Reader Helpers (Little Endian) ---
   var pos = 0
   fun readLongLE(): Long {
+    if (pos + 8 > size) throw IndexOutOfBoundsException("Buffer too small for header length")
     val v = (this[pos].toLong() and 0xFF) or
         ((this[pos + 1].toLong() and 0xFF) shl 8) or
         ((this[pos + 2].toLong() and 0xFF) shl 16) or
@@ -635,46 +644,86 @@ fun ByteArray.toWFA(): WFA {
     return v
   }
 
-  // Read header length (8 bytes)
-  if (size < 8) throw IllegalArgumentException("Buffer too small")
   val headerLen = readLongLE().toInt()
+  if (pos + headerLen > size) throw IndexOutOfBoundsException("Buffer too small for header JSON")
 
-  // Read JSON Header
-  if (size < 8 + headerLen) throw IllegalArgumentException("Header truncated")
-  // Use Kotlin's decodeToString (UTF-8 default)
-  val headerJson = this.decodeToString(startIndex = 8, endIndex = 8 + headerLen)
+  val headerJson = this.decodeToString(startIndex = pos, endIndex = pos + headerLen)
+  val dataStart = pos + headerLen
 
-  // Set position to start of data blob
-  val dataStart = 8 + headerLen
+  // --- 2. Robust JSON Parsing (State Machine) ---
 
-  // --- 2. Lightweight JSON Parsing ---
-  // We strictly assume the format produced by the encoder to avoid full JSON parser dependency.
+  // Robustly parses ["str1", "str2", ...] handling escapes \" and brackets ] inside strings
+  fun parseJsonStringList(key: String): List<String> {
+    val keySearch = "\"$key\":"
+    val startIdx = headerJson.indexOf(keySearch)
+    if (startIdx == -1) return emptyList()
 
-  fun extractIntList(key: String): List<Int> {
-    val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
-    val content = match.groupValues[1]
-    if (content.isBlank()) return emptyList()
-    return content.split(",").map { it.trim().toInt() }
+    // Find start of list '['
+    val arrayStart = headerJson.indexOf('[', startIdx)
+    if (arrayStart == -1) return emptyList()
+
+    val result = ArrayList<String>()
+    val sb = StringBuilder()
+    var inString = false
+    var isEscaped = false
+
+    // Scan starting after '['
+    for (i in arrayStart + 1 until headerJson.length) {
+      val char = headerJson[i]
+
+      if (inString) {
+        if (isEscaped) {
+          // Handle standard JSON escapes
+          when (char) {
+            'n' -> sb.append('\n')
+            'r' -> sb.append('\r')
+            't' -> sb.append('\t')
+            'b' -> sb.append('\b')
+            'f' -> sb.append('\u000c') // Form feed
+            '\\' -> sb.append('\\')
+            '/' -> sb.append('/')
+            '"' -> sb.append('"')
+            'u' -> { /* Unicode escapes tricky without full parser, usually not needed for simple WFA */ sb.append("\\u") }
+            else -> sb.append(char)
+          }
+          isEscaped = false
+        } else {
+          if (char == '\\') {
+            isEscaped = true
+          } else if (char == '"') {
+            // End of current string
+            inString = false
+            result.add(sb.toString())
+            sb.setLength(0) // Clear buffer
+          } else {
+            sb.append(char)
+          }
+        }
+      } else {
+        // Outside strings
+        if (char == '"') {
+          inString = true
+        } else if (char == ']') {
+          // End of array found
+          return result
+        }
+        // Ignore commas and whitespace between strings
+      }
+    }
+    return result
   }
 
-  fun extractDoubleList(key: String): List<Double> {
+  // Simple parser for number lists (Integers/Doubles don't contain brackets/quotes, so Regex is safe enough here)
+  fun parseNumberList(key: String): List<String> {
     val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
     val content = match.groupValues[1]
     if (content.isBlank()) return emptyList()
-    return content.split(",").map { it.trim().toDouble() }
-  }
-
-  fun extractStringList(key: String): List<String> {
-    val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
-    val content = match.groupValues[1]
-    if (content.isBlank()) return emptyList()
-    // Handle escaped quotes
-    return content.split("\",\"")
-      .map { it.replace("\"", "").replace("\\\"", "\"") }
+    return content.split(",")
   }
 
   fun getTensorOffsets(name: String): Pair<Int, Int> {
-    // Regex looks for: "name":{..."data_offsets":[start,end]...}
+    // Look for: "name":{ ... "data_offsets":[start,end] ... }
+    // We use a specific regex that skips nested braces if necessary, but standard SafeTensors header is flat.
     val regex = "\"$name\":\\{.*?\"data_offsets\":\\[(\\d+),(\\d+)\\].*?\\}".toRegex()
     val match = regex.find(headerJson) ?: throw IllegalArgumentException("Tensor $name not found")
     val (start, end) = match.destructured
@@ -682,11 +731,12 @@ fun ByteArray.toWFA(): WFA {
   }
 
   // --- 3. Parse Metadata ---
-  val vocabList = extractStringList("vocab")
-  val startStates = extractIntList("start_states")
-  val startWeightsList = extractDoubleList("start_weights")
-  val finalStates = extractIntList("final_states")
-  val finalWeightsList = extractDoubleList("final_weights")
+  val vocabList = parseJsonStringList("vocab") // <--- Uses robust parser
+
+  val startStates = parseNumberList("start_states").map { it.trim().toInt() }
+  val startWeightsList = parseNumberList("start_weights").map { it.trim().toDouble() }
+  val finalStates = parseNumberList("final_states").map { it.trim().toInt() }
+  val finalWeightsList = parseNumberList("final_weights").map { it.trim().toDouble() }
 
   val sMap = startStates.zip(startWeightsList).toMap()
   val fMap = finalStates.zip(finalWeightsList).toMap()
@@ -699,9 +749,10 @@ fun ByteArray.toWFA(): WFA {
 
   val numEdges = (srcEnd - srcStart) / 4
 
-  // Helpers for random access reading from data blob
+  // Helpers for random access reading
   fun readIntAt(offset: Int): Int {
     val p = dataStart + offset
+    if (p + 4 > size) throw IndexOutOfBoundsException("Data truncated")
     return (this[p].toInt() and 0xFF) or
         ((this[p + 1].toInt() and 0xFF) shl 8) or
         ((this[p + 2].toInt() and 0xFF) shl 16) or
@@ -715,24 +766,31 @@ fun ByteArray.toWFA(): WFA {
   // --- 5. Reconstruct Graph ---
   val transitions = HashMap<Int, MutableList<WFA.WeightedEdge>>()
 
-  // Iterate edges
-  var currentSrcOffset = srcStart
-  var currentTgtOffset = tgtStart
-  var currentLblOffset = lblStart
-  var currentScrOffset = scrStart
+  var currentSrc = srcStart
+  var currentTgt = tgtStart
+  var currentLbl = lblStart
+  var currentScr = scrStart
 
   for (i in 0 until numEdges) {
-    val src = readIntAt(currentSrcOffset)
-    val tgt = readIntAt(currentTgtOffset)
-    val lblIdx = readIntAt(currentLblOffset)
-    val weight = readFloatAt(currentScrOffset)
+    val src = readIntAt(currentSrc)
+    val tgt = readIntAt(currentTgt)
+    val lblIdx = readIntAt(currentLbl)
+    val weight = readFloatAt(currentScr)
 
-    currentSrcOffset += 4
-    currentTgtOffset += 4
-    currentLblOffset += 4
-    currentScrOffset += 4
+    currentSrc += 4
+    currentTgt += 4
+    currentLbl += 4
+    currentScr += 4
 
-    val label = if (lblIdx == 0) null else vocabList[lblIdx - 1]
+    // SAFETY CHECK: Ensure index is valid
+    val label = if (lblIdx == 0) null else {
+      val listIdx = lblIdx - 1
+      if (listIdx >= vocabList.size) {
+        // Fallback for debugging, or throw explicit error
+        throw IndexOutOfBoundsException("Label Index $listIdx out of bounds (Vocab size: ${vocabList.size})")
+      }
+      vocabList[listIdx]
+    }
 
     val edge = WFA.WeightedEdge(label, tgt, weight.toDouble())
     transitions.getOrPut(src) { ArrayList() }.add(edge)
