@@ -1909,7 +1909,6 @@ fun CFG.extractSubwords(n: Int, startSymbol: String = "START"): Set<List<String>
 
 /**
  * Exports the NFA to the SafeTensors format as a Byte array.
- * This is pure Kotlin Common code (no JDK/java.io dependencies).
  */
 fun NFA.toSafeTensors(): ByteArray {
   // --- 1. Flatten the Graph ---

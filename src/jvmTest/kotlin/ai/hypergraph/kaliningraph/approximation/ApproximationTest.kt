@@ -7,6 +7,7 @@ import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
 import ai.hypergraph.kaliningraph.parsing.approximations.*
 import ai.hypergraph.kaliningraph.repair.toyPython
+import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.mcmc.toNgramMap
 import org.junit.jupiter.api.Test
@@ -90,8 +91,10 @@ class ApproximationTest {
 */
   @Test
   fun testWFA() {
-    val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
-    File("wfsa.dot").writeText(wfa.toGraphviz())
+//  val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
+  val wfa = makeWFA(vanillaS2PCFG, Python.P_BIFI_PY150.toNgramMap(), subwords)
+    File("wfa.safetensor").writeBytes(wfa.toSafeTensors())
+//    File("wfsa.dot").writeText(wfa.toGraphviz())
   }
 
   /*

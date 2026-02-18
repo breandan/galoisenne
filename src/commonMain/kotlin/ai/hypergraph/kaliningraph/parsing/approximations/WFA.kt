@@ -472,7 +472,7 @@ fun NFA.toWFAWithLM(
 
 fun makeWFA(cfg: CFG, freqNgrams: Map<List<String>, Double>, allNgrams: Set<List<String>>): WFA {
   val timer = TimeSource.Monotonic.markNow()
-  val approx = cfg.toNederhofNFA(historyDepth = 6).removeEpsilons()
+  val approx = cfg.toNederhofNFA(historyDepth = 2).removeEpsilons()
   println("Original NFA summary ${approx.summary()}")
   val freqNgrams = freqNgrams.toMutableMap()
   allNgrams.forEach { ngram -> if (ngram !in freqNgrams) freqNgrams[ngram] = 1.0 }
@@ -482,7 +482,261 @@ fun makeWFA(cfg: CFG, freqNgrams: Map<List<String>, Double>, allNgrams: Set<List
   val intNFA = approx.intersect(fullNgrams)
   println("∩-NFA summary ${approx.summary()}")
   val minWFA = intNFA.minimize().determinize().normalize().toWFAWithLM(km)
-  println("min-WFA summary ${approx.summary()}")
+  println("min-WFA summary ${minWFA.summary()}")
   println("Constructed WFA in ${timer.elapsedNow()}")
   return minWFA
+}
+
+/**
+ * Exports the WFA to the SafeTensors format as a Byte array.
+ */
+fun WFA.toSafeTensors(): ByteArray {
+  // --- 1. Flatten the Graph ---
+  val vocabSet = mutableSetOf<String>()
+  transitions.values.forEach { edges ->
+    edges.forEach { edge -> edge.label?.let { vocabSet.add(it) } }
+  }
+  val vocabList = vocabSet.sorted()
+  // 0 reserved for Epsilon
+  val vocabMap = vocabList.withIndex().associate { it.value to (it.index + 1) }
+
+  // Use Kotlin MutableLists
+  val sources = mutableListOf<Int>()
+  val targets = mutableListOf<Int>()
+  val labels = mutableListOf<Int>()
+  val scores = mutableListOf<Float>()
+
+  val sortedStates = transitions.keys.sorted()
+  for (src in sortedStates) {
+    val edges = transitions[src] ?: continue
+    // Sort: Target -> Label -> Weight
+    val sortedEdges = edges.sortedWith(compareBy({ it.target }, { it.label ?: "" }, { it.weight }))
+    for (edge in sortedEdges) {
+      sources.add(src)
+      targets.add(edge.target)
+      labels.add(if (edge.label == null) 0 else vocabMap[edge.label]!!)
+      scores.add(edge.weight.toFloat())
+    }
+  }
+
+  val numEdges = sources.size
+  val intSize = 4
+  val floatSize = 4
+
+  // Offsets
+  val sourcesLen = numEdges * intSize
+  val targetsLen = numEdges * intSize
+  val labelsLen = numEdges * intSize
+  val scoresLen = numEdges * floatSize
+
+  val sourcesStart = 0
+  val targetsStart = sourcesStart + sourcesLen
+  val labelsStart = targetsStart + targetsLen
+  val scoresStart = labelsStart + labelsLen
+  val totalDataSize = scoresStart + scoresLen
+
+  // --- 2. Construct JSON Header ---
+  fun toJsonList(list: List<Any>): String = list.joinToString(",", "[", "]") {
+    when (it) {
+      is String -> "\"${it.replace("\"", "\\\"")}\""
+      else -> it.toString()
+    }
+  }
+
+  val sKeys = startWeights.keys.sorted()
+  val fKeys = finalWeights.keys.sorted()
+
+  // Note: Start/Final weights are doubles, but we serialize as floats for compactness in metadata if desired,
+  // or keep as doubles in JSON text. JSON text handles standard numbers fine.
+  val metadata = """
+        "vocab":${toJsonList(vocabList)},
+        "start_states":${toJsonList(sKeys)},
+        "start_weights":${toJsonList(sKeys.map { startWeights[it]!! })},
+        "final_states":${toJsonList(fKeys)},
+        "final_weights":${toJsonList(fKeys.map { finalWeights[it]!! })}
+    """.trimIndent().replace("\n", "")
+
+  fun tensorJson(name: String, dtype: String, start: Int, end: Int): String {
+    return "\"$name\":{\"dtype\":\"$dtype\",\"shape\":[$numEdges],\"data_offsets\":[$start,$end]}"
+  }
+
+  val headerJson = """{
+        "__metadata__":{$metadata},
+        ${tensorJson("sources", "I32", sourcesStart, targetsStart)},
+        ${tensorJson("targets", "I32", targetsStart, labelsStart)},
+        ${tensorJson("labels", "I32", labelsStart, scoresStart)},
+        ${tensorJson("scores", "F32", scoresStart, totalDataSize)}
+    }""".trimIndent().replace("\n", "").replace(" ", "")
+
+  val headerBytes = headerJson.encodeToByteArray()
+  val headerLen = headerBytes.size.toLong()
+
+  // --- 3. Write to ByteArray ---
+  val totalSize = 8 + headerBytes.size + totalDataSize
+  val result = ByteArray(totalSize)
+  var pos = 0
+
+  // KMP Helper: Write Little Endian
+  fun writeLongLE(v: Long) {
+    result[pos++] = (v).toByte()
+    result[pos++] = (v ushr 8).toByte()
+    result[pos++] = (v ushr 16).toByte()
+    result[pos++] = (v ushr 24).toByte()
+    result[pos++] = (v ushr 32).toByte()
+    result[pos++] = (v ushr 40).toByte()
+    result[pos++] = (v ushr 48).toByte()
+    result[pos++] = (v ushr 56).toByte()
+  }
+
+  fun writeIntLE(v: Int) {
+    result[pos++] = (v).toByte()
+    result[pos++] = (v ushr 8).toByte()
+    result[pos++] = (v ushr 16).toByte()
+    result[pos++] = (v ushr 24).toByte()
+  }
+
+  fun writeFloatLE(v: Float) {
+    writeIntLE(v.toBits())
+  }
+
+  // A. Header Length (u64)
+  writeLongLE(headerLen)
+
+  // B. Header JSON
+  headerBytes.copyInto(result, pos)
+  pos += headerBytes.size
+
+  // C. Tensors
+  sources.forEach { writeIntLE(it) }
+  targets.forEach { writeIntLE(it) }
+  labels.forEach { writeIntLE(it) }
+  scores.forEach { writeFloatLE(it) }
+
+  return result
+}
+
+/**
+ * Decodes a SafeTensors ByteArray to a WFA.
+ * Pure Kotlin Multiplatform implementation.
+ */
+fun ByteArray.toWFA(): WFA {
+  // --- 1. Byte Reader Helpers (Little Endian) ---
+  var pos = 0
+  fun readLongLE(): Long {
+    val v = (this[pos].toLong() and 0xFF) or
+        ((this[pos + 1].toLong() and 0xFF) shl 8) or
+        ((this[pos + 2].toLong() and 0xFF) shl 16) or
+        ((this[pos + 3].toLong() and 0xFF) shl 24) or
+        ((this[pos + 4].toLong() and 0xFF) shl 32) or
+        ((this[pos + 5].toLong() and 0xFF) shl 40) or
+        ((this[pos + 6].toLong() and 0xFF) shl 48) or
+        ((this[pos + 7].toLong() and 0xFF) shl 56)
+    pos += 8
+    return v
+  }
+
+  // Read header length (8 bytes)
+  if (size < 8) throw IllegalArgumentException("Buffer too small")
+  val headerLen = readLongLE().toInt()
+
+  // Read JSON Header
+  if (size < 8 + headerLen) throw IllegalArgumentException("Header truncated")
+  // Use Kotlin's decodeToString (UTF-8 default)
+  val headerJson = this.decodeToString(startIndex = 8, endIndex = 8 + headerLen)
+
+  // Set position to start of data blob
+  val dataStart = 8 + headerLen
+
+  // --- 2. Lightweight JSON Parsing ---
+  // We strictly assume the format produced by the encoder to avoid full JSON parser dependency.
+
+  fun extractIntList(key: String): List<Int> {
+    val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
+    val content = match.groupValues[1]
+    if (content.isBlank()) return emptyList()
+    return content.split(",").map { it.trim().toInt() }
+  }
+
+  fun extractDoubleList(key: String): List<Double> {
+    val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
+    val content = match.groupValues[1]
+    if (content.isBlank()) return emptyList()
+    return content.split(",").map { it.trim().toDouble() }
+  }
+
+  fun extractStringList(key: String): List<String> {
+    val match = "\"$key\":\\[(.*?)\\]".toRegex().find(headerJson) ?: return emptyList()
+    val content = match.groupValues[1]
+    if (content.isBlank()) return emptyList()
+    // Handle escaped quotes
+    return content.split("\",\"")
+      .map { it.replace("\"", "").replace("\\\"", "\"") }
+  }
+
+  fun getTensorOffsets(name: String): Pair<Int, Int> {
+    // Regex looks for: "name":{..."data_offsets":[start,end]...}
+    val regex = "\"$name\":\\{.*?\"data_offsets\":\\[(\\d+),(\\d+)\\].*?\\}".toRegex()
+    val match = regex.find(headerJson) ?: throw IllegalArgumentException("Tensor $name not found")
+    val (start, end) = match.destructured
+    return start.toInt() to end.toInt()
+  }
+
+  // --- 3. Parse Metadata ---
+  val vocabList = extractStringList("vocab")
+  val startStates = extractIntList("start_states")
+  val startWeightsList = extractDoubleList("start_weights")
+  val finalStates = extractIntList("final_states")
+  val finalWeightsList = extractDoubleList("final_weights")
+
+  val sMap = startStates.zip(startWeightsList).toMap()
+  val fMap = finalStates.zip(finalWeightsList).toMap()
+
+  // --- 4. Parse Tensors ---
+  val (srcStart, srcEnd) = getTensorOffsets("sources")
+  val (tgtStart, tgtEnd) = getTensorOffsets("targets")
+  val (lblStart, lblEnd) = getTensorOffsets("labels")
+  val (scrStart, scrEnd) = getTensorOffsets("scores")
+
+  val numEdges = (srcEnd - srcStart) / 4
+
+  // Helpers for random access reading from data blob
+  fun readIntAt(offset: Int): Int {
+    val p = dataStart + offset
+    return (this[p].toInt() and 0xFF) or
+        ((this[p + 1].toInt() and 0xFF) shl 8) or
+        ((this[p + 2].toInt() and 0xFF) shl 16) or
+        ((this[p + 3].toInt() and 0xFF) shl 24)
+  }
+
+  fun readFloatAt(offset: Int): Float {
+    return Float.fromBits(readIntAt(offset))
+  }
+
+  // --- 5. Reconstruct Graph ---
+  val transitions = HashMap<Int, MutableList<WFA.WeightedEdge>>()
+
+  // Iterate edges
+  var currentSrcOffset = srcStart
+  var currentTgtOffset = tgtStart
+  var currentLblOffset = lblStart
+  var currentScrOffset = scrStart
+
+  for (i in 0 until numEdges) {
+    val src = readIntAt(currentSrcOffset)
+    val tgt = readIntAt(currentTgtOffset)
+    val lblIdx = readIntAt(currentLblOffset)
+    val weight = readFloatAt(currentScrOffset)
+
+    currentSrcOffset += 4
+    currentTgtOffset += 4
+    currentLblOffset += 4
+    currentScrOffset += 4
+
+    val label = if (lblIdx == 0) null else vocabList[lblIdx - 1]
+
+    val edge = WFA.WeightedEdge(label, tgt, weight.toDouble())
+    transitions.getOrPut(src) { ArrayList() }.add(edge)
+  }
+
+  return WFA(sMap, fMap, transitions)
 }
