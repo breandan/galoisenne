@@ -146,8 +146,8 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
 
   open val midpoints: List<List<List<Int>>> by lazy { TODO() }
 
-  val finalIdxsq by lazy { final.map { stateMap[it]!! }.toTypedArray() }
-  val levFinalIdxs by lazy { finalIdxsq.filter { idsToCoords[it]!!.second > 0 }.toTypedArray() }
+  val finalIdxs by lazy { final.map { stateMap[it]!! }.toTypedArray() }
+  val levFinalIdxs by lazy { finalIdxs.filter { idsToCoords[it]!!.second > 0 }.toTypedArray() }
   val isFinal by lazy { BooleanArray(numStates).also { fm -> for (f in levFinalIdxs) fm[f] = true } }
 
   // TODO: Implement Lev state pairing function to avoid this pain
