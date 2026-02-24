@@ -2,6 +2,7 @@ package ai.hypergraph.kaliningraph.parsing.approximations
 
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
+import kotlin.collections.get
 import kotlin.math.*
 import kotlin.time.TimeSource
 
@@ -18,303 +19,262 @@ data class WFA(
         startWeights.keys + finalWeights.keys
   }
 
-  fun summary(): String = "(states=${allStates.size}, transition=${transitions.values.sumOf { it.size }})"
+  fun summary(): String =
+    "(states=${allStates.size}, transition=${transitions.values.sumOf { it.size }})"
 
-  // Deterministic lookup: state -> (symbol -> edge)
-  // Precondition: DFA (at most one outgoing edge per (state, symbol)),
-  // and (typically) epsilon-free or already epsilon-closed.
-  private val dfaIndex: Map<Int, Map<String, WeightedEdge>> by lazy {
-    transitions.mapValues { (_, edges) ->
-      buildMap(edges.size) {
-        for (e in edges) {
-          val sym = e.label ?: continue // ignore epsilons under DFA precondition
-          // If you want to enforce determinism in debug builds, uncomment:
-          // require(!containsKey(sym)) { "Non-deterministic: multiple edges for ($sym)" }
-          put(sym, e)
+  // ----------------------------
+  // Fast logAddExp (LUT-based)
+  // ----------------------------
+  private object LogAddLUT {
+    // x = (max - min) in [0, MAX_X]; we approximate ln(1 + exp(-x))
+    private const val MAX_X = 50.0
+    private const val RES = 1024              // 1/1024 resolution
+    private const val INV_RES = 1.0 / RES
+    private val TABLE: DoubleArray = run {
+      val n = (MAX_X * RES).toInt()
+      DoubleArray(n + 2) { i ->
+        val x = i.toDouble() * INV_RES
+        // ln(1 + exp(-x))
+        ln1p(exp(-x))
+      }
+    }
+
+    inline fun add(a: Double, b: Double): Double {
+      if (a == Double.NEGATIVE_INFINITY) return b
+      if (b == Double.NEGATIVE_INFINITY) return a
+
+      val hi = if (a >= b) a else b
+      val lo = if (a >= b) b else a
+      val x = hi - lo // >= 0
+
+      if (x >= MAX_X) return hi // ln(1+exp(-x)) ~ 0
+
+      val t = x * RES
+      val i = t.toInt()
+      val frac = t - i
+      val v0 = TABLE[i]
+      val v1 = TABLE[i + 1]
+      val corr = v0 + (v1 - v0) * frac
+
+      return hi + corr
+    }
+  }
+
+  // ----------------------------
+  // Compiled structures for fast scoring
+  // ----------------------------
+  private class OutIndex(
+    val syms: IntArray,        // sorted unique symbol ids
+    val offsets: IntArray,
+    val targets: IntArray,
+    val weights: DoubleArray
+  ) {
+    inline fun findSym(symId: Int): Int {
+      // Small out-degree: linear scan usually wins
+      if (syms.size <= 8) {
+        for (i in syms.indices) if (syms[i] == symId) return i
+        return -1
+      }
+
+      var lo = 0
+      var hi = syms.size - 1
+      while (lo <= hi) {
+        val mid = (lo + hi) ushr 1
+        val v = syms[mid]
+        when {
+          v < symId -> lo = mid + 1
+          v > symId -> hi = mid - 1
+          else -> return mid
         }
       }
+      return -1
     }
   }
 
-  /**
-   * Scores `str` assuming this WFA is a DFA (deterministic, usually epsilon-free).
-   *
-   * Semantics: sum over start states of
-   *   startWeight * Π edgeWeight * finalWeight
-   *
-   * Returns 0.0 if no accepting path exists.
-   */
-  fun dfaScore(str: List<String>): Double {
-    var total = 0.0
+  private data class Compiled(
+    val symToId: HashMap<String, Int>,
+    val charToId: IntArray,          // size 128 (ASCII) filled with -1 if absent
+    val out: Array<OutIndex?>,
+    val startStates: IntArray,
+    val startW: DoubleArray,
+    val finalW: DoubleArray
+  )
 
-    for ((start, w0) in startWeights) {
-      var state = start
-      var w = w0
-      var alive = true
+  private val compiled: Compiled by lazy { compileForScore() }
 
-      for (sym in str) {
-        val e = dfaIndex[state]?.get(sym)
-        if (e == null) { alive = false; break }
-        w *= e.weight
-        state = e.target
+  private fun compileForScore(): Compiled {
+    // Dense state indexing (avoids giant arrays keyed by raw state ids)
+    val stateIds = allStates.toIntArray().also { it.sort() }
+    val n = stateIds.size
+    val toDense = HashMap<Int, Int>(n * 2)
+    for (i in stateIds.indices) toDense[stateIds[i]] = i
+
+    // Symbol table: String -> Int (hashed once per token at runtime)
+    val symToId = HashMap<String, Int>(256)
+    fun symId(s: String): Int = symToId.getOrPut(s) { symToId.size }
+
+    // Build per-state packed outgoing index
+    val out = arrayOfNulls<OutIndex>(n)
+    for ((srcId, edges) in transitions) {
+      val src = toDense[srcId] ?: continue
+
+      // Bucket edges by symbol id (build-time only; OK to allocate here)
+      val bySymT = HashMap<Int, MutableList<Int>>()     // targets
+      val bySymW = HashMap<Int, MutableList<Double>>()  // weights
+
+      for (e in edges) {
+        val lab = e.label ?: continue // score() ignores epsilons (matches your current implementation)
+        val sid = symId(lab)
+        val tgt = toDense[e.target] ?: continue
+        bySymT.getOrPut(sid) { ArrayList() }.add(tgt)
+        bySymW.getOrPut(sid) { ArrayList() }.add(e.weight)
       }
 
-      if (alive) {
-        val fw = finalWeights[state]
-        if (fw != null) total += w * fw
+      if (bySymT.isEmpty()) continue
+
+      val syms = bySymT.keys.toIntArray().also { it.sort() }
+      val offsets = IntArray(syms.size + 1)
+      var total = 0
+      for (i in syms.indices) {
+        offsets[i] = total
+        total += bySymT[syms[i]]!!.size
       }
-    }
+      offsets[syms.size] = total
 
-    return total
-  }
-
-  /**
-   * Viterbi Algorithm: Finds the highest weight path for a given sequence.
-   * Assumes weights are probabilities (multiplicative).
-   * Returns null if not accepted.
-   */
-  fun probabilityOf(str: List<String>): Double {
-    // Current states: Map<StateID, Probability>
-    var current = HashMap<Int, Double>()
-
-    // Initialize with Epsilon Closure of Start States
-    // (Simplified: assuming no epsilons at start for brevity, or pre-closed)
-    for ((s, w) in startWeights) current[s] = w
-    current = expandEpsilonWeights(current)
-
-    for (symbol in str) {
-      val next = HashMap<Int, Double>()
-      for ((u, prob) in current) {
-        transitions[u]?.forEach { edge ->
-          if (edge.label == symbol) {
-            val newProb = prob * edge.weight
-            // Viterbi maximization
-            if (newProb > (next[edge.target] ?: -1.0)) {
-              next[edge.target] = newProb
-            }
-          }
+      val targets = IntArray(total)
+      val weights = DoubleArray(total)
+      var k = 0
+      for (sid in syms) {
+        val ts = bySymT[sid]!!
+        val ws = bySymW[sid]!!
+        for (i in ts.indices) {
+          targets[k] = ts[i]
+          weights[k] = ws[i]
+          k++
         }
       }
-      if (next.isEmpty()) return 0.0
-      current = expandEpsilonWeights(next)
+
+      out[src] = OutIndex(syms, offsets, targets, weights)
     }
 
-    // Finalize
-    var maxProb = 0.0
-    for ((u, prob) in current) {
-      val finalW = finalWeights[u]
-      if (finalW != null) {
-        val total = prob * finalW
-        if (total > maxProb) maxProb = total
+    // Start arrays
+    val startStates = IntArray(startWeights.size)
+    val startW = DoubleArray(startWeights.size)
+    run {
+      var i = 0
+      for ((sId, w) in startWeights) {
+        startStates[i] = toDense[sId] ?: continue
+        startW[i] = w
+        i++
+      }
+      // If some starts were missing (shouldn’t happen), trim:
+      // (usually unnecessary; kept minimal)
+    }
+
+    // Final weights array
+    val finalW = DoubleArray(n) { Double.NEGATIVE_INFINITY }
+    for ((sId, w) in finalWeights) {
+      val s = toDense[sId] ?: continue
+      finalW[s] = w
+    }
+
+    // in compileForScore(), after symToId built:
+    val charToId = IntArray(128) { -1 }
+    for ((s, id) in symToId) {
+      if (s.length == 1) {
+        val c = s[0].code
+        if (c in 0..127) charToId[c] = id
       }
     }
-    return maxProb
+
+    return Compiled(symToId, charToId, out, startStates, startW, finalW)
   }
 
-  // Helper to push weights through epsilon transitions (Max-Product)
-  private fun expandEpsilonWeights(initial: Map<Int, Double>): HashMap<Int, Double> {
-    val result = HashMap(initial)
-    val queue = ArrayDeque(initial.keys)
+  fun scoreString(s: CharSequence, penalty: Double = -20.0): Double {
+    val C = compiled
+    val n = C.finalW.size
+    if (C.startStates.isEmpty()) return Double.NEGATIVE_INFINITY
 
-    while (queue.isNotEmpty()) {
-      val u = queue.removeFirst()
-      val wU = result[u]!!
+    var curScores = DoubleArray(n) { Double.NEGATIVE_INFINITY }
+    var nextScores = DoubleArray(n) { Double.NEGATIVE_INFINITY }
+    var curActive = IntArray(n)
+    var nextActive = IntArray(n)
+    var curN = 0
 
-      transitions[u]?.forEach { edge ->
-        if (edge.label == null) {
-          val wNew = wU * edge.weight
-          val wOld = result[edge.target] ?: -1.0
-          if (wNew > wOld) {
-            result[edge.target] = wNew
-            queue.add(edge.target)
-          }
+    // init
+    for (i in C.startStates.indices) {
+      val st = C.startStates[i]
+      val w = C.startW[i]
+      val prev = curScores[st]
+      if (prev == Double.NEGATIVE_INFINITY) {
+        curScores[st] = w
+        curActive[curN++] = st
+      } else {
+        curScores[st] = LogAddLUT.add(prev, w)
+      }
+    }
+    if (curN == 0) return Double.NEGATIVE_INFINITY
+
+    for (ch in s) {
+      val code = ch.code
+      val sid = if (code in 0..127) C.charToId[code] else -1
+
+      if (sid < 0) {
+        // token unknown globally => penalty-in-place
+        for (i in 0 until curN) {
+          val st = curActive[i]
+          curScores[st] += penalty
         }
-      }
-    }
-    return result
-  }
-
-  fun toGraphviz(
-    name: String = "WFA",
-    pruneThreshold: Double = 0.00, // Don't show edges with p < 1%
-    topK: Int = 9                  // Show top K edges per state (both in and out)
-  ): String = buildString {
-    val prec = 4
-    appendLine("digraph $name {")
-    appendLine("  rankdir=LR;")
-    appendLine("  node [shape = circle, fontname = \"Helvetica\"];")
-    appendLine("  edge [fontname = \"Helvetica\"];")
-
-    // --- 1. Indexing & Pre-calculation ---
-    // Map: Target -> List<Pair<Source, Edge>>
-    val incomingMap = HashMap<Int, MutableList<Pair<Int, WeightedEdge>>>()
-    transitions.forEach { (src, edges) ->
-      edges.forEach { edge ->
-        incomingMap.getOrPut(edge.target) { ArrayList() }.add(src to edge)
-      }
-    }
-
-    // --- 2. Pass 1: Forward Top-K (Standard) ---
-    // Helper data class to track unique edges to draw
-    data class DrawEdge(val src: Int, val edge: WeightedEdge, val isBackfill: Boolean = false)
-    val edgesToRender = HashSet<DrawEdge>()
-
-    transitions.forEach { (src, edges) ->
-      edges.sortedByDescending { it.weight }
-        .filter { it.weight >= pruneThreshold }
-        .take(topK)
-        .forEach { edgesToRender.add(DrawEdge(src, it)) }
-    }
-
-    // --- 3. Pass 2: Orphan Rescue (Incoming Backfill) ---
-    // An "orphan" is a node that is currently rendered (active) but has no visible incoming edges.
-    // We explicitly fetch incoming edges for these to prevent them from looking like start states.
-
-    // Calculate currently visible targets from Pass 1
-    val pass1Targets = edgesToRender.map { it.edge.target }.toSet()
-
-    // The set of nodes currently "in the picture"
-    val activeNodes = (edgesToRender.map { it.src } + pass1Targets + startWeights.keys + finalWeights.keys).toSet()
-
-    // Identify orphans: Active nodes that are NOT start states and NOT visible targets
-    val orphans = activeNodes.filter { node ->
-      !startWeights.containsKey(node) && !pass1Targets.contains(node)
-    }
-
-    orphans.forEach { orphan ->
-      val allIncoming = incomingMap[orphan] ?: emptyList()
-
-      // Select top K incoming edges for this orphan
-      // These are added REGARDLESS of whether the source has used its Top-K quota.
-      allIncoming.sortedByDescending { it.second.weight }
-        .filter { it.second.weight >= pruneThreshold }
-        .take(topK)
-        .forEach { (src, edge) -> edgesToRender.add(DrawEdge(src, edge, isBackfill = true)) }
-    }
-
-    // --- 4. Render Nodes ---
-    // Recalculate rendered states (Backfill might have added new sources)
-    val finalRenderedStates = (edgesToRender.map { it.src } + edgesToRender.map { it.edge.target } + startWeights.keys + finalWeights.keys).toSet()
-
-    // Render Final States
-    finalWeights.forEach { (s, w) ->
-      if (s in finalRenderedStates && w > pruneThreshold) {
-        val wStr = w.toString().take(3)
-        appendLine("  $s [shape = doublecircle, xlabel=\"$wStr\"];")
-      }
-    }
-
-    // Render Start States
-    startWeights.forEach { (s, w) ->
-      if (s in finalRenderedStates && w > pruneThreshold) {
-        appendLine("  __start_$s [shape=point, style=invisible];")
-        appendLine("  __start_$s -> $s [label=\"${w.toString().take(prec)}\"];")
-      }
-    }
-
-    // --- 5. Render Edges ---
-    // Group by (Source, Target) to merge parallel edges into one label
-    val groupedEdges = edgesToRender.groupBy { it.src to it.edge.target }
-
-    groupedEdges.forEach { (key, drawEdges) ->
-      val (src, target) = key
-
-      // Consolidated label
-      val labelText = drawEdges.joinToString("\\n") {
-        val sym = it.edge.label ?: "ε"
-        "$sym ${it.edge.weight.toString().take(prec)}"
+        continue
       }
 
-      // Thicker lines for higher total probability
-      val totalWeight = drawEdges.sumOf { it.edge.weight }
-      val penwidth = 1.0 + (totalWeight * 3.0)
+      var nextN = 0
+      var anyTransition = false
 
-      // Use a dashed style if these are purely backfilled edges (optional, removed for consistency)
-      // appendLine("  $src -> $target [label=\"$labelText\", penwidth=$penwidth];")
-      appendLine("  $src -> $target [label=\"$labelText\", penwidth=$penwidth];")
-    }
+      for (i in 0 until curN) {
+        val src = curActive[i]
+        val srcScore = curScores[src]
+        val out = C.out[src] ?: continue
+        val pos = out.findSym(sid)
+        if (pos < 0) continue
 
-    // --- 6. Render Residuals (Summaries) ---
-    // We draw dashed lines for any weight NOT accounted for by the explicit edges above.
-
-    // A. Outgoing Residuals
-    finalRenderedStates.forEach { src ->
-      val allOutgoing = transitions[src] ?: emptyList()
-      val drawnOutgoing = edgesToRender.filter { it.src == src }.map { it.edge }.toSet()
-
-      val hiddenEdges = allOutgoing.filter { it !in drawnOutgoing }
-
-      if (hiddenEdges.isNotEmpty()) {
-        val hiddenWeight = hiddenEdges.sumOf { it.weight }
-        if (hiddenWeight > pruneThreshold) {
-          appendLine("  $src -> __pruned_out_$src [label=\"<${hiddenEdges.size} others>\\nSUM: ${hiddenWeight.toString().take(prec)}\", style=dotted, fontcolor=gray, color=gray];")
-          appendLine("  __pruned_out_$src [shape=point, style=invisible];")
-        }
-      }
-    }
-
-    // B. Incoming Residuals
-    finalRenderedStates.forEach { target ->
-      if (!startWeights.containsKey(target)) {
-        val allIncoming = incomingMap[target] ?: emptyList()
-        val drawnIncoming = edgesToRender.filter { it.edge.target == target }.map { it.edge }.toSet()
-
-        val hiddenIncoming = allIncoming.filter { it.second !in drawnIncoming }
-
-        if (hiddenIncoming.isNotEmpty()) {
-          val hiddenWeight = hiddenIncoming.sumOf { it.second.weight }
-          if (hiddenWeight > pruneThreshold) {
-            val label = "<${hiddenIncoming.size} others>\\nSUM: ${hiddenWeight.toString().take(prec)}"
-            appendLine("  __hidden_in_$target [shape=point, style=invisible];")
-            appendLine("  __hidden_in_$target -> $target [label=\"$label\", style=dotted, fontcolor=gray, color=gray];")
-          }
-        }
-      }
-    }
-
-    appendLine("}")
-  }
-
-  private val index: Map<Int, Map<String, List<WeightedEdge>>> by lazy {
-    transitions.mapValues { (_, edges) ->
-      edges.filter { it.label != null }
-        .groupBy { it.label!! }
-    }
-  }
-
-  fun score(tokens: List<String>, penalty: Double = -20.0): Double {
-    var currentStates = HashMap(startWeights)
-    if (currentStates.isEmpty()) { println("WARNING: No start states found!"); return Double.NEGATIVE_INFINITY }
-
-    for (token in tokens) {
-      val nextStates = HashMap<Int, Double>()
-      var transitionFound = false
-
-      for ((src, score) in currentStates) {
-        val edges = index[src]?.get(token)
-
-        if (edges != null) {
-          transitionFound = true
-          for (edge in edges) {
-            val newScore = score + edge.weight
-
-            val prev = nextStates[edge.target]
-            nextStates[edge.target] = if (prev == null) newScore else logAddExp(prev, newScore)
+        anyTransition = true
+        val from = out.offsets[pos]
+        val to = out.offsets[pos + 1]
+        for (p in from until to) {
+          val tgt = out.targets[p]
+          val newScore = srcScore + out.weights[p]
+          val prev = nextScores[tgt]
+          if (prev == Double.NEGATIVE_INFINITY) {
+            nextScores[tgt] = newScore
+            nextActive[nextN++] = tgt
+          } else {
+            nextScores[tgt] = LogAddLUT.add(prev, newScore)
           }
         }
       }
 
-      currentStates = if (nextStates.isEmpty()) {
-        currentStates.mapValuesTo(HashMap()) { it.value + penalty }
-      } else nextStates
+      if (!anyTransition) {
+        for (i in 0 until curN) {
+          val st = curActive[i]
+          curScores[st] += penalty
+        }
+      } else {
+        for (i in 0 until curN) curScores[curActive[i]] = Double.NEGATIVE_INFINITY
+
+        val ts = curScores; curScores = nextScores; nextScores = ts
+        val ta = curActive; curActive = nextActive; nextActive = ta
+        curN = nextN
+        if (curN == 0) return Double.NEGATIVE_INFINITY
+      }
     }
 
-    // Final Weights
     var total = Double.NEGATIVE_INFINITY
-    var finalStateCount = 0
-    for ((s, score) in currentStates)
-      finalWeights[s]?.let { fw -> total = logAddExp(total, score + fw); finalStateCount++ }
-
+    for (i in 0 until curN) {
+      val st = curActive[i]
+      val fw = C.finalW[st]
+      if (fw != Double.NEGATIVE_INFINITY) total = LogAddLUT.add(total, curScores[st] + fw)
+    }
     return total
   }
 }
@@ -507,14 +467,6 @@ fun NFA.toWFAWithLM(
     finalWeights = newFinalWeights,
     transitions = newTransitions
   )
-}
-
-// Helper for numerical stability: log(exp(a) + exp(b))
-fun logAddExp(a: Double, b: Double): Double {
-  if (a == Double.NEGATIVE_INFINITY) return b
-  if (b == Double.NEGATIVE_INFINITY) return a
-  val maxVal = max(a, b)
-  return maxVal + ln(1.0 + exp(a + b - 2 * maxVal)) // 2*maxVal cancels out inside exp
 }
 
 fun makeWFA(cfg: CFG, freqNgrams: Map<List<String>, Double>, allNgrams: Set<List<String>>): WFA {
