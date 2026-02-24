@@ -277,6 +277,147 @@ data class WFA(
     }
     return total
   }
+
+  fun toGraphviz(
+    name: String = "WFA",
+    pruneThreshold: Double = 0.00, // Don't show edges with p < 1%
+    topK: Int = 9                  // Show top K edges per state (both in and out)
+  ): String = buildString {
+    val prec = 4
+    appendLine("digraph $name {")
+    appendLine("  rankdir=LR;")
+    appendLine("  node [shape = circle, fontname = \"Helvetica\"];")
+    appendLine("  edge [fontname = \"Helvetica\"];")
+
+    // --- 1. Indexing & Pre-calculation ---
+    // Map: Target -> List<Pair<Source, Edge>>
+    val incomingMap = HashMap<Int, MutableList<Pair<Int, WeightedEdge>>>()
+    transitions.forEach { (src, edges) ->
+      edges.forEach { edge ->
+        incomingMap.getOrPut(edge.target) { ArrayList() }.add(src to edge)
+      }
+    }
+
+    // --- 2. Pass 1: Forward Top-K (Standard) ---
+    // Helper data class to track unique edges to draw
+    data class DrawEdge(val src: Int, val edge: WeightedEdge, val isBackfill: Boolean = false)
+    val edgesToRender = HashSet<DrawEdge>()
+
+    transitions.forEach { (src, edges) ->
+      edges.sortedByDescending { it.weight }
+        .filter { it.weight >= pruneThreshold }
+        .take(topK)
+        .forEach { edgesToRender.add(DrawEdge(src, it)) }
+    }
+
+    // --- 3. Pass 2: Orphan Rescue (Incoming Backfill) ---
+    // An "orphan" is a node that is currently rendered (active) but has no visible incoming edges.
+    // We explicitly fetch incoming edges for these to prevent them from looking like start states.
+
+    // Calculate currently visible targets from Pass 1
+    val pass1Targets = edgesToRender.map { it.edge.target }.toSet()
+
+    // The set of nodes currently "in the picture"
+    val activeNodes = (edgesToRender.map { it.src } + pass1Targets + startWeights.keys + finalWeights.keys).toSet()
+
+    // Identify orphans: Active nodes that are NOT start states and NOT visible targets
+    val orphans = activeNodes.filter { node ->
+      !startWeights.containsKey(node) && !pass1Targets.contains(node)
+    }
+
+    orphans.forEach { orphan ->
+      val allIncoming = incomingMap[orphan] ?: emptyList()
+
+      // Select top K incoming edges for this orphan
+      // These are added REGARDLESS of whether the source has used its Top-K quota.
+      allIncoming.sortedByDescending { it.second.weight }
+        .filter { it.second.weight >= pruneThreshold }
+        .take(topK)
+        .forEach { (src, edge) -> edgesToRender.add(DrawEdge(src, edge, isBackfill = true)) }
+    }
+
+    // --- 4. Render Nodes ---
+    // Recalculate rendered states (Backfill might have added new sources)
+    val finalRenderedStates = (edgesToRender.map { it.src } + edgesToRender.map { it.edge.target } + startWeights.keys + finalWeights.keys).toSet()
+
+    // Render Final States
+    finalWeights.forEach { (s, w) ->
+      if (s in finalRenderedStates && w > pruneThreshold) {
+        val wStr = w.toString().take(3)
+        appendLine("  $s [shape = doublecircle, xlabel=\"$wStr\"];")
+      }
+    }
+
+    // Render Start States
+    startWeights.forEach { (s, w) ->
+      if (s in finalRenderedStates && w > pruneThreshold) {
+        appendLine("  __start_$s [shape=point, style=invisible];")
+        appendLine("  __start_$s -> $s [label=\"${w.toString().take(prec)}\"];")
+      }
+    }
+
+    // --- 5. Render Edges ---
+    // Group by (Source, Target) to merge parallel edges into one label
+    val groupedEdges = edgesToRender.groupBy { it.src to it.edge.target }
+
+    groupedEdges.forEach { (key, drawEdges) ->
+      val (src, target) = key
+
+      // Consolidated label
+      val labelText = drawEdges.joinToString("\\n") {
+        val sym = it.edge.label ?: "ε"
+        "$sym ${it.edge.weight.toString().take(prec)}"
+      }
+
+      // Thicker lines for higher total probability
+      val totalWeight = drawEdges.sumOf { it.edge.weight }
+      val penwidth = 1.0 + (totalWeight * 3.0)
+
+      // Use a dashed style if these are purely backfilled edges (optional, removed for consistency)
+      // appendLine("  $src -> $target [label=\"$labelText\", penwidth=$penwidth];")
+      appendLine("  $src -> $target [label=\"$labelText\", penwidth=$penwidth];")
+    }
+
+    // --- 6. Render Residuals (Summaries) ---
+    // We draw dashed lines for any weight NOT accounted for by the explicit edges above.
+
+    // A. Outgoing Residuals
+    finalRenderedStates.forEach { src ->
+      val allOutgoing = transitions[src] ?: emptyList()
+      val drawnOutgoing = edgesToRender.filter { it.src == src }.map { it.edge }.toSet()
+
+      val hiddenEdges = allOutgoing.filter { it !in drawnOutgoing }
+
+      if (hiddenEdges.isNotEmpty()) {
+        val hiddenWeight = hiddenEdges.sumOf { it.weight }
+        if (hiddenWeight > pruneThreshold) {
+          appendLine("  $src -> __pruned_out_$src [label=\"<${hiddenEdges.size} others>\\nSUM: ${hiddenWeight.toString().take(prec)}\", style=dotted, fontcolor=gray, color=gray];")
+          appendLine("  __pruned_out_$src [shape=point, style=invisible];")
+        }
+      }
+    }
+
+    // B. Incoming Residuals
+    finalRenderedStates.forEach { target ->
+      if (!startWeights.containsKey(target)) {
+        val allIncoming = incomingMap[target] ?: emptyList()
+        val drawnIncoming = edgesToRender.filter { it.edge.target == target }.map { it.edge }.toSet()
+
+        val hiddenIncoming = allIncoming.filter { it.second !in drawnIncoming }
+
+        if (hiddenIncoming.isNotEmpty()) {
+          val hiddenWeight = hiddenIncoming.sumOf { it.second.weight }
+          if (hiddenWeight > pruneThreshold) {
+            val label = "<${hiddenIncoming.size} others>\\nSUM: ${hiddenWeight.toString().take(prec)}"
+            appendLine("  __hidden_in_$target [shape=point, style=invisible];")
+            appendLine("  __hidden_in_$target -> $target [label=\"$label\", style=dotted, fontcolor=gray, color=gray];")
+          }
+        }
+      }
+    }
+
+    appendLine("}")
+  }
 }
 
 class KneserNeyLM(
