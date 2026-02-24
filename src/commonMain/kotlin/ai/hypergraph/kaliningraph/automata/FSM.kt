@@ -38,6 +38,23 @@ class DFSM(
     return countFrom(q_alpha)
   }
 
+  fun recognizes(word: List<String>, tmLst: List<String>): Boolean {
+    // Build encoder: terminal string -> symbol id (0..sigma-1)
+    val symToId = HashMap<String, Int>(tmLst.size * 2)
+    for (i in tmLst.indices) symToId[tmLst[i]] = i
+    return recognizes(word, symToId)
+  }
+
+  fun recognizes(word: List<String>, symToId: Map<String, Int>): Boolean {
+    var q = q_alpha
+    for (tok in word) {
+      val a = symToId[tok] ?: return false
+      if (a !in 0 until width) return false
+      q = deltaMap[q]?.get(a) ?: return false
+    }
+    return q in F
+  }
+
   fun summarize() = "(states=${Q.size}, transitions=${deltaMap.values.sumOf { it.values.size }})"
 }
 

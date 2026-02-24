@@ -10,6 +10,7 @@ import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton.*
 import java.util.PriorityQueue
 import java.util.concurrent.PriorityBlockingQueue
+import java.util.stream.Stream
 import kotlin.random.Random
 import kotlin.time.*
 
@@ -147,6 +148,121 @@ fun BAutomaton.decodeDFA(
 
   val deduped = fullTrajectories.distinct().map { it.toString() }.toList()
 
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${beam.size} in queue")
+  return deduped
+}
+
+// Java Stream doesn't have mapNotNull in Kotlin, so add a tiny helper:
+inline fun <T, R : Any> Stream<T>.mapNotNull(crossinline f: (T) -> R?): Stream<R> =
+  this.map { f(it) }.filter { it != null }.map { it!! }
+
+fun DFSM.decodeDFA(
+  mc: MarkovChain<Σᐩ>,
+  dec: Map<Char, Σᐩ>,
+  callback: (Σᐩ) -> Unit = {},
+  timeout: Duration = Duration.INFINITE,
+  beamWidth: Long = 40_000_000L,
+): List<Σᐩ> {
+  val startTime = TimeSource.Monotonic.markNow()
+
+  // ------------------------------------------------------------------
+  // IMPORTANT: DFSM labels are Int terminal-IDs 0..width-1
+  // So decoding should be "a -> token".
+  //
+  // We *do not sort* keys (sorting scrambles the intended order).
+  //
+  // We support 2 common conventions:
+  //  (1) index-by-insertion-order: a is the index into dec.entries iteration order
+  //  (2) contiguous char block: keys are (base + a) for some base char
+  // ------------------------------------------------------------------
+
+  val entriesInOrder: List<Map.Entry<Char, Σᐩ>> = dec.entries.toList() // preserves iteration order
+  val byIndex: List<Σᐩ> = entriesInOrder.map { it.value }
+
+  val byCode: Map<Int, Σᐩ> = entriesInOrder.associate { (ch, tok) -> ch.code to tok }
+  val codesSorted: IntArray = entriesInOrder.map { it.key.code }.sorted().toIntArray()
+  val base: Int? = codesSorted.firstOrNull()
+
+  val hasContiguousBlock: Boolean = run {
+    val b = base ?: return@run false
+    if (dec.size < width) return@run false
+    var i = 0
+    while (i < width) {
+      if (!byCode.containsKey(b + i)) return@run false
+      i++
+    }
+    true
+  }
+
+  fun decodeSym(a: Int): Σᐩ? {
+    // If you encoded as contiguous chars (base + a), use that.
+    if (hasContiguousBlock) {
+      val tok = byCode[(base!! + a)]
+      if (tok != null) return tok
+    }
+    // Otherwise, treat a as an index into insertion order.
+    return byIndex.getOrNull(a)
+  }
+
+  // Trajectory (store last mc.memory tokens with newest at index 0)
+  data class DFSMTrajectory(
+    val ctx: Array<Σᐩ?>,
+    val lastState: String,
+    val score: Double,
+    val out: String
+  ) : Comparable<DFSMTrajectory> {
+    override fun compareTo(other: DFSMTrajectory): Int =
+      other.score.compareTo(score) // max-heap behavior
+
+    fun isComplete(dfsm: DFSM): Boolean = lastState in dfsm.F
+    fun hasOutgoing(dfsm: DFSM): Boolean = dfsm.deltaMap[lastState]?.isNotEmpty() == true
+
+    fun append(tok: Σᐩ, nextState: String, nextScore: Double): DFSMTrajectory {
+      val newCtx = ctx.copyOf()
+      for (i in newCtx.size - 1 downTo 1) newCtx[i] = newCtx[i - 1]
+      newCtx[0] = tok
+      val newOut = if (out.isEmpty()) tok else "$out $tok"
+      return DFSMTrajectory(newCtx, nextState, nextScore, newOut)
+    }
+  }
+
+  val fullTrajectories = PriorityBlockingQueue<DFSMTrajectory>(10_000)
+  val beam = PriorityQueue<DFSMTrajectory>()
+
+  beam.add(DFSMTrajectory(Array(mc.memory) { null }, q_alpha, 0.0, ""))
+
+  while (
+    fullTrajectories.size.toLong() < beamWidth &&
+    beam.isNotEmpty() &&
+    startTime.elapsedNow() < timeout
+  ) {
+    val nextBeam = beam.parallelStream().flatMap { partTraj ->
+      // match your original: take first (m-1) of newest-first buffer, reverse to oldest..newest
+      val lastToks: List<Σᐩ?> =
+        partTraj.ctx.asList().take(mc.memory - 1).asReversed()
+
+      val row = deltaMap[partTraj.lastState].orEmpty()
+
+      row.entries.stream()
+        .mapNotNull { (a, nxt) ->
+          val decTok = decodeSym(a) ?: return@mapNotNull null
+          val nextScore = partTraj.score + mc.scoreChunk(lastToks + decTok)
+          partTraj.append(decTok, nxt, nextScore)
+        }
+        .flatMap { traj ->
+          if (traj.isComplete(this)) {
+            fullTrajectories.add(traj)
+            callback(traj.out)
+            if (traj.hasOutgoing(this)) Stream.of(traj) else Stream.empty()
+          } else Stream.of(traj)
+        }
+    }.sorted().limit(beamWidth).toList()
+
+    beam.clear()
+    beam.addAll(nextBeam)
+  }
+
+  val deduped = fullTrajectories.asSequence().map { it.out }.distinct().toList()
   println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${beam.size} in queue")
   return deduped
 }
