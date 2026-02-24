@@ -126,6 +126,8 @@ kotlin {
         // https://github.com/UnitTestBot/kosat
         implementation("org.logicng:logicng:2.6.0")
 
+        implementation("com.google.ortools:ortools-java:9.15.6755")
+
         val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")

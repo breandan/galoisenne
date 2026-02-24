@@ -1,10 +1,8 @@
 package ai.hypergraph.kaliningraph.parsing.approximations
 
-import ai.hypergraph.kaliningraph.parsing.CFG
-import ai.hypergraph.kaliningraph.parsing.NFA
+import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
-import ai.hypergraph.kaliningraph.repair.toyPython
-import kotlin.math.max
+import kotlin.math.*
 import kotlin.time.TimeSource
 
 data class WFA(
@@ -191,9 +189,7 @@ data class WFA(
       allIncoming.sortedByDescending { it.second.weight }
         .filter { it.second.weight >= pruneThreshold }
         .take(topK)
-        .forEach { (src, edge) ->
-          edgesToRender.add(DrawEdge(src, edge, isBackfill = true))
-        }
+        .forEach { (src, edge) -> edgesToRender.add(DrawEdge(src, edge, isBackfill = true)) }
     }
 
     // --- 4. Render Nodes ---
@@ -277,6 +273,49 @@ data class WFA(
     }
 
     appendLine("}")
+  }
+
+  private val index: Map<Int, Map<String, List<WeightedEdge>>> by lazy {
+    transitions.mapValues { (_, edges) ->
+      edges.filter { it.label != null }
+        .groupBy { it.label!! }
+    }
+  }
+
+  fun score(tokens: List<String>, penalty: Double = -20.0): Double {
+    var currentStates = HashMap(startWeights)
+    if (currentStates.isEmpty()) { println("WARNING: No start states found!"); return Double.NEGATIVE_INFINITY }
+
+    for (token in tokens) {
+      val nextStates = HashMap<Int, Double>()
+      var transitionFound = false
+
+      for ((src, score) in currentStates) {
+        val edges = index[src]?.get(token)
+
+        if (edges != null) {
+          transitionFound = true
+          for (edge in edges) {
+            val newScore = score + edge.weight
+
+            val prev = nextStates[edge.target]
+            nextStates[edge.target] = if (prev == null) newScore else logAddExp(prev, newScore)
+          }
+        }
+      }
+
+      currentStates = if (nextStates.isEmpty()) {
+        currentStates.mapValuesTo(HashMap()) { it.value + penalty }
+      } else nextStates
+    }
+
+    // Final Weights
+    var total = Double.NEGATIVE_INFINITY
+    var finalStateCount = 0
+    for ((s, score) in currentStates)
+      finalWeights[s]?.let { fw -> total = logAddExp(total, score + fw); finalStateCount++ }
+
+    return total
   }
 }
 
@@ -468,6 +507,14 @@ fun NFA.toWFAWithLM(
     finalWeights = newFinalWeights,
     transitions = newTransitions
   )
+}
+
+// Helper for numerical stability: log(exp(a) + exp(b))
+fun logAddExp(a: Double, b: Double): Double {
+  if (a == Double.NEGATIVE_INFINITY) return b
+  if (b == Double.NEGATIVE_INFINITY) return a
+  val maxVal = max(a, b)
+  return maxVal + ln(1.0 + exp(a + b - 2 * maxVal)) // 2*maxVal cancels out inside exp
 }
 
 fun makeWFA(cfg: CFG, freqNgrams: Map<List<String>, Double>, allNgrams: Set<List<String>>): WFA {

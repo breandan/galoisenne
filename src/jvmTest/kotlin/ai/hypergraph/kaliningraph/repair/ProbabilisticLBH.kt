@@ -720,7 +720,7 @@ class ProbabilisticLBH {
   }
 
   val slp by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/slp.cnf").readText().trimIndent().lines()
+    File(File("").absolutePath + "/src/jvmTest/resources/slp_k2_n2.cnf").readText().trimIndent().lines()
       .map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
   }
 
@@ -753,7 +753,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */
-  @Test // ~30s
+  @Test // ~21s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
     println("Nonterminals: ${cfg.nonterminals.size}")
@@ -762,7 +762,7 @@ class ProbabilisticLBH {
       val total = 100
       Python.testCases.take(total).forEach { (broke, fixed) ->
 //    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-        val t = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
+        val t = repairWithTCC(broke.tokenizeByWhitespace(), cfg, vanillaS2PCFGBCC)
           ?.sampleStrWithoutReplacement(cfg.tmLst)
           ?.take(1000)?.toList() ?: emptyList()
 
@@ -783,43 +783,14 @@ class ProbabilisticLBH {
 */
   @Test
   fun testCompactCircuitEquivalence() {
-    val cfg = Grammars.seq2parsePythonCFG
-    measureTime {
-      Python.testCases.take(10).forEach { (broke, fixed) ->
-//    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-//      .take(100)
-
-        println(broke)
-        val gre0 = repairWithGRE(broke.tokenizeByWhitespace(), cfg)
-        val gre1 = repairWithCompactCircuit(broke.tokenizeByWhitespace(), cfg)
-        val gre0_dfa0 = gre0!!.toDFSMDirect(cfg.tmLst)
-        val gre0_dfa1 = gre0!!.toDFSM(cfg.tmLst)
-        val gre1_dfa0 = gre1!!.toDFSMDirect(cfg.tmLst)
-        val gre1_dfa1 = gre1!!.toDFSM(cfg.tmLst)
-        val gre0_dfa0_min = gre0_dfa0!!.minimize()
-        val gre0_dfa1_min = gre0_dfa1!!.minimize()
-        val gre1_dfa0_min = gre1_dfa0!!.minimize()
-        val gre1_dfa1_min = gre1_dfa1!!.minimize()
-        println("    GRE0+DFA0 => |L|: ${gre0_dfa0.countWords()}")
-        println("    GRE0+DFA1 => |L|: ${gre0_dfa1.countWords()}")
-        println("    GRE1+DFA0 => |L|: ${gre1_dfa0.countWords()}")
-        println("    GRE1+DFA1 => |L|: ${gre1_dfa1.countWords()}")
-        println("GRE0+DFA0+MIN => |L|: ${gre0_dfa0_min.countWords()}")
-        println("GRE0+DFA1+MIN => |L|: ${gre0_dfa1_min.countWords()}")
-        println("GRE1+DFA0+MIN => |L|: ${gre1_dfa0_min.countWords()}")
-        println("GRE1+DFA1+MIN => |L|: ${gre1_dfa1_min.countWords()}")
-//      println("Min fast size: ${fastGRE.toDFSMDirect(cfg.tmLst).minimize().countWords()}")
-//      println("Min slow size: ${slowGRE.toDFSMDirect(cfg.tmLst).minimize().countWords()}")
-        val t = gre1
-          .also { gRE -> println("DFSM size: ${gRE.toDFSM(cfg.tmLst)?.minimize()?.Q?.size}") }
-          .sampleStrWithoutReplacement(cfg.tmLst)
-          .take(100).toList() ?: emptyList<Σᐩ>()
-
-//      t.onEach {
-//        assertTrue(it in vanillaS2PCFG.language)
-//        if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
-//      }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
-      }
-    }.also { println("Took: $it") }
+    val cfg = toyPython
+    val broke = "BOS NAME = NAME ( NAME + ) , ) EOS".tokenizeByWhitespace()
+    val x = repairWithTCC(broke, cfg)!!.toDFSMDirect(cfg.tmLst)
+    val y = repairWithGRE(broke, cfg)!!.toDFSMDirect(cfg.tmLst)
+    val tx = x.sampleUniformly(cfg.tmLst).take(1000).toSet()
+    val ty = y.sampleUniformly(cfg.tmLst).take(1000).toSet()
+    println("|tx|=${tx.size}, |ty|=${ty.size}")
+    assertEquals(50, tx.size)
+    assertEquals(tx, ty)
   }
 }

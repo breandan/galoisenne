@@ -6,7 +6,6 @@ import ai.hypergraph.kaliningraph.automata.latestLangEditDistance
 import ai.hypergraph.kaliningraph.repair.LED_BUFFER
 import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import ai.hypergraph.kaliningraph.types.cache
-import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
@@ -19,37 +18,158 @@ private fun LongArray.hasInter(other: LongArray): Boolean {
 }
 private infix fun LongArray.orAssign(other: LongArray) { for (i in indices) this[i] = this[i] or other[i] }
 
-data class Rank1Component(val U: LongArray, val V: LongArray, val W: LongArray)
+data class UVW(val U: LongArray, val V: LongArray, val W: LongArray)
 
-val CFG.rankOneDecomposition: Array<Rank1Component> by cache {
+// Computes maximal triclique cover with a greedy heuristic
+val CFG.greedyTricliqueCover: Array<UVW> by cache {
+  val timer = TimeSource.Monotonic.markNow()
   val numWords = (nonterminals.size + 63) shr 6
 
-  // Flatten vindex into (A, B, C) triples and group by Left Child (B)
-  vindex.withIndex()
-    .flatMap { (A, rhs) -> (0 until rhs.size step 2).map { i -> Triple(A, rhs[i], rhs[i+1]) } }
-    .groupBy { it.second } // Group by B
-    .flatMap { (B, triples) ->
-      // Inside B, group by Output (A) -> List of Right Children (C)
-      // Then group by the Signature (Set of C's) -> List of Outputs (A's)
-      triples.groupBy { it.first }
-        .mapValues { (_, v) -> v.map { it.third }.sorted() } // A -> [C1, C2...]
-        .entries.groupBy({ it.value }, { it.key }) // [C1...] -> [A1, A2...]
-        .map { (CS, AS) ->
-          Rank1Component(
-            LongArray(numWords).apply { setBit(B) },               // U = {B}
-            LongArray(numWords).apply { CS.forEach { setBit(it) } }, // V = {C...}
-            LongArray(numWords).apply { AS.forEach { setBit(it) } } // W = {A...}
-          )
-        }
-    }.toTypedArray()
+  // 1. Flatten all rules into R = {(A, B, C)}
+  val R = mutableSetOf<Triple<Int, Int, Int>>()
+  vindex.withIndex().forEach { (A, rhs) -> for (i in 0 until rhs.size step 2) R.add(Triple(A, rhs[i], rhs[i+1])) }
+
+  // Adjacency maps for fast intersection queries
+  val aMap = mutableMapOf<Pair<Int, Int>, Set<Int>>()
+  val bMap = mutableMapOf<Pair<Int, Int>, Set<Int>>()
+  val cMap = mutableMapOf<Pair<Int, Int>, Set<Int>>()
+
+  R.forEach { (a, b, c) ->
+    (aMap.getOrPut(b to c) { mutableSetOf() } as MutableSet).add(a)
+    (bMap.getOrPut(a to c) { mutableSetOf() } as MutableSet).add(b)
+    (cMap.getOrPut(a to b) { mutableSetOf() } as MutableSet).add(c)
+  }
+
+  // Helpers to fetch intersection of valid nonterminals
+  fun getU(W: Set<Int>, V: Set<Int>): Set<Int> {
+    var res: Set<Int>? = null
+    for (a in W) for (c in V) {
+      val s = bMap[a to c]
+      if (s.isNullOrEmpty()) return emptySet()
+      res = res?.intersect(s) ?: s
+    }
+    return res ?: emptySet()
+  }
+
+  fun getV(W: Set<Int>, U: Set<Int>): Set<Int> {
+    var res: Set<Int>? = null
+    for (a in W) for (b in U) {
+      val s = cMap[a to b]
+      if (s.isNullOrEmpty()) return emptySet()
+      res = res?.intersect(s) ?: s
+    }
+    return res ?: emptySet()
+  }
+
+  fun getW(U: Set<Int>, V: Set<Int>): Set<Int> {
+    var res: Set<Int>? = null
+    for (b in U) for (c in V) {
+      val s = aMap[b to c]
+      if (s.isNullOrEmpty()) return emptySet()
+      res = res?.intersect(s) ?: s
+    }
+    return res ?: emptySet()
+  }
+
+  // 2. Discover maximal 3-bicliques (Alternating Optimization)
+  data class Rect(val W: Set<Int>, val U: Set<Int>, val V: Set<Int>) {
+    val edges: Set<Triple<Int, Int, Int>> by lazy {
+      val e = mutableSetOf<Triple<Int, Int, Int>>()
+      for (a in W) for (b in U) for (c in V) e.add(Triple(a, b, c))
+      e
+    }
+  }
+
+  val maxRects = mutableSetOf<Rect>()
+  for (seed in R) {
+    // Start with a greedy seed: max out W immediately for a given (B, C)
+    var W = aMap[seed.second to seed.third]!!
+    var U = setOf(seed.second)
+    var V = setOf(seed.third)
+
+    // Bounce between dimensions until the biclique stops growing
+    while (true) {
+      val nextU = getU(W, V)
+      val nextV = getV(W, nextU)
+      val nextW = getW(nextU, nextV)
+
+      if (W == nextW && U == nextU && V == nextV) break
+      W = nextW; U = nextU; V = nextV
+    }
+    maxRects.add(Rect(W, U, V))
+  }
+
+  // 3. Greedy Set Cover Phase
+  val uncov = R.toMutableSet()
+  val cover = mutableListOf<UVW>()
+  val pool = maxRects.toMutableList()
+
+  while (uncov.isNotEmpty()) {
+    // Find the rectangle that eats the biggest chunk of remaining rules
+    val best = pool.maxByOrNull { rect -> rect.edges.count { it in uncov } }
+
+    // Safety break, though theoretically impossible if generated from R
+    if (best == null || best.edges.none { it in uncov }) break
+
+    cover.add(UVW(
+      LongArray(numWords).apply { best.U.forEach { setBit(it) } },
+      LongArray(numWords).apply { best.V.forEach { setBit(it) } },
+      LongArray(numWords).apply { best.W.forEach { setBit(it) } }
+    ))
+
+    // Remove the covered edges and discard the rectangle from the pool
+    uncov.removeAll(best.edges)
+    pool.remove(best)
+  }
+
+  println("Computed greedy biclique cover in ${timer.elapsedNow()}")
+  cover.toTypedArray()//.also { it.prettyPrint(this) }
 }
 
-fun repairWithCompactCircuit(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
+fun Array<UVW>.prettyPrint(cfg: CFG) {
+  println("Biclique Cover (K=${size} components):")
+
+  // Helper to decode the bitset back into nonterminal names
+  fun LongArray.decode(): String {
+    val items = mutableListOf<String>()
+    for (w in indices) {
+      var word = this[w]
+      while (word != 0L) {
+        val bit = word.countTrailingZeroBits()
+        val idx = (w shl 6) + bit
+        items.add(cfg.nonterminals.toList()[idx])
+        word = word and (word - 1L) // Clear lowest set bit
+      }
+    }
+    return items.joinToString(", ", "{", "}")
+  }
+
+  this.forEachIndexed { index, comp ->
+    val wStr = comp.W.decode()
+    val uStr = comp.U.decode()
+    val vStr = comp.V.decode()
+    println("  [${index.toString().padStart(3, '0')}] $wStr -> $uStr $vStr")
+  }
+}
+
+private fun String.deserializeLongArray(): LongArray =
+  if (isEmpty()) LongArray(0) else split(",").map { it.toULong(16).toLong() }.toLongArray()
+
+fun String.deserializeUVW(): Array<UVW> =
+  if (isEmpty()) emptyArray() else split(";").map { uvwStr ->
+    val parts = uvwStr.split("|")
+    UVW(
+      U = parts[0].deserializeLongArray(),
+      V = parts[1].deserializeLongArray(),
+      W = parts[2].deserializeLongArray()
+    )
+  }.toTypedArray()
+
+fun repairWithTCC(brokenStr: List<Σᐩ>, cfg: CFG, bcc: Array<UVW> = cfg.greedyTricliqueCover): GRE? {
   val startT = TimeSource.Monotonic.markNow()
   val nT = cfg.nonterminals.size
   val numWords = (nT + 63) shr 6
-  val components = cfg.rankOneDecomposition
-  val K = components.size
+  val K = bcc.size
 
   // Buffer for FSA-based boolean parsing
   fun booleanParse(fsa: FSA): Pair<Int, Array<Array<LongArray>>>? {
@@ -65,7 +185,7 @@ fun repairWithCompactCircuit(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
     // Inline helper to update features for a specific cell (p, q)
     fun update(p: Int, q: Int, cell: LongArray) {
       for (k in 0 until K) {
-        val comp = components[k]
+        val comp = bcc[k]
         val base = k * featWords
         // If cell overlaps U_k, set bit q in rowFeats[p]
         if (cell.hasInter(comp.U)) {
@@ -112,7 +232,7 @@ fun repairWithCompactCircuit(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
               overlap = true; break
             }
           }
-          if (overlap) cell orAssign components[k].W
+          if (overlap) cell orAssign bcc[k].W
         }
 
         if (dist > 1) update(p, q, cell)

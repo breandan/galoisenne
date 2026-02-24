@@ -1,11 +1,6 @@
 package ai.hypergraph.kaliningraph.sat
 
-import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.tensor.*
-import ai.hypergraph.kaliningraph.theory.prefAttach
-import ai.hypergraph.kaliningraph.times
-import ai.hypergraph.kaliningraph.types.A
-import ai.hypergraph.kaliningraph.types.A_AUG
 import org.junit.jupiter.api.Test
 import org.logicng.formulas.Formula
 import kotlin.random.Random

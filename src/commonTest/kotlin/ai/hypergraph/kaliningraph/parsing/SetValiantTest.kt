@@ -38,9 +38,10 @@ class SetValiantTest {
   @Test
   fun testStressRecognizer() {
     val g = Grammars.seq2parsePythonVanillaCFG
-    g.sliceSample(20).take(10000).forEach {
+    val eosTerms = setOf("DEDENT", "NEWLINE", "EOS")
+    g.sliceSample(20).take(10_000).forEach {
       assertTrue(it.matches(g))
-      assertFalse(it.tokenizeByWhitespace().dropLastWhile { it == "DEDENT" || it == "NEWLINE" }.matches(g))
+      assertFalse(it.tokenizeByWhitespace().dropLastWhile { it in eosTerms }.matches(g))
     }
   }
 
