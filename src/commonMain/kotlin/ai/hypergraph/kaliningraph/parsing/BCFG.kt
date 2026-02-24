@@ -201,15 +201,12 @@ fun repairWithTCC(brokenStr: List<Σᐩ>, cfg: CFG, bcc: Array<UVW> = cfg.greedy
     }
 
     // 1. Base Cases (Terminals)
-    fsa.allIndexedTxs2(cfg.grpUPs, cfg.bindex).forEach { (p, nt, q) ->
-      mat[p][q].setBit(nt)
-    }
+    fsa.allIndexedTxs2(cfg.grpUPs, cfg.bindex).forEach { (p, nt, q) -> mat[p][q].setBit(nt) }
 
     // Init features for length-1 spans (transitions p -> p+1)
     // FIX: Iterate only up to nS - 1 to prevent IndexOutOfBounds when accessing p+1
-    for (p in 0 until nS - 1) {
+    for (p in 0 until nS - 1)
       fsa.allPairs[p][p + 1]?.let { update(p, p + 1, mat[p][p + 1]) }
-    }
 
     // 2. Main DP Loop (CYK-style)
     var minRad = Int.MAX_VALUE
