@@ -13,6 +13,80 @@ class TricliqueCoverSolver(val cfg: CFG, var bcc: Array<UVW>? = null) {
   private val Int.bitMask get() = 1L shl (this and 63)
   private fun LongArray.setBit(idx: Int) { this[idx.wordIdx] = this[idx.wordIdx] or idx.bitMask }
 
+  private val ntById: List<String> by lazy { cfg.nonterminals.toList() }
+  private fun ntName(idx: Int): String = ntById.getOrElse(idx) { "<nt:$idx>" }
+
+  private inline fun LongArray.forEachSetBit(f: (Int) -> Unit) {
+    for (w in indices) {
+      var x = this[w]
+      while (x != 0L) {
+        val b = x.countTrailingZeroBits()
+        f((w shl 6) + b)
+        x = x and (x - 1L)
+      }
+    }
+  }
+
+  private fun LongArray.popCount(): Int = sumOf { it.countOneBits() }
+
+  private fun LongArray.render(symbolOf: (Int) -> String): String =
+    buildString {
+      append("{")
+      var first = true
+      forEachSetBit { idx ->
+        if (!first) append(", ")
+        append(symbolOf(idx))
+        first = false
+      }
+      append("}")
+    }
+
+  private fun UVW.volume(): Long = W.popCount().toLong() * U.popCount().toLong() * V.popCount().toLong()
+
+  /**
+   * Summarize the largest tricliques in the chosen cover.
+   *
+   * W = parent nonterminals A
+   * U = left-child nonterminals B
+   * V = right-child nonterminals C
+   *
+   * By default, symbols are printed as raw integer ids. If you have an inverse
+   * index, pass it in via `symbolOf`.
+   */
+  fun summary(k: Int = 10): String {
+    val cover = bcc ?: return "Triclique cover is null."
+    if (cover.isEmpty()) return "Triclique cover is empty."
+
+    val top = cover.indices
+      .map { i -> i to cover[i] }
+      .sortedWith(
+        compareByDescending<Pair<Int, UVW>> { it.second.volume() }
+          .thenByDescending { it.second.W.popCount() }
+          .thenByDescending { it.second.U.popCount() }
+          .thenByDescending { it.second.V.popCount() }
+          .thenBy { it.first }
+      )
+      .take(k.coerceAtLeast(0))
+
+    val totalVolume = cover.sumOf { it.volume() }
+
+    return buildString {
+      appendLine("Triclique cover: ${cover.size} tricliques")
+      appendLine("Total covered cartesian volume: $totalVolume")
+      appendLine("Top ${top.size} tricliques by |W|×|U|×|V|:")
+      for ((rank, entry) in top.withIndex()) {
+        val (idx, t) = entry
+        val wN = t.W.popCount()
+        val uN = t.U.popCount()
+        val vN = t.V.popCount()
+        appendLine("#${rank + 1} [cover[$idx]] volume=${t.volume()} ($wN × $uN × $vN)")
+        appendLine("  W / parents A ($wN): ${t.W.render(::ntName)}")
+        appendLine("  U / left    B ($uN): ${t.U.render(::ntName)}")
+        appendLine("  V / right   C ($vN): ${t.V.render(::ntName)}")
+      }
+    }.trimEnd()
+  }
+
   init {
     if (bcc == null) {
       var greedyCoverSize = 0

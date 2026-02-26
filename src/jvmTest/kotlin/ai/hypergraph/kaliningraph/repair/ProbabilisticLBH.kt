@@ -3,6 +3,7 @@ package ai.hypergraph.kaliningraph.repair
 import ai.hypergraph.kaliningraph.parsing.Grammars
 import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.languages.*
 import ai.hypergraph.kaliningraph.languages.Python
 import ai.hypergraph.kaliningraph.sat.summarizeT
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
@@ -533,18 +534,7 @@ class ProbabilisticLBH {
       .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
   }
 
-  val k1 by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/fun_k1.cnf")
-      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
-  }
-  val k2 by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/fun_k2.cnf")
-      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
-  }
-  val k3 by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/fun_k3.cnf")
-      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
-  }
+
 
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testMiniKTAPI"
@@ -753,29 +743,28 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */
-  @Test // ~21s
+  @Test // ~2m 6s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
     println("Nonterminals: ${cfg.nonterminals.size}")
+    var hash = 0
     measureTime {
       var precision = 0
-      val total = 100
+      val total = 1000
       Python.testCases.take(total).forEach { (broke, fixed) ->
-//    val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg)
-        val t = repairWithTCC(broke.tokenizeByWhitespace(), cfg, vanillaS2PCFGBCC)
-          ?.sampleStrWithoutReplacement(cfg.tmLst)
-          ?.take(1000)?.toList() ?: emptyList()
-
+        val t = initiateSerialRepair(broke.tokenizeByWhitespace(), cfg).take(1000).toList()
+        hash += t.size
 //      t.take(100).onEach {
 //        assertTrue(it in vanillaS2PCFG.language)
 //        if (3 < levenshtein(broke, it)) println(levenshteinAlign(broke, it).paintANSIColors())
 //      }.toList().also { assertTrue(it.isNotEmpty(), "Empty repair!\n$broke") }
-        println("Took: ${t.size}")
 
         if (fixed in t) precision++
       }
       println("Precision: ${precision / total.toDouble()}")
     }.also { println("Took: $it") }
+
+    assertEquals(898359, hash)
   }
 
 /*
@@ -785,7 +774,7 @@ class ProbabilisticLBH {
   fun testCompactCircuitEquivalence() {
     val cfg = toyPython
     val broke = "BOS NAME = NAME ( NAME + ) , ) EOS".tokenizeByWhitespace()
-    val x = repairWithTCC(broke, cfg)!!.toDFSMDirect(cfg.tmLst)
+    val x = repairWithSparseGRE(broke, cfg)!!.toDFSMDirect(cfg.tmLst)
     val y = repairWithGRE(broke, cfg)!!.toDFSMDirect(cfg.tmLst)
     val tx = x.sampleUniformly(cfg.tmLst).take(1000).toSet()
     val ty = y.sampleUniformly(cfg.tmLst).take(1000).toSet()

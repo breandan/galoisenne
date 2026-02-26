@@ -28,7 +28,8 @@ fun CFG.normalize(): CFG =
       .eliminateParametricityFromLHS()
       .also { rewrites.add(it) } /** [nonparametricForm] */
       .generateNonterminalStubs()
-      .transformIntoCNF()
+//      .transformIntoCNF()
+      .transformIntoCNFFast()
       .freeze()
       // This should occur after CNF transform otherwise it causes issues
       // during nonterminal-constrained synthesis, e.g., _ _ _ <NT> _ _ _
@@ -40,14 +41,14 @@ fun CFG.normalize(): CFG =
       .also { cnf -> rewriteHistory.put(cnf, rewrites) }
   }
 
-fun CFG.transformIntoCNF(): CFG = transformIntoCNFFast()
-//  addEpsilonProduction()
-//    .refactorEpsilonProds()
-//    .elimVarUnitProds()
-////    .binarizeRHSByFrequency()
-//    .binarizeRHSByRightmost()
-//    .terminalsToUnitProds()
-//    .removeUselessSymbols()
+fun CFG.transformIntoCNF(): CFG =
+  addEpsilonProduction()
+    .refactorEpsilonProds()
+    .elimVarUnitProds()
+//    .binarizeRHSByFrequency()
+    .binarizeRHSByRightmost()
+    .terminalsToUnitProds()
+    .removeUselessSymbols()
 
 val START_SYMBOL = "START"
 

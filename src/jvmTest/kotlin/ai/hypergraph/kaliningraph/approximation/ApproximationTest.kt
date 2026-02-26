@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.approximation
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.languages.Python
+import ai.hypergraph.kaliningraph.languages.*
 import ai.hypergraph.kaliningraph.languages.Python.subwords
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
@@ -148,10 +148,15 @@ class ApproximationTest {
     }.also { println("Took: $it") }
   }
 
-
   /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.optimizeBicliqueCover"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.optimizeTricliqueCover"
   */
-//  @Test
-  fun optimizeBicliqueCover() = println("Triclique cover:\n\n" + TricliqueCoverSolver(vanillaS2PCFG).serialize())
+  @Test
+  fun optimizeTricliqueCover() {
+    val cfg = vanillaS2PCFG
+    println("CFG: ${cfg.size} / ${cfg.nonterminals.size}")
+    val tcc = TricliqueCoverSolver(cfg)
+//    println("Triclique cover:\n\n" + tcc.serialize())
+//    println("Summary\n${tcc.summary()}")
+  }
 }
