@@ -546,11 +546,9 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
   val sigma = tmLst.size
   val END = sigma
 
-  // Build GRE' = this · #
   val endSet = GRE.SET(KBitSet(sigma + 1).apply { set(END) })
   val root = GRE.CAT(this, endSet)
 
-  // Count SET *occurrences* in the unfolded tree, not distinct nodes
   fun countSetOccurrences(g: GRE): Int = when (g) {
     is GRE.SET -> 1
     is GRE.CUP -> g.args.sumOf { countSetOccurrences(it) }
@@ -560,17 +558,40 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
 
   val P = countSetOccurrences(root)
   val posSyms = ArrayList<KBitSet>(P)
-  val follow = Array(P) { KBitSet(P) }
+
+  // Minimal unboxed list to sidestep KBitSet overhead during construction
+  class IntArrayList(capacity: Int = 4) {
+    var data = IntArray(capacity)
+    var size = 0
+    fun add(element: Int) {
+      if (size == data.size) data = data.copyOf(data.size * 2)
+      data[size++] = element
+    }
+    // Deduplicate at the end for clean subset transitions
+    fun toDistinctIntArray(): IntArray {
+      if (size == 0) return IntArray(0)
+      val sorted = data.copyOf(size)
+      sorted.sort()
+      var unique = 1
+      for (i in 1 until size) {
+        if (sorted[i] != sorted[i - 1]) {
+          sorted[unique++] = sorted[i]
+        }
+      }
+      return sorted.copyOf(unique)
+    }
+  }
+
+  // Sparse Follow array
+  val followList = Array(P) { IntArrayList() }
 
   fun emptyPosSet() = KBitSet(P)
-  fun union(a: KBitSet, b: KBitSet): KBitSet = KBitSet(P).apply { or(a); or(b) }
 
   data class Info(val first: KBitSet, val last: KBitSet, val nullable: Boolean)
 
   var nextPos = 0
   var endPos = -1
 
-  // Traverse as a tree: each SET visit gets a fresh position
   fun info(g: GRE): Info = when (g) {
     is GRE.EPS -> Info(emptyPosSet(), emptyPosSet(), true)
 
@@ -579,31 +600,47 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
       posSyms += g.s
       if (g === endSet) endPos = id
 
-      val one = emptyPosSet().apply { set(id) }
-      Info(one, one, false)
+      // CRITICAL: Allocate STRICTLY DISTINCT bitsets here so that
+      // in-place mutations later on do not unintentionally alias first/last.
+      val firstSet = emptyPosSet().apply { set(id) }
+      val lastSet = emptyPosSet().apply { set(id) }
+      Info(firstSet, lastSet, false)
     }
 
     is GRE.CUP -> {
-      var first = emptyPosSet()
-      var last = emptyPosSet()
-      var nullb = false
-      for (c in g.args) {
-        val I = info(c)
-        first.or(I.first)
-        last.or(I.last)
-        nullb = nullb || I.nullable
+      if (g.args.isEmpty()) {
+        Info(emptyPosSet(), emptyPosSet(), false)
+      } else {
+        val I = info(g.args[0])
+        val first = I.first
+        val last = I.last
+        var nullb = I.nullable
+
+        // Mutate the first child's KBitSets in-place to save memory
+        for (i in 1 until g.args.size) {
+          val nextI = info(g.args[i])
+          first.or(nextI.first)
+          last.or(nextI.last)
+          nullb = nullb || nextI.nullable
+        }
+        Info(first, last, nullb)
       }
-      Info(first, last, nullb)
     }
 
     is GRE.CAT -> {
       val L = info(g.l)
       val R = info(g.r)
 
-      for (i in L.last.iterator()) follow[i].or(R.first)
+      // Directly append ints. Duplicates are allowed here and cleaned up later
+      for (i in L.last.iterator()) {
+        for (j in R.first.iterator()) {
+          followList[i].add(j)
+        }
+      }
 
-      val first = union(L.first, if (L.nullable) R.first else emptyPosSet())
-      val last  = union(R.last,  if (R.nullable) L.last  else emptyPosSet())
+      // Mutate in-place to avoid heavy new KBitSet allocations
+      val first = if (L.nullable) { L.first.or(R.first); L.first } else L.first
+      val last  = if (R.nullable) { R.last.or(L.last); R.last } else R.last
       Info(first, last, L.nullable && R.nullable)
     }
   }
@@ -612,7 +649,9 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
   check(nextPos == P) { "Position allocation mismatch: expected $P, got $nextPos" }
   check(endPos >= 0) { "Internal endmarker was not assigned a position" }
 
-  // positions carrying each real symbol
+  // Bake the construction lists down into minimal deduplicated arrays
+  val follow = Array(P) { followList[it].toDistinctIntArray() }
+
   val posBySym: Array<IntArray> = Array(sigma) { a ->
     val acc = ArrayList<Int>()
     for (p in 0 until P) {
@@ -654,7 +693,10 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
 
       for (p in posBySym[a]) {
         if (S[p]) {
-          T.or(follow[p])
+          // Unfurl sparse integer transitions directly onto bitset T
+          for (v in follow[p]) {
+            T.set(v)
+          }
           any = true
         }
       }
