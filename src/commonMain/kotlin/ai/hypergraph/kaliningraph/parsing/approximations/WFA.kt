@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing.approximations
 
+import ai.hypergraph.kaliningraph.automata.DFSM
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
 import kotlin.collections.get
@@ -765,7 +766,6 @@ fun WFA.toSafeTensors(): ByteArray {
 
 /**
  * Decodes a SafeTensors ByteArray to a WFA.
- * Pure Kotlin Multiplatform implementation.
  */
 fun ByteArray.toWFA(): WFA {
   // --- 1. Byte Reader Helpers (Little Endian) ---
@@ -937,4 +937,152 @@ fun ByteArray.toWFA(): WFA {
   }
 
   return WFA(sMap, fMap, transitions)
+}
+
+fun DFSM.toWFA(tmLst: List<String>): WFA {
+  require(width <= tmLst.size) {
+    "DFSM width ($width) exceeds tmLst size (${tmLst.size})"
+  }
+
+  // Dense integer ids for WFA states. Put q_alpha first for a stable/idempotent start id.
+  val stateNames = buildList {
+    add(q_alpha)
+    for (q in Q) if (q != q_alpha) add(q)
+    for ((src, outs) in deltaMap) {
+      if (src !in this) add(src)
+      for (dst in outs.values) if (dst !in this) add(dst)
+    }
+    for (q in F) if (q !in this) add(q)
+  }
+
+  val idOf = stateNames.withIndex().associate { (i, q) -> q to i }
+
+  val startWeights = mapOf(idOf.getValue(q_alpha) to 0.0)
+
+  val finalWeights = buildMap {
+    for (q in F) {
+      val id = idOf[q]
+      if (id != null) put(id, 0.0)
+    }
+  }
+
+  // Only explicit DFSM transitions become WFA edges; each gets weight log(1)=0.
+  val transitions = buildMap {
+    for (q in stateNames) {
+      val srcId = idOf.getValue(q)
+      val outs = deltaMap[q]
+
+      val edges =
+        if (outs == null) emptyList()
+        else outs.entries
+          .sortedBy { it.key } // deterministic order
+          .map { (sym, dst) ->
+            require(sym in 0 until width) {
+              "Symbol id $sym out of range [0, $width)"
+            }
+
+            WFA.WeightedEdge(
+              label = tmLst[sym],
+              target = idOf.getValue(dst),
+              weight = 0.0
+            )
+          }
+
+      put(srcId, edges)
+    }
+  }
+
+  return WFA(
+    startWeights = startWeights,
+    finalWeights = finalWeights,
+    transitions = transitions
+  )
+}
+
+fun WFA.intersectOther(wfa2: WFA): WFA {
+  require(transitions.values.none { edges -> edges.any { it.label == null } }) {
+    "WFA.intersect currently requires the left automaton to be epsilon-free"
+  }
+  require(wfa2.transitions.values.none { edges -> edges.any { it.label == null } }) {
+    "WFA.intersect currently requires the right automaton to be epsilon-free"
+  }
+
+  val productStart = mutableMapOf<Int, Double>()
+  val productFinal = mutableMapOf<Int, Double>()
+  val productTransitions = mutableMapOf<Int, MutableList<WFA.WeightedEdge>>()
+
+  // Pair of source-state ids -> dense product-state id
+  val pairToId = mutableMapOf<Pair<Int, Int>, Int>()
+  val worklist = mutableListOf<Pair<Int, Int>>()
+
+  fun internPair(q1: Int, q2: Int): Int {
+    val key = q1 to q2
+    val existing = pairToId[key]
+    if (existing != null) return existing
+
+    val id = pairToId.size
+    pairToId[key] = id
+    worklist.add(key)
+
+    val f1 = this@intersectz.finalWeights[q1]
+    val f2 = wfa2.finalWeights[q2]
+    if (f1 != null && f2 != null) productFinal[id] = f1 + f2
+
+    return id
+  }
+
+  // Cross-product of start states
+  for ((q1, w1) in startWeights) {
+    for ((q2, w2) in wfa2.startWeights) {
+      val pid = internPair(q1, q2)
+      productStart[pid] = w1 + w2
+    }
+  }
+
+  var head = 0
+  while (head < worklist.size) {
+    val (q1, q2) = worklist[head++]
+    val srcId = pairToId.getValue(q1 to q2)
+
+    val outs1 = transitions[q1].orEmpty()
+    val outs2 = wfa2.transitions[q2].orEmpty()
+    if (outs1.isEmpty() || outs2.isEmpty()) continue
+
+    // Index right outgoing edges by label for faster matching
+    val rightByLabel = mutableMapOf<String, MutableList<WFA.WeightedEdge>>()
+    for (e2 in outs2) {
+      val lab = e2.label ?: continue
+      val bucket = rightByLabel[lab]
+      if (bucket == null) rightByLabel[lab] = mutableListOf(e2)
+      else bucket.add(e2)
+    }
+
+    var dstEdges: MutableList<WFA.WeightedEdge>? = null
+
+    for (e1 in outs1) {
+      val lab = e1.label ?: continue
+      val matches = rightByLabel[lab] ?: continue
+
+      if (dstEdges == null) dstEdges = mutableListOf()
+
+      for (e2 in matches) {
+        val tgtId = internPair(e1.target, e2.target)
+        dstEdges.add(
+          WFA.WeightedEdge(
+            label = lab,
+            target = tgtId,
+            weight = e1.weight + e2.weight
+          )
+        )
+      }
+    }
+
+    if (dstEdges != null) productTransitions[srcId] = dstEdges
+  }
+
+  return WFA(
+    startWeights = productStart,
+    finalWeights = productFinal,
+    transitions = productTransitions
+  )
 }

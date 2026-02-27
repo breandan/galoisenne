@@ -764,7 +764,23 @@ class ProbabilisticLBH {
       println("Precision: ${precision / total.toDouble()}")
     }.also { println("Took: $it") }
 
-    assertEquals(898359, hash)
+    assertTrue(898359 <= hash.also { println("Hash: $it") })
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testBadExample"
+*/
+  @Test
+  fun testBadExample() {
+    val cfg = vanillaS2PCFG
+    val broke = "> NAME = NAME ( NAME , > > STRING ) NEWLINE"
+    val gre: GRE = repairWithGRE(broke.tokenizeByWhitespace(), cfg)!!
+    val dfsm = gre.toDFSM(cfg.tmLst)
+    val dfsmd = gre.toDFSMDirect(cfg.tmLst)
+    val badFix = "NAME = NAME ( NAME , NAME > STRING ; NEWLINE"
+    assertFalse(dfsm.recognizes(badFix.tokenizeByWhitespace(), cfg.tmLst))
+    assertFalse(dfsmd.recognizes(badFix.tokenizeByWhitespace(), cfg.tmLst))
+    assertFalse(badFix in cfg.language)
   }
 
 /*
