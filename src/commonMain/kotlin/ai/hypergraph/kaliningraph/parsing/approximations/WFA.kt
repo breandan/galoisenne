@@ -1024,7 +1024,7 @@ fun WFA.intersectOther(wfa2: WFA): WFA {
     pairToId[key] = id
     worklist.add(key)
 
-    val f1 = this@intersectz.finalWeights[q1]
+    val f1 = this@intersectOther.finalWeights[q1]
     val f2 = wfa2.finalWeights[q2]
     if (f1 != null && f2 != null) productFinal[id] = f1 + f2
 
