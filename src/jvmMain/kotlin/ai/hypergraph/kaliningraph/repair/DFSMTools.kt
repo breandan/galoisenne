@@ -407,7 +407,7 @@ fun GRE.toDFSMAntimirov(tmLst: List<String>): DFSM {
     F = F,
     width = sigma
   ).also {
-    println("toDFSMAntimirov (row-cached) took: ${timer.elapsedNow()} | states=$qCount | residuals=${nodes.size}")
+    println("toDFSMAntimirov (row-cached) took: ${timer.elapsedNow()} | |Q|=$qCount | residuals=${nodes.size}")
   }
 }
 
