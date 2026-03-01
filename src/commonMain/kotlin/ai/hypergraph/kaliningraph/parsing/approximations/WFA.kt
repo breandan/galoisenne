@@ -1041,9 +1041,7 @@ fun ByteArray.toWFA(): WFA {
         ((this[p + 3].toInt() and 0xFF) shl 24)
   }
 
-  fun readFloatAt(offset: Int): Float {
-    return Float.fromBits(readIntAt(offset))
-  }
+  fun readFloatAt(offset: Int): Float = Float.fromBits(readIntAt(offset))
 
   // --- 5. Reconstruct Graph ---
   val transitions = HashMap<Int, MutableList<WFA.WeightedEdge>>()
