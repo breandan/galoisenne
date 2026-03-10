@@ -2,6 +2,7 @@ package ai.hypergraph.markovian.mcmc
 
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.parsing.Σᐩ
+import ai.hypergraph.kaliningraph.sampling.FastMC
 import ai.hypergraph.kaliningraph.sampling.pow
 import ai.hypergraph.markovian.*
 import ai.hypergraph.markovian.concurrency.*
@@ -68,6 +69,7 @@ open class MarkovChain<T>(
   var scoreSuffix: List<T> = listOf()
 ) {
   private val mgr = ResettableLazyManager()
+  private val corpus: List<T> = train.toList()
 
   private val dictionary: Bijection<T> by resettableLazy(mgr) {
     counter.rawCounts.getFrequentItems(NO_FALSE_POSITIVES)
@@ -115,6 +117,23 @@ open class MarkovChain<T>(
   // TODO: mergeable cache?
   // Maps the coordinates of a transition tensor fiber to a memoized distribution
   val dists: LRUCache<List<Int>, Dist> = LRUCache()
+
+  fun contextBase(ctx: List<T?>): Double {
+    val ctxCount = counter.nrmCounts.getEstimate(ctx + null).toDouble()
+    return ln(ctxCount + dictionary.size.toDouble())
+  }
+
+  fun scoreTransitionFromBase(ctxBase: Double, ctx: List<T?>, tok: T): Double {
+    val ngramCount = counter.nrmCounts.getEstimate(ctx + tok).toDouble()
+    return ctxBase - ln(ngramCount + 1.0)
+  }
+
+  fun compile(): FastMC<T> = FastMC.compile(
+    corpus = corpus,
+    memory = memory,
+    scorePrefix = scorePrefix,
+    scoreSuffix = scoreSuffix,
+  )
 
   // Computes perplexity of a sequence normalized by sequence length (lower is better)
   fun score(seq: List<T?>): Double =

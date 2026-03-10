@@ -6,9 +6,11 @@ import ai.hypergraph.kaliningraph.automata.GRE.EPS
 import ai.hypergraph.kaliningraph.automata.GRE.SET
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.sampling.FastMC
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton.*
 import java.util.PriorityQueue
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.PriorityBlockingQueue
 import java.util.stream.Stream
 import kotlin.random.Random
@@ -115,7 +117,7 @@ fun BAutomaton.decodeDFA(
   beamWidth: Long = 40_000_000L, // Maximum number of trajectories to keep at each step
 ): List<Σᐩ> {
   val startTime = TimeSource.Monotonic.markNow()
-  val fullTrajectories = PriorityBlockingQueue<FSATrajectory>(10000) // Max-heap for full trajectories
+  val fullTrajectories = ConcurrentLinkedQueue<FSATrajectory>() // Max-heap for full trajectories
   val beam = PriorityQueue<FSATrajectory>() // Beam for partial trajectories
 
   beam.add(FSATrajectory(List(mc.memory) { null }, initialState, 0.0))
@@ -154,10 +156,10 @@ fun BAutomaton.decodeDFA(
 
 // Java Stream doesn't have mapNotNull in Kotlin, so add a tiny helper:
 inline fun <T, R : Any> Stream<T>.mapNotNull(crossinline f: (T) -> R?): Stream<R> =
-  this.map { f(it) }.filter { it != null }.map { it!! }
+  map { f(it) }.filter { it != null }.map { it!! }
 
 fun DFSM.decodeDFA(
-  mc: MarkovChain<Σᐩ>,
+  mc: FastMC<Σᐩ>,
   dec: Map<Char, Σᐩ>,
   callback: (Σᐩ) -> Unit = {},
   timeout: Duration = Duration.INFINITE,
@@ -165,26 +167,15 @@ fun DFSM.decodeDFA(
 ): List<Σᐩ> {
   val startTime = TimeSource.Monotonic.markNow()
 
-  // ------------------------------------------------------------------
-  // IMPORTANT: DFSM labels are Int terminal-IDs 0..width-1
-  // So decoding should be "a -> token".
-  //
-  // We *do not sort* keys (sorting scrambles the intended order).
-  //
-  // We support 2 common conventions:
-  //  (1) index-by-insertion-order: a is the index into dec.entries iteration order
-  //  (2) contiguous char block: keys are (base + a) for some base char
-  // ------------------------------------------------------------------
-
-  val entriesInOrder: List<Map.Entry<Char, Σᐩ>> = dec.entries.toList() // preserves iteration order
+  val entriesInOrder: List<Map.Entry<Char, Σᐩ>> = dec.entries.toList()
   val byIndex: List<Σᐩ> = entriesInOrder.map { it.value }
 
   val byCode: Map<Int, Σᐩ> = entriesInOrder.associate { (ch, tok) -> ch.code to tok }
   val codesSorted: IntArray = entriesInOrder.map { it.key.code }.sorted().toIntArray()
-  val base: Int? = codesSorted.firstOrNull()
+  val contiguousBase: Int? = codesSorted.firstOrNull()
 
   val hasContiguousBlock: Boolean = run {
-    val b = base ?: return@run false
+    val b = contiguousBase ?: return@run false
     if (dec.size < width) return@run false
     var i = 0
     while (i < width) {
@@ -195,75 +186,139 @@ fun DFSM.decodeDFA(
   }
 
   fun decodeSym(a: Int): Σᐩ? {
-    // If you encoded as contiguous chars (base + a), use that.
     if (hasContiguousBlock) {
-      val tok = byCode[(base!! + a)]
+      val tok = byCode[(contiguousBase!! + a)]
       if (tok != null) return tok
     }
-    // Otherwise, treat a as an index into insertion order.
     return byIndex.getOrNull(a)
   }
 
-  // Trajectory (store last mc.memory tokens with newest at index 0)
+  // Precompute label -> token / encoded token once
+  val tokByLabel = arrayOfNulls<String>(width)
+  val tokIdByLabel = IntArray(width) { -1 }
+  for (a in 0 until width) {
+    val tok = decodeSym(a) ?: continue
+    tokByLabel[a] = tok
+    tokIdByLabel[a] = mc.encode(tok)
+  }
+
   data class DFSMTrajectory(
-    val ctx: Array<Σᐩ?>,
+    val base: FastMC.ContextBase,
     val lastState: String,
     val score: Double,
     val out: String
-  ) : Comparable<DFSMTrajectory> {
-    override fun compareTo(other: DFSMTrajectory): Int =
-      other.score.compareTo(score) // max-heap behavior
-
+  ) {
     fun isComplete(dfsm: DFSM): Boolean = lastState in dfsm.F
     fun hasOutgoing(dfsm: DFSM): Boolean = dfsm.deltaMap[lastState]?.isNotEmpty() == true
-
-    fun append(tok: Σᐩ, nextState: String, nextScore: Double): DFSMTrajectory {
-      val newCtx = ctx.copyOf()
-      for (i in newCtx.size - 1 downTo 1) newCtx[i] = newCtx[i - 1]
-      newCtx[0] = tok
-      val newOut = if (out.isEmpty()) tok else "$out $tok"
-      return DFSMTrajectory(newCtx, nextState, nextScore, newOut)
-    }
   }
 
-  val fullTrajectories = PriorityBlockingQueue<DFSMTrajectory>(10_000)
-  val beam = PriorityQueue<DFSMTrajectory>()
+  data class ExpansionBatch(
+    val next: MutableList<DFSMTrajectory>,
+    val complete: MutableList<DFSMTrajectory>
+  )
 
-  beam.add(DFSMTrajectory(Array(mc.memory) { null }, q_alpha, 0.0, ""))
+  val fullTrajectories = ArrayList<DFSMTrajectory>()
+  var frontier = arrayListOf(
+    DFSMTrajectory(
+      base = mc.contextBaseEncoded(IntArray(0)),
+      lastState = q_alpha,
+      score = 0.0,
+      out = ""
+    )
+  )
 
   while (
     fullTrajectories.size.toLong() < beamWidth &&
-    beam.isNotEmpty() &&
+    frontier.isNotEmpty() &&
     startTime.elapsedNow() < timeout
   ) {
-    val nextBeam = beam.parallelStream().flatMap { partTraj ->
-      // match your original: take first (m-1) of newest-first buffer, reverse to oldest..newest
-      val lastToks: List<Σᐩ?> =
-        partTraj.ctx.asList().take(mc.memory - 1).asReversed()
+    val batches =
+      if (frontier.size < 256) {
+        // small frontiers: avoid parallel overhead
+        frontier.map { partTraj ->
+          val next = ArrayList<DFSMTrajectory>()
+          val complete = ArrayList<DFSMTrajectory>()
+          val row = deltaMap[partTraj.lastState].orEmpty()
 
-      val row = deltaMap[partTraj.lastState].orEmpty()
+          for ((a, nxt) in row) {
+            if (a !in 0 until width) continue
+            val tokId = tokIdByLabel[a]
+            if (tokId < 0) continue
+            val tok = tokByLabel[a] ?: continue
 
-      row.entries.stream()
-        .mapNotNull { (a, nxt) ->
-          val decTok = decodeSym(a) ?: return@mapNotNull null
-          val nextScore = partTraj.score + mc.scoreChunk(lastToks + decTok)
-          partTraj.append(decTok, nxt, nextScore)
+            val delta = mc.scoreTransitionFromBaseEncoded(partTraj.base, tokId)
+            val nextBase = mc.advanceEncoded(partTraj.base, tokId)
+            val nextScore = partTraj.score + delta
+            val nextOut = if (partTraj.out.isEmpty()) tok else "${partTraj.out} $tok"
+
+            val traj = DFSMTrajectory(nextBase, nxt, nextScore, nextOut)
+
+            if (traj.isComplete(this)) {
+              complete.add(traj)
+              if (traj.hasOutgoing(this)) next.add(traj)
+            } else {
+              next.add(traj)
+            }
+          }
+
+          ExpansionBatch(next, complete)
         }
-        .flatMap { traj ->
-          if (traj.isComplete(this)) {
-            fullTrajectories.add(traj)
-            callback(traj.out)
-            if (traj.hasOutgoing(this)) Stream.of(traj) else Stream.empty()
-          } else Stream.of(traj)
-        }
-    }.sorted().limit(beamWidth).toList()
+      } else {
+        frontier.parallelStream().unordered().map { partTraj ->
+          val next = ArrayList<DFSMTrajectory>()
+          val complete = ArrayList<DFSMTrajectory>()
+          val row = deltaMap[partTraj.lastState].orEmpty()
 
-    beam.clear()
-    beam.addAll(nextBeam)
+          for ((a, nxt) in row) {
+            if (a !in 0 until width) continue
+            val tokId = tokIdByLabel[a]
+            if (tokId < 0) continue
+            val tok = tokByLabel[a] ?: continue
+
+            val delta = mc.scoreTransitionFromBaseEncoded(partTraj.base, tokId)
+            val nextBase = mc.advanceEncoded(partTraj.base, tokId)
+            val nextScore = partTraj.score + delta
+            val nextOut = if (partTraj.out.isEmpty()) tok else "${partTraj.out} $tok"
+
+            val traj = DFSMTrajectory(nextBase, nxt, nextScore, nextOut)
+
+            if (traj.isComplete(this)) {
+              complete.add(traj)
+              if (traj.hasOutgoing(this)) next.add(traj)
+            } else {
+              next.add(traj)
+            }
+          }
+
+          ExpansionBatch(next, complete)
+        }.toList()
+      }
+
+    val nextFrontier = ArrayList<DFSMTrajectory>()
+    for (batch in batches) {
+      if (fullTrajectories.size.toLong() >= beamWidth) break
+
+      for (traj in batch.complete) {
+        if (fullTrajectories.size.toLong() >= beamWidth) break
+        fullTrajectories.add(traj)
+        callback(traj.out)
+      }
+
+      if (fullTrajectories.size.toLong() < beamWidth) {
+        nextFrontier.addAll(batch.next)
+      }
+    }
+
+    frontier = nextFrontier
   }
 
-  val deduped = fullTrajectories.asSequence().map { it.out }.distinct().toList()
-  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${beam.size} in queue")
+  val deduped = fullTrajectories
+    .asSequence()
+    .map { it.out }
+    .distinct()
+    .toList()
+
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} trajectories, with ${frontier.size} in queue")
   return deduped
 }
 

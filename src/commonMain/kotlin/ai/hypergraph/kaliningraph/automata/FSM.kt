@@ -543,96 +543,128 @@ fun DFSM.sampleUniformly(tmLst: List<String>): Sequence<String> = sequence {
 
 fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
   val timer = TimeSource.Monotonic.markNow()
-  val sigma = tmLst.size                // real alphabet size
-  val END = sigma                       // internal endmarker symbol index
+  val sigma = tmLst.size
+  val END = sigma
 
-  // Build GRE' = (this) · #
   val endSet = GRE.SET(KBitSet(sigma + 1).apply { set(END) })
   val root = GRE.CAT(this, endSet)
 
-  // Pass 1: give every SET occurrence a unique position id
-  val posId = mutableMapOf<GRE, Int>()
-  val posSyms = mutableListOf<KBitSet>()   // per-position symbol set
-  fun index(g: GRE) {
-    when (g) {
-      is GRE.SET -> {
-        if (g !in posId) {
-          posId.put(g, posSyms.size)
-          posSyms += g.s // (KBitSet) symbol-set for this position
+  fun countSetOccurrences(g: GRE): Int = when (g) {
+    is GRE.SET -> 1
+    is GRE.CUP -> g.args.sumOf { countSetOccurrences(it) }
+    is GRE.CAT -> countSetOccurrences(g.l) + countSetOccurrences(g.r)
+    is GRE.EPS -> 0
+  }
+
+  val P = countSetOccurrences(root)
+  val posSyms = ArrayList<KBitSet>(P)
+
+  // Minimal unboxed list to sidestep KBitSet overhead during construction
+  class IntArrayList(capacity: Int = 4) {
+    var data = IntArray(capacity)
+    var size = 0
+    fun add(element: Int) {
+      if (size == data.size) data = data.copyOf(data.size * 2)
+      data[size++] = element
+    }
+    // Deduplicate at the end for clean subset transitions
+    fun toDistinctIntArray(): IntArray {
+      if (size == 0) return IntArray(0)
+      val sorted = data.copyOf(size)
+      sorted.sort()
+      var unique = 1
+      for (i in 1 until size) {
+        if (sorted[i] != sorted[i - 1]) {
+          sorted[unique++] = sorted[i]
         }
       }
-      is GRE.CUP -> g.args.forEach(::index)
-      is GRE.CAT -> { index(g.l); index(g.r) }
-      is GRE.EPS -> {}
+      return sorted.copyOf(unique)
     }
   }
-  index(root)
 
-  val P = posSyms.size
-  val endPos = posId[endSet] ?: error("Internal endmarker not indexed")
+  // Sparse Follow array
+  val followList = Array(P) { IntArrayList() }
 
-  // follow[pos] is a set of positions
-  val follow = Array(P) { KBitSet(P) }
-
-  // Small helpers over position-sets
   fun emptyPosSet() = KBitSet(P)
-  fun union(a: KBitSet, b: KBitSet): KBitSet = KBitSet(P).apply { or(a); or(b) }
 
   data class Info(val first: KBitSet, val last: KBitSet, val nullable: Boolean)
 
-  // Pass 2: compute first/last/nullable and fill follow by recursion
+  var nextPos = 0
+  var endPos = -1
+
   fun info(g: GRE): Info = when (g) {
     is GRE.EPS -> Info(emptyPosSet(), emptyPosSet(), true)
 
     is GRE.SET -> {
-      val id = posId[g]!!
-      val one = emptyPosSet().apply { set(id) }
-      Info(one, one, false)
+      val id = nextPos++
+      posSyms += g.s
+      if (g === endSet) endPos = id
+
+      // CRITICAL: Allocate STRICTLY DISTINCT bitsets here so that
+      // in-place mutations later on do not unintentionally alias first/last.
+      val firstSet = emptyPosSet().apply { set(id) }
+      val lastSet = emptyPosSet().apply { set(id) }
+      Info(firstSet, lastSet, false)
     }
 
     is GRE.CUP -> {
-      // fold union across children
-      var first = emptyPosSet()
-      var last  = emptyPosSet()
-      var nullb = false
-      for (c in g.args) {
-        val I = info(c)
-        first.or(I.first)
-        last.or(I.last)
-        nullb = nullb || I.nullable
+      if (g.args.isEmpty()) {
+        Info(emptyPosSet(), emptyPosSet(), false)
+      } else {
+        val I = info(g.args[0])
+        val first = I.first
+        val last = I.last
+        var nullb = I.nullable
+
+        // Mutate the first child's KBitSets in-place to save memory
+        for (i in 1 until g.args.size) {
+          val nextI = info(g.args[i])
+          first.or(nextI.first)
+          last.or(nextI.last)
+          nullb = nullb || nextI.nullable
+        }
+        Info(first, last, nullb)
       }
-      Info(first, last, nullb)
     }
 
     is GRE.CAT -> {
       val L = info(g.l)
       val R = info(g.r)
-      // For every i in last(L) and j in first(R), add i -> j to follow
-      for (i in L.last.iterator()) follow[i].or(R.first)
 
-      val first = union(L.first, if (L.nullable) R.first else emptyPosSet())
-      val last  = union(R.last, if (R.nullable) L.last else emptyPosSet())
+      // Directly append ints. Duplicates are allowed here and cleaned up later
+      for (i in L.last.iterator()) {
+        for (j in R.first.iterator()) {
+          followList[i].add(j)
+        }
+      }
+
+      // Mutate in-place to avoid heavy new KBitSet allocations
+      val first = if (L.nullable) { L.first.or(R.first); L.first } else L.first
+      val last  = if (R.nullable) { R.last.or(L.last); R.last } else R.last
       Info(first, last, L.nullable && R.nullable)
     }
   }
 
   val rootInfo = info(root)
+  check(nextPos == P) { "Position allocation mismatch: expected $P, got $nextPos" }
+  check(endPos >= 0) { "Internal endmarker was not assigned a position" }
 
-  // Precompute: positions that carry each real symbol a ∈ [0, sigma)
+  // Bake the construction lists down into minimal deduplicated arrays
+  val follow = Array(P) { followList[it].toDistinctIntArray() }
+
   val posBySym: Array<IntArray> = Array(sigma) { a ->
     val acc = ArrayList<Int>()
-    for (p in 0 until P) if (p != endPos) {
-      // copy real-alphabet part only
-      // (endPos has END bit set; others may have multiple real bits)
-      if (posSyms[p][a]) acc += p
+    for (p in 0 until P) {
+      if (p != endPos && posSyms[p][a]) acc += p
     }
     acc.toIntArray()
   }
 
-  // BFS subset construction over position-sets (as KBitSet)
-  val start = rootInfo.first // contains endPos iff GRE was nullable
-  data class IntKey(val a: IntArray) { override fun hashCode() = a.contentHashCode()
-    override fun equals(o: Any?) = o is IntKey && a.contentEquals(o.a) }
+  data class IntKey(val a: IntArray) {
+    override fun hashCode() = a.contentHashCode()
+    override fun equals(other: Any?) = other is IntKey && a.contentEquals(other.a)
+  }
+
   fun keyOf(bits: KBitSet): IntKey {
     val xs = ArrayList<Int>()
     for (i in bits.iterator()) xs += i
@@ -644,11 +676,9 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
   val deltaMap = mutableMapOf<String, MutableMap<Int, String>>()
   val finals = mutableSetOf<String>()
 
-  run {
-    val k = keyOf(start)
-    subset2name[k] = "q0"
-    queue.add(start)
-  }
+  val start = rootInfo.first
+  subset2name[keyOf(start)] = "q0"
+  queue.add(start)
 
   while (queue.isNotEmpty()) {
     val S = queue.removeFirst()
@@ -657,18 +687,21 @@ fun GRE.toDFSMDirect(tmLst: List<String>): DFSM {
 
     val row = deltaMap.getOrPut(sName) { mutableMapOf() }
 
-    // For each real symbol a, T = ⋃_{p∈S∩posBySym[a]} follow[p]
     for (a in 0 until sigma) {
       var any = false
       val T = KBitSet(P)
-      val candidates = posBySym[a]
-      var i = 0
-      while (i < candidates.size) {
-        val p = candidates[i]
-        if (S[p]) { T.or(follow[p]); any = true }
-        i++
+
+      for (p in posBySym[a]) {
+        if (S[p]) {
+          // Unfurl sparse integer transitions directly onto bitset T
+          for (v in follow[p]) {
+            T.set(v)
+          }
+          any = true
+        }
       }
-      if (!any) continue // no outgoing edge on a
+
+      if (!any) continue
 
       val k = keyOf(T)
       val tName = subset2name.getOrPut(k) {

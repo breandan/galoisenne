@@ -1,5 +1,6 @@
 package ai.hypergraph.kaliningraph.parsing.approximations
 
+import ai.hypergraph.kaliningraph.automata.DFSM
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
 import kotlin.collections.get
@@ -64,36 +65,33 @@ data class WFA(
   // Compiled structures for fast scoring
   // ----------------------------
   private class OutIndex(
-    val syms: IntArray,        // sorted unique symbol ids
+    val syms: IntArray,
     val offsets: IntArray,
     val targets: IntArray,
-    val weights: DoubleArray
+    val weights: DoubleArray,
+    val hashKeys: IntArray, // empty => linear path
+    val hashPos: IntArray
   ) {
     inline fun findSym(symId: Int): Int {
-      // Small out-degree: linear scan usually wins
-      if (syms.size <= 8) {
+      if (hashKeys.isEmpty()) {
         for (i in syms.indices) if (syms[i] == symId) return i
         return -1
       }
 
-      var lo = 0
-      var hi = syms.size - 1
-      while (lo <= hi) {
-        val mid = (lo + hi) ushr 1
-        val v = syms[mid]
-        when {
-          v < symId -> lo = mid + 1
-          v > symId -> hi = mid - 1
-          else -> return mid
-        }
+      val mask = hashKeys.size - 1
+      var idx = mix32(symId) and mask
+      while (true) {
+        val k = hashKeys[idx]
+        if (k == -1) return -1
+        if (k == symId) return hashPos[idx]
+        idx = (idx + 1) and mask
       }
-      return -1
     }
   }
 
   private data class Compiled(
-    val symToId: HashMap<String, Int>,
-    val charToId: IntArray,          // size 128 (ASCII) filled with -1 if absent
+    val detAscii: DeterministicAscii?,
+    val charToId: IntArray,          // size 128, -1 => unknown
     val out: Array<OutIndex?>,
     val startStates: IntArray,
     val startW: DoubleArray,
@@ -102,29 +100,59 @@ data class WFA(
 
   private val compiled: Compiled by lazy { compileForScore() }
 
+  private data class DeterministicAscii(
+    val startState: Int,
+    val startWeight: Double,
+    val next: IntArray,      // n * 128, -1 => missing
+    val edgeW: DoubleArray,  // n * 128
+    val finalW: DoubleArray
+  )
+
   private fun compileForScore(): Compiled {
-    // Dense state indexing (avoids giant arrays keyed by raw state ids)
     val stateIds = allStates.toIntArray().also { it.sort() }
     val n = stateIds.size
     val toDense = HashMap<Int, Int>(n * 2)
     for (i in stateIds.indices) toDense[stateIds[i]] = i
 
-    // Symbol table: String -> Int (hashed once per token at runtime)
-    val symToId = HashMap<String, Int>(256)
-    fun symId(s: String): Int = symToId.getOrPut(s) { symToId.size }
+    // Reserve 0..127 for single-char ASCII labels directly.
+    var nextExtraSid = 128
+    val extraSymIds = HashMap<String, Int>(256)
 
-    // Build per-state packed outgoing index
+    fun symId(s: String): Int {
+      if (s.length == 1) {
+        val c = s[0].code
+        if (c in 0..127) return c
+      }
+      return extraSymIds.getOrPut(s) { nextExtraSid++ }
+    }
+
+    val charToId = IntArray(128) { -1 }
     val out = arrayOfNulls<OutIndex>(n)
+
+    // Fast path candidate: exactly one start, epsilon-free, one edge per ASCII char per state
+    var detOk = startWeights.size == 1
+    val detNext = IntArray(n * 128) { -1 }
+    val detEdgeW = DoubleArray(n * 128)
+
     for ((srcId, edges) in transitions) {
       val src = toDense[srcId] ?: continue
 
-      // Bucket edges by symbol id (build-time only; OK to allocate here)
-      val bySymT = HashMap<Int, MutableList<Int>>()     // targets
-      val bySymW = HashMap<Int, MutableList<Double>>()  // weights
+      val bySymT = HashMap<Int, MutableList<Int>>()
+      val bySymW = HashMap<Int, MutableList<Double>>()
 
       for (e in edges) {
-        val lab = e.label ?: continue // score() ignores epsilons (matches your current implementation)
+        val lab = e.label
+        if (lab == null) {
+          detOk = false
+          continue
+        }
+
         val sid = symId(lab)
+        if (lab.length == 1) {
+          val c = lab[0].code
+          if (c in 0..127) charToId[c] = sid
+        }
+
         val tgt = toDense[e.target] ?: continue
         bySymT.getOrPut(sid) { ArrayList() }.add(tgt)
         bySymW.getOrPut(sid) { ArrayList() }.add(e.weight)
@@ -132,66 +160,135 @@ data class WFA(
 
       if (bySymT.isEmpty()) continue
 
-      val syms = bySymT.keys.toIntArray().also { it.sort() }
-      val offsets = IntArray(syms.size + 1)
+      val k = bySymT.size
+      val syms = IntArray(k)
+      val offsets = IntArray(k + 1)
+
+      var pos = 0
       var total = 0
-      for (i in syms.indices) {
-        offsets[i] = total
-        total += bySymT[syms[i]]!!.size
+      for ((sid, ts) in bySymT) {
+        syms[pos] = sid
+        offsets[pos] = total
+        total += ts.size
+        pos++
       }
-      offsets[syms.size] = total
+      offsets[k] = total
 
       val targets = IntArray(total)
       val weights = DoubleArray(total)
-      var k = 0
-      for (sid in syms) {
+
+      for (i in 0 until k) {
+        val sid = syms[i]
         val ts = bySymT[sid]!!
         val ws = bySymW[sid]!!
-        for (i in ts.indices) {
-          targets[k] = ts[i]
-          weights[k] = ws[i]
-          k++
+        var p = offsets[i]
+        for (j in ts.indices) {
+          targets[p] = ts[j]
+          weights[p] = ws[j]
+          p++
+        }
+
+        if (detOk) {
+          if (sid !in 0..127 || ts.size != 1) {
+            detOk = false
+          } else {
+            val idx = src * 128 + sid
+            if (detNext[idx] != -1) {
+              detOk = false
+            } else {
+              detNext[idx] = ts[0]
+              detEdgeW[idx] = ws[0]
+            }
+          }
         }
       }
 
-      out[src] = OutIndex(syms, offsets, targets, weights)
+      val (hashKeys, hashPos) =
+        if (k <= 8) IntArray(0) to IntArray(0)
+        else buildSymHash(syms)
+
+      out[src] = OutIndex(syms, offsets, targets, weights, hashKeys, hashPos)
     }
 
-    // Start arrays
-    val startStates = IntArray(startWeights.size)
-    val startW = DoubleArray(startWeights.size)
-    run {
-      var i = 0
-      for ((sId, w) in startWeights) {
-        startStates[i] = toDense[sId] ?: continue
-        startW[i] = w
-        i++
-      }
-      // If some starts were missing (shouldn’t happen), trim:
-      // (usually unnecessary; kept minimal)
+    val startPairs = ArrayList<Pair<Int, Double>>(startWeights.size)
+    for ((sId, w) in startWeights) {
+      val s = toDense[sId] ?: continue
+      startPairs.add(s to w)
     }
 
-    // Final weights array
+    val startStates = IntArray(startPairs.size)
+    val startW = DoubleArray(startPairs.size)
+    for (i in startPairs.indices) {
+      startStates[i] = startPairs[i].first
+      startW[i] = startPairs[i].second
+    }
+
     val finalW = DoubleArray(n) { Double.NEGATIVE_INFINITY }
     for ((sId, w) in finalWeights) {
       val s = toDense[sId] ?: continue
       finalW[s] = w
     }
 
-    // in compileForScore(), after symToId built:
-    val charToId = IntArray(128) { -1 }
-    for ((s, id) in symToId) {
-      if (s.length == 1) {
-        val c = s[0].code
-        if (c in 0..127) charToId[c] = id
-      }
-    }
+    val detAscii =
+      if (detOk && startStates.size == 1) {
+        DeterministicAscii(
+          startState = startStates[0],
+          startWeight = startW[0],
+          next = detNext,
+          edgeW = detEdgeW,
+          finalW = finalW
+        )
+      } else null
 
-    return Compiled(symToId, charToId, out, startStates, startW, finalW)
+    return Compiled(
+      detAscii = detAscii,
+      charToId = charToId,
+      out = out,
+      startStates = startStates,
+      startW = startW,
+      finalW = finalW
+    )
   }
 
   fun scoreString(s: CharSequence, penalty: Double = -20.0): Double {
     val C = compiled
+    val det = C.detAscii
+    return if (det != null) scoreDetAscii(det, s, penalty) else scoreGeneral(C, s, penalty)
+  }
+
+  private fun scoreDetAscii(C: DeterministicAscii, s: CharSequence, penalty: Double): Double {
+    var st = C.startState
+    var score = C.startWeight
+
+    val next = C.next
+    val edgeW = C.edgeW
+
+    var i = 0
+    val len = s.length
+    while (i < len) {
+      val code = s[i].code
+      if (code !in 0..127) {
+        score += penalty
+        i++
+        continue
+      }
+
+      val idx = st * 128 + code
+      val dst = next[idx]
+      if (dst < 0) {
+        score += penalty
+      } else {
+        score += edgeW[idx]
+        st = dst
+      }
+      i++
+    }
+
+    val fw = C.finalW[st]
+    return if (fw == Double.NEGATIVE_INFINITY) Double.NEGATIVE_INFINITY else score + fw
+  }
+
+  private fun scoreGeneral(C: Compiled, s: CharSequence, penalty: Double): Double {
     val n = C.finalW.size
     if (C.startStates.isEmpty()) return Double.NEGATIVE_INFINITY
 
@@ -201,7 +298,6 @@ data class WFA(
     var nextActive = IntArray(n)
     var curN = 0
 
-    // init
     for (i in C.startStates.indices) {
       val st = C.startStates[i]
       val w = C.startW[i]
@@ -215,16 +311,18 @@ data class WFA(
     }
     if (curN == 0) return Double.NEGATIVE_INFINITY
 
-    for (ch in s) {
-      val code = ch.code
+    var j = 0
+    val len = s.length
+    while (j < len) {
+      val code = s[j].code
       val sid = if (code in 0..127) C.charToId[code] else -1
 
       if (sid < 0) {
-        // token unknown globally => penalty-in-place
         for (i in 0 until curN) {
           val st = curActive[i]
           curScores[st] += penalty
         }
+        j++
         continue
       }
 
@@ -260,22 +358,67 @@ data class WFA(
           curScores[st] += penalty
         }
       } else {
-        for (i in 0 until curN) curScores[curActive[i]] = Double.NEGATIVE_INFINITY
+        for (i in 0 until curN) {
+          curScores[curActive[i]] = Double.NEGATIVE_INFINITY
+        }
 
-        val ts = curScores; curScores = nextScores; nextScores = ts
-        val ta = curActive; curActive = nextActive; nextActive = ta
+        val ts = curScores
+        curScores = nextScores
+        nextScores = ts
+
+        val ta = curActive
+        curActive = nextActive
+        nextActive = ta
+
         curN = nextN
         if (curN == 0) return Double.NEGATIVE_INFINITY
       }
+
+      j++
     }
 
     var total = Double.NEGATIVE_INFINITY
     for (i in 0 until curN) {
       val st = curActive[i]
       val fw = C.finalW[st]
-      if (fw != Double.NEGATIVE_INFINITY) total = LogAddLUT.add(total, curScores[st] + fw)
+      if (fw != Double.NEGATIVE_INFINITY) {
+        total = LogAddLUT.add(total, curScores[st] + fw)
+      }
     }
     return total
+  }
+
+  companion object {
+    private fun mix32(x0: Int): Int {
+      var x = x0
+      x = x xor (x ushr 16)
+      x *= 0x7feb352d
+      x = x xor (x ushr 15)
+      x *= 0x846ca68b.toInt()
+      x = x xor (x ushr 16)
+      return x
+    }
+
+    private fun buildSymHash(syms: IntArray): Pair<IntArray, IntArray> {
+      var cap = 1
+      while (cap < syms.size * 2) cap = cap shl 1
+
+      val keys = IntArray(cap) { -1 }
+      val pos = IntArray(cap)
+      val mask = cap - 1
+
+      for (i in syms.indices) {
+        val sym = syms[i]
+        var slot = mix32(sym) and mask
+        while (keys[slot] != -1) {
+          slot = (slot + 1) and mask
+        }
+        keys[slot] = sym
+        pos[slot] = i
+      }
+
+      return keys to pos
+    }
   }
 
   fun toGraphviz(
@@ -765,7 +908,6 @@ fun WFA.toSafeTensors(): ByteArray {
 
 /**
  * Decodes a SafeTensors ByteArray to a WFA.
- * Pure Kotlin Multiplatform implementation.
  */
 fun ByteArray.toWFA(): WFA {
   // --- 1. Byte Reader Helpers (Little Endian) ---
@@ -899,9 +1041,7 @@ fun ByteArray.toWFA(): WFA {
         ((this[p + 3].toInt() and 0xFF) shl 24)
   }
 
-  fun readFloatAt(offset: Int): Float {
-    return Float.fromBits(readIntAt(offset))
-  }
+  fun readFloatAt(offset: Int): Float = Float.fromBits(readIntAt(offset))
 
   // --- 5. Reconstruct Graph ---
   val transitions = HashMap<Int, MutableList<WFA.WeightedEdge>>()
@@ -937,4 +1077,152 @@ fun ByteArray.toWFA(): WFA {
   }
 
   return WFA(sMap, fMap, transitions)
+}
+
+fun DFSM.toWFA(tmLst: List<String>): WFA {
+  require(width <= tmLst.size) {
+    "DFSM width ($width) exceeds tmLst size (${tmLst.size})"
+  }
+
+  // Dense integer ids for WFA states. Put q_alpha first for a stable/idempotent start id.
+  val stateNames = buildList {
+    add(q_alpha)
+    for (q in Q) if (q != q_alpha) add(q)
+    for ((src, outs) in deltaMap) {
+      if (src !in this) add(src)
+      for (dst in outs.values) if (dst !in this) add(dst)
+    }
+    for (q in F) if (q !in this) add(q)
+  }
+
+  val idOf = stateNames.withIndex().associate { (i, q) -> q to i }
+
+  val startWeights = mapOf(idOf.getValue(q_alpha) to 0.0)
+
+  val finalWeights = buildMap {
+    for (q in F) {
+      val id = idOf[q]
+      if (id != null) put(id, 0.0)
+    }
+  }
+
+  // Only explicit DFSM transitions become WFA edges; each gets weight log(1)=0.
+  val transitions = buildMap {
+    for (q in stateNames) {
+      val srcId = idOf.getValue(q)
+      val outs = deltaMap[q]
+
+      val edges =
+        if (outs == null) emptyList()
+        else outs.entries
+          .sortedBy { it.key } // deterministic order
+          .map { (sym, dst) ->
+            require(sym in 0 until width) {
+              "Symbol id $sym out of range [0, $width)"
+            }
+
+            WFA.WeightedEdge(
+              label = tmLst[sym],
+              target = idOf.getValue(dst),
+              weight = 0.0
+            )
+          }
+
+      put(srcId, edges)
+    }
+  }
+
+  return WFA(
+    startWeights = startWeights,
+    finalWeights = finalWeights,
+    transitions = transitions
+  )
+}
+
+fun WFA.intersectOther(wfa2: WFA): WFA {
+  require(transitions.values.none { edges -> edges.any { it.label == null } }) {
+    "WFA.intersect currently requires the left automaton to be epsilon-free"
+  }
+  require(wfa2.transitions.values.none { edges -> edges.any { it.label == null } }) {
+    "WFA.intersect currently requires the right automaton to be epsilon-free"
+  }
+
+  val productStart = mutableMapOf<Int, Double>()
+  val productFinal = mutableMapOf<Int, Double>()
+  val productTransitions = mutableMapOf<Int, MutableList<WFA.WeightedEdge>>()
+
+  // Pair of source-state ids -> dense product-state id
+  val pairToId = mutableMapOf<Pair<Int, Int>, Int>()
+  val worklist = mutableListOf<Pair<Int, Int>>()
+
+  fun internPair(q1: Int, q2: Int): Int {
+    val key = q1 to q2
+    val existing = pairToId[key]
+    if (existing != null) return existing
+
+    val id = pairToId.size
+    pairToId[key] = id
+    worklist.add(key)
+
+    val f1 = this@intersectOther.finalWeights[q1]
+    val f2 = wfa2.finalWeights[q2]
+    if (f1 != null && f2 != null) productFinal[id] = f1 + f2
+
+    return id
+  }
+
+  // Cross-product of start states
+  for ((q1, w1) in startWeights) {
+    for ((q2, w2) in wfa2.startWeights) {
+      val pid = internPair(q1, q2)
+      productStart[pid] = w1 + w2
+    }
+  }
+
+  var head = 0
+  while (head < worklist.size) {
+    val (q1, q2) = worklist[head++]
+    val srcId = pairToId.getValue(q1 to q2)
+
+    val outs1 = transitions[q1].orEmpty()
+    val outs2 = wfa2.transitions[q2].orEmpty()
+    if (outs1.isEmpty() || outs2.isEmpty()) continue
+
+    // Index right outgoing edges by label for faster matching
+    val rightByLabel = mutableMapOf<String, MutableList<WFA.WeightedEdge>>()
+    for (e2 in outs2) {
+      val lab = e2.label ?: continue
+      val bucket = rightByLabel[lab]
+      if (bucket == null) rightByLabel[lab] = mutableListOf(e2)
+      else bucket.add(e2)
+    }
+
+    var dstEdges: MutableList<WFA.WeightedEdge>? = null
+
+    for (e1 in outs1) {
+      val lab = e1.label ?: continue
+      val matches = rightByLabel[lab] ?: continue
+
+      if (dstEdges == null) dstEdges = mutableListOf()
+
+      for (e2 in matches) {
+        val tgtId = internPair(e1.target, e2.target)
+        dstEdges.add(
+          WFA.WeightedEdge(
+            label = lab,
+            target = tgtId,
+            weight = e1.weight + e2.weight
+          )
+        )
+      }
+    }
+
+    if (dstEdges != null) productTransitions[srcId] = dstEdges
+  }
+
+  return WFA(
+    startWeights = productStart,
+    finalWeights = productFinal,
+    transitions = productTransitions
+  )
 }
