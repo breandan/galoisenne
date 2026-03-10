@@ -89,6 +89,33 @@ val CFG.vindex2: Array<List<List<Int>>> by cache {
   }
 }
 
+val CFG.leftAdjEncoding: Pair<IntArray, IntArray> by cache {
+  val ladj = leftAdj
+  val offsets = IntArray(nonterminals.size)
+  val flat = ArrayList<Int>()
+
+  var b = 0
+  while (b < ladj.size) {
+    offsets[b] = flat.size
+
+    val adj = ladj[b]
+    if (adj != null) {
+      val os = adj.other
+      val asz = adj.aIdx
+      var i = 0
+      while (i < os.size) {
+        flat += os[i]
+        flat += asz[i]
+        i++
+      }
+    }
+
+    b++
+  }
+
+  flat.toIntArray() to offsets
+}
+
 data class PackedAdj(val other: IntArray, val aIdx: IntArray) {
   inline fun forEachIfIn(bitset: KBitSet, f: (c: Int, a: Int) -> Unit) {
     val os = other; val asz = aIdx
