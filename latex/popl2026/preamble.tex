@@ -665,4 +665,16 @@ fill=green!30]
     }
 }
 
-\usepackage{arydshln}
+\makeatletter
+\newcommand{\leftharpoonrightarrow}{%
+  \mathrel{\mathpalette\leftharpoonrightarrow@{}}%
+}
+\newcommand{\leftharpoonrightarrow@}[2]{%
+  \sbox\z@{$\m@th#1\leftrightarrow$}%
+  \hbox to \wd\z@{%
+    \rlap{$\m@th#1\mkern-2mu\leftharpoonup$}%
+    \hfil
+    $\m@th#1\mkern 2mu\rightarrow$%
+  }%
+}
+\makeatother
