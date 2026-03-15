@@ -484,7 +484,7 @@ fun repairWithGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
 
 fun initiateSerialRepair(brokenStr: List<Σᐩ>, cfg: CFG): Sequence<Σᐩ> {
   val repair = repairWithSparseGRE(brokenStr, cfg)
-//  println(repair!!.toDFSM(cfg.tmLst).minimize().summarize())
+  println(repair!!.toDFSM(cfg.tmLst).minimize().summarize())
 //  val repair = repairWithGRE(brokenStr, cfg)
   val clock = TimeSource.Monotonic.markNow()
   return repair?.words(cfg.tmLst) { clock.elapsedNow().inWholeMilliseconds < TIMEOUT_MS } ?: emptySequence()

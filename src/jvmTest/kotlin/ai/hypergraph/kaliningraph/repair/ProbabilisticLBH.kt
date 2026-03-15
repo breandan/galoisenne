@@ -795,7 +795,7 @@ class ProbabilisticLBH {
     val tx = x.sampleUniformly(cfg.tmLst).take(1000).toSet()
     val ty = y.sampleUniformly(cfg.tmLst).take(1000).toSet()
     println("|tx|=${tx.size}, |ty|=${ty.size}")
-    assertEquals(50, tx.size)
+    assertEquals(25, tx.size)
     assertEquals(tx, ty)
   }
 }

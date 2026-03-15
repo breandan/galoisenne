@@ -46,6 +46,8 @@ class ApproximationTest {
 
     File("det_nfa.dot").writeText(minDFA.toGraphviz())
 
+    //Complement NFA: (states=917, transition=82530)
+    println("Complement NFA: ${minNFA.complement(cfg.terminals).summary()}")
 //    val validNgrams = minNFA.extractNgrams(4)//.also { println("Extracted ${it.keys.size} n-grams") }
 //    val realNgrams = Python.P_BIFI_PY150.toNgramMap()
 //    val allNgrams = (realNgrams + validNgrams)
