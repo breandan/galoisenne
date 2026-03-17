@@ -5,6 +5,7 @@ import javax.script.ScriptEngine
 import javax.script.ScriptEngineManager
 import javax.script.ScriptException
 
+// TODO: Migrate to: https://kotlin.github.io/analysis-api/file-compilation.html
 object KotlinTypeChecker {
   private val engine: ScriptEngine by lazy {
     ScriptEngineManager().getEngineByExtension("kts")

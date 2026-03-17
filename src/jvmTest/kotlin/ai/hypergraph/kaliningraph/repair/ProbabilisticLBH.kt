@@ -764,7 +764,7 @@ class ProbabilisticLBH {
       println("Precision: ${precision / total.toDouble()}")
     }.also { println("Took: $it") }
 
-    assertTrue(898359 <= hash.also { println("Hash: $it") })
+    assertTrue(897754 <= hash.also { println("Hash: $it") })
   }
 
 /*

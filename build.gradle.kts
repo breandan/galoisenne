@@ -161,6 +161,7 @@ kotlin {
         implementation("org.eclipse.collections:eclipse-collections-api:$eccVersion")
         implementation("org.eclipse.collections:eclipse-collections:$eccVersion")
 
+        // TODO: https://slack-chats.kotlinlang.org/t/29202015/hey-there-we-re-using-analysis-api-for-our-static-code-analy
         implementation(kotlin("scripting-jsr223"))
       }
     }
