@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.languages.*
 import ai.hypergraph.kaliningraph.languages.Python
+import ai.hypergraph.kaliningraph.rasp.compileToRASPBytecode
 import ai.hypergraph.kaliningraph.sat.summarizeT
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
 import ai.hypergraph.markovian.stdDev
@@ -797,5 +798,17 @@ class ProbabilisticLBH {
     println("|tx|=${tx.size}, |ty|=${ty.size}")
     assertEquals(25, tx.size)
     assertEquals(tx, ty)
+  }
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testRASP"
+*/
+  @Test
+  fun testRASP() {
+    val cfg = loopyHeapless
+    completeWithSparseGRE(List(300) { "_" }, cfg)!!
+      .sampleStrWithoutReplacement(cfg.tmLst)
+      .take(10).map { it to it.compileToRASPBytecode() }
+      .forEach { println(it.first + "\n" + it.second.joinToString(" ", "", "\n")) }
   }
 }

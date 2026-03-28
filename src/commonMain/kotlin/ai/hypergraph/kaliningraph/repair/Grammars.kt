@@ -203,6 +203,19 @@ Yield_Arg -> From_Keyword Test | Testlist_Endcomma
 val vanillaS2PCFG by lazy { s2pCFGStr.parseCFG().noEpsilonOrNonterminalStubs.freeze() } // Without Epsilon
 val vanillaS2PCFGWE by lazy { s2pCFGStr.parseCFG().noNonterminalStubs.freeze() } // With Epsilon
 
+val loopyHeapless: CFG by lazy {
+  """
+    START -> fun f0 ( ipt : W ^ N ) -> W ^ N { B }
+    N -> 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+    B -> S | S ; B | hlt
+    S -> P = E | ife G { B } { B } | whl G { B }
+    Z -> 0 | N
+    G -> ipt [ Z ] | scr [ Z ] | opt [ Z ]
+    P -> scr [ Z ] | opt [ Z ]
+    E -> G + G | G * G | G | Z
+  """.parseCFG().noEpsilonOrNonterminalStubs
+}
+
 val toyPython: CFG by lazy {
   """
   START -> STMT | BOS STMT EOS

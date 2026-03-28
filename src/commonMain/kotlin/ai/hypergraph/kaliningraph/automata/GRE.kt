@@ -1,6 +1,7 @@
 package ai.hypergraph.kaliningraph.automata
 
 import ai.hypergraph.kaliningraph.KBitSet
+import ai.hypergraph.kaliningraph.nextBigInteger
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.sampling.bigLFSRSequence
@@ -9,6 +10,7 @@ import ai.hypergraph.kaliningraph.types.*
 import com.ionspin.kotlin.bignum.integer.BigInteger
 import kotlinx.coroutines.delay
 import kotlin.math.*
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.TimeSource
 
@@ -146,10 +148,12 @@ sealed class GRE(open vararg val args: GRE) {
     val total = this.sizeMemo(memo).size
     if (total.isZero()) return emptySequence()
 
+    val bits = total.bitLength()
     val idxSeq =
-      if (6 < total.bitLength()) bigLFSRSequence(total)
+      if (168 < bits) sequence { var i = BigInteger.ZERO; while (i < total) { yield(Random.nextBigInteger(total)); i++ } }
+      else if (6 < bits) bigLFSRSequence(total)
       else sequence { var i = BigInteger.ZERO; while (i < total) { yield(i); i++ } }
-
+    
     return idxSeq.mapIndexedNotNull { ix, bi ->
       if (ix % stride != offset) return@mapIndexedNotNull null
       val buf = ArrayList<Int>(32)
