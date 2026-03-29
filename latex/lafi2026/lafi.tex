@@ -168,12 +168,12 @@ Consider a simply-typed language with the following terms:
     \hskip 1em
     \AxiomC{$(\sigma_0 \rightarrow \sigma_{1..n}) \in P$}
     \RightLabel{$P_V$}
-    \UnaryInfC{$\bigcup_{i=0}^n\{\sigma_i\} \setminus \Sigma \in V$}
+    \UnaryInfC{$\bigcup_{i=0}^n\{\sigma_i\} \setminus \Sigma \subseteq V$}
     \DisplayProof
     \hskip 1em
     \AxiomC{$(\sigma_0 \rightarrow \sigma_{1..n}) \in P$}
     \RightLabel{$P_\Sigma$}
-    \UnaryInfC{$\bigcup_{i=1}^n \{\sigma_i\} \setminus V \in \Sigma$}
+    \UnaryInfC{$\bigcup_{i=1}^n \{\sigma_i\} \setminus V \subseteq \Sigma$}
   \end{prooftree}
   \end{small}
 
