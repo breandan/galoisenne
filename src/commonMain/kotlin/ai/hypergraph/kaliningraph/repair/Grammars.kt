@@ -212,7 +212,7 @@ val loopyHeapless: CFG by lazy {
     Z -> 0 | N
     G -> ipt [ Z ] | scr [ Z ] | opt [ Z ]
     P -> scr [ Z ] | opt [ Z ]
-    E -> G + G | G * G | G | Z
+    E -> G + G | G * G | G + Z | G * Z | G | Z
   """.parseCFG().noEpsilonOrNonterminalStubs
 }
 
