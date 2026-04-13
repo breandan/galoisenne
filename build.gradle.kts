@@ -1,6 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import kotlin.time.*
 import kotlin.time.DurationUnit.MILLISECONDS
 
@@ -38,8 +40,8 @@ if (sonatypeApiUser.isPresent && sonatypeApiKey.isPresent)
   nexusPublishing {
     repositories {
       sonatype {
-        nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
-        snapshotRepositoryUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        nexusUrl = uri("https://ossrh-staging-api.central.sonatype.com/service/local/")
+        snapshotRepositoryUrl = uri("https://central.sonatype.com/repository/maven-snapshots/")
         username = sonatypeApiUser
         password = sonatypeApiKey
         useStaging = true
@@ -52,10 +54,7 @@ fun getExtraString(name: String) = ext[name]?.toString()
 
 signing {
   useGpgCmd()
-  if (keyId.isPresent && password.isPresent) {
-    useInMemoryPgpKeys(keyId.get(), secretKey.get(), password.get())
-    sign(publishing.publications)
-  } else logger.info("PGP signing key not defined, skipping signing configuration")
+  sign(publishing.publications)
 }
 
 group = "ai.hypergraph"
@@ -66,7 +65,6 @@ repositories.mavenCentral {
   metadataSources.artifact()
 }
 
-val javadocJar by tasks.registering(Jar::class) { archiveClassifier = "javadoc" }
 
 kotlin {
   jvm { compilerOptions.jvmTarget = JvmTarget.JVM_21 }
@@ -94,9 +92,7 @@ kotlin {
 
     val jvmMain by getting {
       dependencies {
-        implementation(project.dependencies.platform(kotlin("bom")))
-        implementation(kotlin("stdlib"))
-        implementation(kotlin("reflect"))
+        implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.21")
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
@@ -187,34 +183,47 @@ kotlin {
    * Adapted from: https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-going-public-4a8k
    */
 
-//  publishing {
-//    publications {
-//      withType<MavenPublication> {
-//        artifact(javadocJar.get())
-//        pom {
-//          url = "https://github.com/breandan/kaliningraph"
-//          name = "Kaliningraph"
-//          description = "A purely functional algebraic graph library"
-//          licenses {
-//            license {
-//              name = "The Apache Software License, Version 2.0"
-//              url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-//              distribution = "repo"
-//            }
-//          }
-//          developers {
-//            developer {
-//              id = "Breandan Considine"
-//              name = "Breandan Considine"
-//              email = "bre@ndan.co"
-//              organization = "McGill University"
-//            }
-//          }
-//          scm { url = "https://github.com/breandan/kaliningraph" }
-//        }
-//      }
-//    }
-//  }
+  project.extensions.configure<PublishingExtension> {
+    publications.withType(MavenPublication::class.java).configureEach {
+      val pub = this
+
+      val pubJavadocJar = tasks.register("${name}JavadocJar", Jar::class) {
+        archiveBaseName.set(pub.artifactId)
+        archiveVersion.set(project.version.toString())
+        archiveClassifier.set("javadoc")
+      }
+
+      artifact(pubJavadocJar)
+
+      pom {
+        name.set("Kaliningraph")
+        description.set("A purely functional algebraic graph library")
+        url.set("https://github.com/breandan/galoisenne")
+
+        licenses {
+          license {
+            name.set("The Apache Software License, Version 2.0")
+            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            distribution.set("repo")
+          }
+        }
+
+        developers {
+          developer {
+            id.set("breandan")
+            name.set("Breandan Considine")
+            email.set("bre@ndan.co")
+          }
+        }
+
+        scm {
+          url.set("https://github.com/breandan/galoisenne")
+          connection.set("scm:git:git://github.com/breandan/galoisenne.git")
+          developerConnection.set("scm:git:ssh://git@github.com/breandan/galoisenne.git")
+        }
+      }
+    }
+  }
 }
 
 data class TestDuration(val name: String, val duration: Duration) { override fun toString() = "$name: $duration" }
