@@ -25,7 +25,7 @@ private fun unpackProdId(item: Long): Int = (item ushr 32).toInt()
 private fun unpackDot(item: Long): Int = (item and 0xffffffffL).toInt()
 
 /** History = newest-first list of packed items. */
-private data class HistKey(val items: LongArray) {
+data class HistKey(val items: LongArray) {
   override fun equals(other: Any?): Boolean =
     other is HistKey && items.contentEquals(other.items)
   override fun hashCode(): Int = items.contentHashCode()
@@ -47,7 +47,7 @@ private data class HistKey(val items: LongArray) {
   }
 }
 
-private sealed interface RTNStateKey {
+sealed interface RTNStateKey {
   data class Entry(val nt: Σᐩ, val h: HistKey) : RTNStateKey   // q_{A,H}
   data class Exit(val nt: Σᐩ, val h: HistKey) : RTNStateKey    // q'_{A,H}
   data class Item(val item: Long, val h: HistKey) : RTNStateKey // q_{I,H}
@@ -62,7 +62,8 @@ fun CFG.toNederhofNFA(
   startSymbol: Σᐩ = "START",
   historyDepth: Int = 1,
   removeEpsilons: Boolean = true,
-  trim: Boolean = true
+  trim: Boolean = true,
+  eRemoval: NFA.() -> NFA = { removeEpsilons() }
 ): NFA {
   val timer = TimeSource.Monotonic.markNow()
   require(historyDepth >= 1) { "historyDepth must be >= 1" }
@@ -153,9 +154,11 @@ fun CFG.toNederhofNFA(
     finalStates = setOf(finalId),
     transitions = transitions.mapValues { it.value }
   )
-
+  println("Finished initial NFA construction in ${timer.elapsedNow()}")
   val n1 = if (trim) raw.trim() else raw
-  val n2 = if (removeEpsilons) n1.removeEpsilons() else n1
+  println("Finished trimming in ${timer.elapsedNow()}")
+  val n2 = if (removeEpsilons) n1.eRemoval() else n1
+  println("Finished ε-removal in ${timer.elapsedNow()}")
   return (if (trim) n2.trim() else n2)
     .also { println("Nederhof approximation constructed in ${timer.elapsedNow()}") }
 }
