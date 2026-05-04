@@ -723,13 +723,8 @@ class KneserNeyLM(
  * Wrapper for List<String> to be used as a HashMap key.
  * Can be optimized with integer packing later if needed.
  */
-data class Hist(val toks: List<String>)
 
-fun NFA.toWFAWithLM(
-  lm: KneserNeyLM,
-  bos: String = "BOS",
-  eos: String = "EOS"
-): WFA {
+fun NFA.toWFAWithLM(lm: KneserNeyLM, bos: String = "BOS", eos: String = "EOS"): WFA {
   // 1. Context Inference
   // We need to determine "What word history does state S represent?"
   // Since we cannot change topology, we infer history from incoming edges.
@@ -739,9 +734,7 @@ fun NFA.toWFAWithLM(
   // Initialize start states with BOS (Beginning of Sentence) context
   // The context size should ideally be maxOrder - 1
   val startCtx = listOf(bos)
-  for (s in startStates) {
-    stateContexts[s] = startCtx
-  }
+  for (s in startStates) stateContexts[s] = startCtx
 
   // Propagate context via BFS/Topological traversal
   // If a state has multiple incoming edges with conflicting histories,

@@ -160,7 +160,7 @@ fun CFG.toNederhofNFA(
   val n2 = if (removeEpsilons) n1.eRemoval() else n1
   println("Finished ε-removal in ${timer.elapsedNow()}")
   return (if (trim) n2.trim() else n2)
-    .also { println("Nederhof approximation constructed in ${timer.elapsedNow()}") }
+    .also { println("Nederhof ${historyDepth}-RTN approximation constructed in ${timer.elapsedNow()}") }
 }
 
 fun CFG.toNederhofNFA(history: Int = 1): NFA =

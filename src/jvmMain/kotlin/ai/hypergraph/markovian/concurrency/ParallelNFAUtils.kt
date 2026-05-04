@@ -1,13 +1,14 @@
 package ai.hypergraph.markovian.concurrency
 
 import ai.hypergraph.kaliningraph.parsing.*
-import ai.hypergraph.kaliningraph.parsing.approximations.DEFAULT_LIDSTONE_ALPHA
-import ai.hypergraph.kaliningraph.parsing.approximations.WFA
+import ai.hypergraph.kaliningraph.parsing.approximations.*
+import java.io.File
+import java.nio.*
 import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.IntStream
-import kotlin.math.ln
+import kotlin.math.*
 import kotlin.time.TimeSource
 
 fun NFA.removeEpsilonsParallel(): NFA {
@@ -538,4 +539,119 @@ fun NFA.trainDFAParallel(
       transitions = weightedTransitions
     )
   } finally { pool.shutdown() }
+}
+
+const val WDFA_MAGIC: Int = 0x41464457 // "WDFA" little-endian-ish
+const val WDFA_VERSION: Int = 1
+const val WDFA_INF: Int = 0x3fffffff
+
+fun negLogCost(w: Double, scale: Int): Int {
+  if (!w.isFinite()) return WDFA_INF
+  val c = (-w * scale).roundToInt()
+  require(c >= 0) {
+    "Expected log-weights <= 0 for GPU cost encoding; got weight=$w"
+  }
+  return c.coerceAtMost(WDFA_INF)
+}
+
+/**
+ * Serializes a deterministic, epsilon-free, token-level WFA/WDFA.
+ *
+ * Assumes edge labels are CFG terminals and cfg.tmMap[label] is the same
+ * 1-based token id written into sampled packets. If cfg.tmMap is 0-based
+ * in your build, change `tok = ...` to `tok = ... + 1`.
+ */
+fun WFA.toWDFAInts(cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0): IntArray {
+  require(startWeights.size == 1) { "GPU WDFA path expects exactly one start state" }
+  require(transitions.values.none { es -> es.any { it.label == null } }) { "GPU WDFA path expects ε-free automata" }
+
+  val states = allStates.toIntArray().also { it.sort() }
+  val n = states.size
+  val dense = HashMap<Int, Int>(n * 2)
+  for (i in states.indices) dense[states[i]] = i
+
+  val startOrig = startWeights.keys.single()
+  val start = dense[startOrig] ?: error("Missing dense start state: $startOrig")
+  val startCost = negLogCost(startWeights.getValue(startOrig), scale)
+  val missingCost = negLogCost(missingPenalty, scale)
+
+  val finalCost = IntArray(n) { WDFA_INF }
+  for ((q0, w) in finalWeights) {
+    val q = dense[q0] ?: continue
+    finalCost[q] = negLogCost(w, scale)
+  }
+
+  val rowOffset = IntArray(n + 1)
+  val edgeTok = ArrayList<Int>()
+  val edgeDst = ArrayList<Int>()
+  val edgeCost = ArrayList<Int>()
+
+  for (q in 0 until n) {
+    val q0 = states[q]
+    val outs = transitions[q0].orEmpty()
+
+    val row = ArrayList<Triple<Int, Int, Int>>(outs.size)
+    val seen = HashSet<Int>()
+
+    for (e in outs) {
+      val lab = e.label ?: error("epsilon edge not allowed")
+      val tok = (cfg.tmMap[lab] ?: error("WDFA label not in cfg.tmMap: $lab")) + 1
+      require(tok > 0) { "Expected packet-compatible 1-based token id for '$lab', got $tok" }
+      require(seen.add(tok)) { "Non-deterministic WDFA row: state=$q0 has duplicate token=$tok label=$lab" }
+
+      val dst = dense[e.target] ?: error("Missing dense target state: ${e.target}")
+      row += Triple(tok, dst, negLogCost(e.weight, scale))
+    }
+
+    row.sortBy { it.first }
+
+    rowOffset[q] = edgeTok.size
+    for ((tok, dst, cost) in row) {
+      edgeTok += tok
+      edgeDst += dst
+      edgeCost += cost
+    }
+  }
+  rowOffset[n] = edgeTok.size
+
+  val payloads = listOf(
+    finalCost,
+    rowOffset,
+    edgeTok.toIntArray(),
+    edgeDst.toIntArray(),
+    edgeCost.toIntArray()
+  )
+
+  val constants = listOf(
+    WDFA_MAGIC,
+    WDFA_VERSION,
+    scale,
+    n,
+    edgeTok.size,
+    start,
+    startCost,
+    missingCost
+  )
+
+  val lens = payloads.map { it.size }
+  val offsets = lens.runningFold(0) { acc, len -> acc + len }.dropLast(1)
+
+  val header = ArrayList<Int>(constants.size + payloads.size * 2)
+  header += constants
+  for (i in payloads.indices) { header += offsets[i]; header += lens[i] }
+
+  val out = IntArray(header.size + lens.sum())
+  var p = 0
+  for (x in header) out[p++] = x
+  for (buf in payloads) { for (x in buf) out[p++] = x }
+
+  return out
+}
+
+fun WFA.writeWDFA(file: String, cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0) {
+  val ints = toWDFAInts(cfg, scale, missingPenalty)
+  val bb = ByteBuffer .allocate(ints.size * 4).order(ByteOrder.LITTLE_ENDIAN)
+
+  for (x in ints) bb.putInt(x)
+  File(file).writeBytes(bb.array())
 }
