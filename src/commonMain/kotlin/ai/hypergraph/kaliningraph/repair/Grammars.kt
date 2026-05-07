@@ -4312,6 +4312,11 @@ val dyck by lazy {
   """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
 }
 
+val ifWhl by lazy {
+  """START -> x | START START | { START }"""
+    .trimIndent().parseCFG().noEpsilonOrNonterminalStubs
+}
+
 val simpleLang by lazy {
   """
     START -> START + START | START * START | START - START | START / START | ( START )

@@ -1,0 +1,39 @@
+\begin{tikzpicture}[>=latex, every node/.style={font=\tiny}
+]
+  \coordinate (C) at (3,3);
+
+  \draw[thick] (0,0) rectangle (6,6);
+  \node at (0.5,5.5) {$\Sigma^+$};
+
+  \pgfmathsetseed{12310}
+  \begin{scope}[decoration={random steps,segment length=2pt,amplitude=1.02pt}]
+    \draw[thick,decorate] (C) circle [radius=2.6];
+  \end{scope}
+  \node at (1.2,4.0) {$\mathcal{L}(\alpha)$};
+
+  \begin{scope}[decoration={random steps,segment length=4pt,amplitude=4pt}]
+    \draw[thick,decorate] (C) circle [radius=1.65];
+  \end{scope}
+  \node at (2.03,3.17) {$\mathcal{L}(G)$};
+
+  \pgfmathsetseed{2673}
+  \begin{scope}
+    \clip (C) circle[radius=1.5];
+    \foreach \k in {1,...,80}{
+      \pgfmathsetmacro{\rr}{sqrt(rnd)*1.45}
+      \pgfmathsetmacro{\tt}{rnd*360}
+      \fill[red] ($(C)+(\tt:\rr)$) circle[radius=0.032];
+    }
+  \end{scope}
+  % Calculate exact positions for the gap measurement line at 3 o'clock (0 degrees).
+% We add a small 0.1em pad for the label and a small gap for clarity.
+% For the outer circle, we use the un-decorated (minimum) radius.
+  \coordinate (gap_start) at ($(C)+(0:1.65)$);
+  \coordinate (gap_end) at ($(C)+(0:2.6)$);
+
+% Draw the line with vertical bars and internal arrows
+  \draw[|<->|, thin, shorten >=0.05em, shorten <=0.05em] (gap_start) -- (gap_end);
+
+% Place the label \Delta above the line
+  \node[anchor=south, yshift=-0.25cm] at ($(gap_start)!0.5!(gap_end)$) {$\Delta$};
+\end{tikzpicture}

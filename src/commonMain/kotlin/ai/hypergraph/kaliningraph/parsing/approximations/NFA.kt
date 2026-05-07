@@ -585,18 +585,18 @@ data class NFA(
   fun toGraphviz(name: String = "Nederhof_NFA"): String = buildString {
     appendLine("digraph $name {")
     appendLine("  rankdir=LR;")
-    appendLine("  node [shape = circle, fontname = \"Helvetica\"];")
+    appendLine("  node [label=\"\", shape = circle, fontname = \"Helvetica\"];")
     appendLine("  edge [fontname = \"Helvetica\"];")
 
     // 1. Define Final States
     if (finalStates.isNotEmpty()) {
-      append("  node [shape = doublecircle];")
+      append("  node [label=\"\", shape = doublecircle];")
       finalStates.forEach { append(" $it") }
       appendLine(";")
     }
 
     // 2. Define Start States
-    appendLine("  node [shape = circle];")
+    appendLine("  node [label=\"\", shape = circle];")
     appendLine("  __start [style = invisible, shape = point];")
     startStates.forEach { start ->
       appendLine("  __start -> $start;")
@@ -608,7 +608,6 @@ data class NFA(
       edges.map { edge -> Triple(src, edge.target, edge.label) }
     }.groupBy { (src, target, _) -> src to target }
 
-    // Render groups
     // Render groups
     for ((key, group) in groupedTransitions) {
       val (src, target) = key

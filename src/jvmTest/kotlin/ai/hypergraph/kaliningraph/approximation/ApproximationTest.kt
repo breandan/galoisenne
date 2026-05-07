@@ -6,21 +6,28 @@ import ai.hypergraph.kaliningraph.languages.Python.subwords
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
 import ai.hypergraph.kaliningraph.parsing.approximations.*
+import ai.hypergraph.kaliningraph.repair.dyck
+import ai.hypergraph.kaliningraph.repair.ifWhl
+import ai.hypergraph.kaliningraph.repair.loopyHeapless
+import ai.hypergraph.kaliningraph.repair.simpleLang
 import ai.hypergraph.kaliningraph.repair.toyPython
 import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
 import ai.hypergraph.kaliningraph.sat.TricliqueCoverSolver
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
+import ai.hypergraph.kaliningraph.visualization.render
+import ai.hypergraph.kaliningraph.visualization.show
 import ai.hypergraph.markovian.mcmc.toNgramMap
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.net.URL
 import kotlin.time.measureTime
 
 fun NFA.save(name: String) = File(name).writeBytes(toSafeTensors())
 
 class ApproximationTest {
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testApproximation"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testApproximation"
+*/
   @Test
   fun testApproximation() {
     val cfg = Grammars.seq2parsePythonVanillaCFG
@@ -89,9 +96,9 @@ class ApproximationTest {
     }
   }
 
-  /*
-  ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testWFA"
-  */
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testWFA"
+*/
   @Test
   fun testWFA() {
     val wfa = makeWFA(toyPython, Python.P_BIFI_PY150.toNgramMap(), subwords)
@@ -100,7 +107,7 @@ class ApproximationTest {
     File("wfsa.dot").writeText(wfa.toGraphviz())
   }
 
-  /*
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testPythonEquivalence"
 */
   @Test
@@ -150,9 +157,22 @@ class ApproximationTest {
     }.also { println("Took: $it") }
   }
 
+
+/*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.vizNederhof"
+*/
+//  @Test
+  fun vizNederhof() {
+    val d2: NFA = simpleLang.toNederhofNFA(historyDepth = 2).determinize().minimize()
+    d2.show()
+    println(d2.recognizes("{ { x x } x }".tokenizeByWhitespace()))
+//    println("NFA: ${d2.summary()}")
+//    d2.toGraphviz().show()
+  }
+
   /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.optimizeTricliqueCover"
-  */
+*/
   @Test
   fun optimizeTricliqueCover() {
     val cfg = vanillaS2PCFG
@@ -160,5 +180,38 @@ class ApproximationTest {
     val tcc = TricliqueCoverSolver(cfg)
 //    println("Triclique cover:\n\n" + tcc.serialize())
 //    println("Summary\n${tcc.summary()}")
+  }
+
+  companion object {
+    private fun NFA.show() = toGraphviz().graphvizUrl().show()
+
+    private val GRAPHVIZ_ONLINE =
+      "https://dreampuf.github.io/GraphvizOnline/?engine="
+
+    private fun String.urlFragmentEncode(): String {
+      val hex = "0123456789ABCDEF"
+      return buildString {
+        for (byte in this@urlFragmentEncode.encodeToByteArray()) {
+          val b = byte.toInt() and 0xFF
+          val c = b.toChar()
+
+          val unreserved =
+            c in 'A'..'Z' ||
+                c in 'a'..'z' ||
+                c in '0'..'9' ||
+                c == '-' || c == '_' || c == '.' || c == '~'
+
+          if (unreserved) append(c)
+          else {
+            append('%')
+            append(hex[b ushr 4])
+            append(hex[b and 0x0F])
+          }
+        }
+      }
+    }
+
+    fun String.graphvizUrl(engine: String = "dot"): URL =
+      URL(GRAPHVIZ_ONLINE + engine.urlFragmentEncode() + "#" + this.urlFragmentEncode())
   }
 }
