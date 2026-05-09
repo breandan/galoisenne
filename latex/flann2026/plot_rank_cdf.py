@@ -9,58 +9,80 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-MODELS = ["MKC", "WFA", "NEURAL", "RAND"]
+MODELS = [
+    # "MKC",
+    # "RAND",
+    # "WDFA",
+    "CSTD"
+]
+DISPLAY_NAMES = {
+    # "MKC": "MKC",
+    # "RAND": "RAND",
+    # "WDFA": "WDFA",
+    "CSTD": "CSTD",
+}
 
-rank_re = re.compile(
-    r"""(?:ORIG\s+)?(MKC|WFA|NEURAL|RAND)\s+RANK:\s*(-?\d+)(?:\s*/\s*(\d+))?(?=\s|$)""",
-    re.IGNORECASE,
-)
+# Parse only the first integer after each desired label.
+# Accept both MKC and MKV for robustness.
+PATTERNS = {
+    # "MKC": re.compile(r"\bORIG\s+MK[CV]\s+RANK:\s*(-?\d+)\b", re.IGNORECASE),
+    # "RAND": re.compile(r"\bRAND\s+RANK:\s*(-?\d+)\b", re.IGNORECASE),
+    # "WDFA": re.compile(r"\bWDFA\s+RANK:\s*(-?\d+)\b", re.IGNORECASE),
+    # "NEURAL": re.compile(r"\bNEURAL\s+RANK:\s*(-?\d+)\b", re.IGNORECASE),
+    "CSTD": re.compile(r"\bCSTD\s+RANK:\s*(-?\d+)\b", re.IGNORECASE),
+}
 
 
 def read_ranks(path: Path) -> dict[str, list[int]]:
     ranks = {name: [] for name in MODELS}
 
     with path.open("r", encoding="utf-8", errors="replace") as f:
-        for line_no, line in enumerate(f, start=1):
-            m = rank_re.search(line)
-            if m is None:
-                continue
-
-            model = m.group(1).upper()
-            rank = int(m.group(2))
-            ranks[model].append(rank)
+        for line in f:
+            for model, pat in PATTERNS.items():
+                m = pat.search(line)
+                if m is not None:
+                    ranks[model].append(int(m.group(1)))
+                    break
 
     return ranks
 
 
 def exact_cdf_points(values: list[int]) -> tuple[np.ndarray, np.ndarray]:
-    values = np.asarray(values, dtype=int)
+    """
+    Convert zero-based ranks to CDF points.
 
-    # -1 means not retrieved.
-    #  0 means best possible rank.
-    # Since log-scale cannot plot x=0, plot raw rank r as x = r + 1.
-    retrieved = values[values >= 0]
-    retrieved = np.sort(retrieved)
+    Convention:
+      -1  => not retrieved
+       0  => best possible rank
 
-    if len(values) == 0 or len(retrieved) == 0:
+    Since log-scale cannot show x=0, we plot x = rank + 1.
+    The CDF denominator is the full number of examples, so the final plateau
+    equals the retrieval rate.
+    """
+    if not values:
+        return np.array([], dtype=int), np.array([], dtype=float)
+
+    vals = np.asarray(values, dtype=int)
+    retrieved = np.sort(vals[vals >= 0])
+
+    if retrieved.size == 0:
         return np.array([], dtype=int), np.array([], dtype=float)
 
     xs = retrieved + 1
-    ys = np.arange(1, len(retrieved) + 1, dtype=float) / len(values)
-
+    ys = np.arange(1, retrieved.size + 1, dtype=float) / len(vals)
     return xs, ys
 
 
 def collapse_duplicate_x(xs: np.ndarray, ys: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
-    If many items have the same rank, keep only the final CDF height
-    for that x-coordinate. This is exact for the visible CDF envelope.
+    If many examples share the same rank, keep only the last CDF height at that x.
+    This preserves the visible CDF envelope while removing redundant points.
     """
     if len(xs) == 0:
         return xs, ys
 
-    last_idx = np.r_[np.flatnonzero(xs[1:] != xs[:-1]), len(xs) - 1]
-    return xs[last_idx], ys[last_idx]
+    keep = np.r_[np.flatnonzero(xs[1:] != xs[:-1]), len(xs) - 1]
+    return xs[keep], ys[keep]
 
 
 def simplify_log_cdf(
@@ -70,26 +92,25 @@ def simplify_log_cdf(
         exact_head: int = 50,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Reduce PGFPlots size by keeping:
-      1. one point per distinct x-coordinate,
-      2. all small-rank points up to exact_head,
-      3. a log-spaced subset of the remaining tail.
+    Simplify a monotone CDF for plotting on a log-x axis.
 
-    The curve remains monotone and visually faithful on a log x-axis.
+    Strategy:
+      1. Collapse repeated x-values.
+      2. Keep all points with x <= exact_head.
+      3. Keep endpoints.
+      4. In the tail, keep a log-spaced subset of existing points.
     """
     xs, ys = collapse_duplicate_x(xs, ys)
 
     n = len(xs)
-    if n <= max_points:
+    if n == 0 or n <= max_points:
         return xs, ys
 
     keep = set()
-
-    # Always keep endpoints.
     keep.add(0)
     keep.add(n - 1)
 
-    # Keep low ranks exactly. These are visually important and few.
+    # Keep all low-rank points exactly.
     for idx in np.flatnonzero(xs <= exact_head):
         keep.add(int(idx))
 
@@ -98,27 +119,23 @@ def simplify_log_cdf(
         idxs = np.array(sorted(keep), dtype=int)
         return xs[idxs], ys[idxs]
 
-    tail_start_candidates = np.flatnonzero(xs > exact_head)
+    tail_idxs = np.flatnonzero(xs > exact_head)
+    if len(tail_idxs) > 0:
+        tail_start = int(tail_idxs[0])
+        keep.add(tail_start)
 
-    if len(tail_start_candidates) > 0:
-        tail_start = int(tail_start_candidates[0])
         xmin = xs[tail_start]
         xmax = xs[-1]
 
         if xmin < xmax:
-            # Pick actual existing points at log-spaced x thresholds.
             edges = np.geomspace(xmin, xmax, num=remaining_budget + 1)
-
             for edge in edges:
                 idx = int(np.searchsorted(xs, edge, side="right") - 1)
                 if 0 <= idx < n:
                     keep.add(idx)
 
-        keep.add(tail_start)
-
     idxs = np.array(sorted(keep), dtype=int)
 
-    # If duplicate selections or a huge exact head went over budget, thin again.
     if len(idxs) > max_points:
         chosen = np.linspace(0, len(idxs) - 1, max_points).round().astype(int)
         idxs = idxs[chosen]
@@ -130,33 +147,34 @@ def pgf_coordinates(xs: np.ndarray, ys: np.ndarray) -> str:
     return "\n".join(f"({int(x)},{y:.8f})" for x, y in zip(xs, ys))
 
 
-def make_pgfplots(series: dict[str, tuple[np.ndarray, np.ndarray]]) -> str:
-    plots = []
+def make_pgfplots(series: dict[str, tuple[np.ndarray, np.ndarray]], top_k: int = 1000) -> str:
+    blocks = []
 
-    for name, (xs, ys) in series.items():
+    for model in MODELS:
+        xs, ys = series[model]
         if len(xs) == 0:
             continue
 
-        plots.append(
+        blocks.append(
             rf"""
 \addplot+[mark=none, line width=3pt] coordinates {{
 {pgf_coordinates(xs, ys)}
 }};
-\addlegendentry{{{name}}}
+\addlegendentry{{{DISPLAY_NAMES[model]}}}
 """.strip()
         )
 
-    plots.append(
-        r"""
-\addplot+[red, dashed, line width=3.4pt, mark=none] coordinates {
-(1000,0)
-(1000,1)
-};
-\addlegendentry{Rank 1000}
+    blocks.append(
+        rf"""
+\addplot+[red, dashed, line width=3pt, mark=none] coordinates {{
+({top_k},0)
+({top_k},1)
+}};
+\addlegendentry{{Rank {top_k}}}
 """.strip()
     )
 
-    body = "\n\n".join(plots)
+    body = "\n\n".join(blocks)
 
     return rf"""
 \begin{{tikzpicture}}
@@ -165,7 +183,10 @@ def make_pgfplots(series: dict[str, tuple[np.ndarray, np.ndarray]]) -> str:
   height=0.45\linewidth,
   xmode=log,
   log basis x=10,
-  xlabel={{Rank, plotted as raw rank $+1$}},
+  ymin=0,
+  ymax=0.8,
+  ytick={{0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8}},
+  xlabel={{Rank, plotted as raw rank + 1}},
   ylabel={{Cumulative probability}},
   title={{CDF of Ranks}},
   legend pos=south east,
@@ -179,24 +200,20 @@ def make_pgfplots(series: dict[str, tuple[np.ndarray, np.ndarray]]) -> str:
 """.strip()
 
 
-def summarize(name: str, values: list[int]) -> None:
-    values_np = np.asarray(values, dtype=int)
+def summarize(model: str, values: list[int]) -> None:
+    vals = np.asarray(values, dtype=int)
 
-    retrieved = int(np.sum(values_np >= 0))
-    rank0 = int(np.sum(values_np == 0))
-    positive_rank = int(np.sum(values_np > 0))
-    not_retrieved = int(np.sum(values_np == -1))
-    other_negative = int(np.sum(values_np < -1))
-    plateau = retrieved / len(values_np) if len(values_np) else 0.0
+    if len(vals) == 0:
+        print(f"{model}: n=0", file=sys.stderr)
+        return
+
+    retrieved = int(np.sum(vals >= 0))
+    not_retrieved = int(np.sum(vals == -1))
+    plateau = retrieved / len(vals)
 
     print(
-        f"{name}: n={len(values_np)}, "
-        f"retrieved={retrieved}, "
-        f"rank0={rank0}, "
-        f"positive_rank={positive_rank}, "
-        f"not_retrieved={not_retrieved}, "
-        f"other_negative={other_negative}, "
-        f"cdf_plateau={plateau:.6f}",
+        f"{model}: n={len(vals)}, retrieved={retrieved}, "
+        f"not_retrieved={not_retrieved}, plateau={plateau:.6f}",
         file=sys.stderr,
     )
 
@@ -206,70 +223,77 @@ def main() -> None:
     parser.add_argument(
         "--log",
         type=Path,
-        default=Path(__file__).with_name("reconstruct_cdf.log"),
-        help="Path to reconstruct_cdf.log",
+        default=Path(__file__).with_name("reconstruct_cdf8.log"),
+        help="Path to the log file",
     )
     parser.add_argument(
         "--max-points",
         type=int,
         default=500,
-        help="Maximum PGFPlots points per CDF curve after simplification",
+        help="Maximum number of points per simplified CDF",
     )
     parser.add_argument(
         "--exact-head",
         type=int,
         default=50,
-        help="Keep ranks <= this plotted x-value exactly before log-binning",
+        help="Keep all points with x <= this value before log-tail simplification",
+    )
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=1000,
+        help="Reference vertical line at this plotted x-value",
     )
     parser.add_argument(
         "--no-display",
         action="store_true",
-        help="Do not open the matplotlib display window",
+        help="Do not show the matplotlib window",
     )
     args = parser.parse_args()
 
     ranks = read_ranks(args.log)
 
-    lengths = {name: len(values) for name, values in ranks.items() if len(values) > 0}
+    lengths = {k: len(v) for k, v in ranks.items()}
     if len(set(lengths.values())) > 1:
-        print(f"WARNING: unequal number of parsed ranks: {lengths}", file=sys.stderr)
-        print("This usually means one rank line is missing or malformed in the log.", file=sys.stderr)
+        print(
+            f"WARNING: unequal number of parsed ranks: {lengths}",
+            file=sys.stderr,
+        )
 
     exact_series = {}
     simplified_series = {}
 
-    for name, values in ranks.items():
-        xs, ys = exact_cdf_points(values)
-        exact_series[name] = (xs, ys)
-        simplified_series[name] = simplify_log_cdf(
-            xs,
-            ys,
+    for model in MODELS:
+        xs, ys = exact_cdf_points(ranks[model])
+        exact_series[model] = (xs, ys)
+
+        xs_s, ys_s = simplify_log_cdf(
+            xs, ys,
             max_points=args.max_points,
             exact_head=args.exact_head,
         )
+        simplified_series[model] = (xs_s, ys_s)
 
-    for name in MODELS:
-        summarize(name, ranks[name])
+    for model in MODELS:
+        summarize(model, ranks[model])
 
-    for name in MODELS:
-        exact_n = len(exact_series[name][0])
-        simp_n = len(simplified_series[name][0])
-        if exact_n:
-            print(
-                f"{name}: tikz points {exact_n} -> {simp_n}",
-                file=sys.stderr,
-            )
+    for model in MODELS:
+        n0 = len(exact_series[model][0])
+        n1 = len(simplified_series[model][0])
+        if n0 > 0:
+            print(f"{model}: tikz points {n0} -> {n1}", file=sys.stderr)
 
     if not args.no_display:
         plt.figure(figsize=(7, 4.5))
 
-        # Display the simplified curves too, so the local plot matches the TeX.
-        for name, (xs, ys) in simplified_series.items():
+        # Plot the simplified curves, not the full curves.
+        for model in MODELS:
+            xs, ys = simplified_series[model]
             if len(xs):
-                plt.plot(xs, ys, label=name)
+                plt.plot(xs, ys, label=DISPLAY_NAMES[model])
 
         plt.xscale("log")
-        plt.axvline(x=1000, color="red", linestyle="--", label="Rank 1000")
+        plt.axvline(x=args.top_k, color="red", linestyle="--", label=f"Rank {args.top_k}")
         plt.xlabel("Rank, plotted as raw rank + 1")
         plt.ylabel("Cumulative Probability")
         plt.title("CDF of Ranks")
@@ -277,8 +301,8 @@ def main() -> None:
         plt.tight_layout()
         plt.show()
 
-    # Print only the PGFPlots/TikZ code to stdout.
-    print(make_pgfplots(simplified_series))
+    # Emit PGFPlots/TikZ to stdout.
+    print(make_pgfplots(simplified_series, top_k=args.top_k))
 
 
 if __name__ == "__main__":

@@ -23,11 +23,23 @@
 \def\extraVskip{6pt}
 \makeatother
 \usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
+\pgfplotsset{
+  compat=1.18,
+  every tick label/.append style={font=\large}
+}
 \usepackage{dsfont}
 \usepackage{qrcode}
 \usepackage{svg}
 \usetikzlibrary{automata, positioning, arrows.meta}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsthm}
+
+\newtheorem{definition}{Definition}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 %\setlength{\proofhsep}{55pt}   % default is smaller
 %\setlength{\proofvsep}{50pt}   % optional
@@ -100,14 +112,14 @@
 %            \itemindent=-0.6cm
             \item \textbf{Assume}: we are given a learned distribution, $P_{\theta}(\sigma)$, with support over $\sigma: \Sigma^+$ but largely concentrated within $\mathcal{L}(G)$, where $G$ is a known CFG.
             \item \textbf{Our goal}: distill a surrogate WFA, $\alpha_{\hat\theta}$, such that for all $\sigma \in \mathcal{L}(G)$, $P_{\hat\theta}(\sigma) \propto P_{\theta}\big(\sigma \mid \sigma \in \mathcal{L}(G)\big)$, while preserving inclusion $\big(\mathcal{L}(\alpha)\supseteq \mathcal{L}(G)\big)$.
-            \item \textbf{Desiderata}: Regular description $\alpha$ should be reasonably concise and precise, i.e., $\Delta = |\mathcal{L}(\alpha) \setminus \mathcal{L}(G)|$ is approximately minimized up to $\Sigma^n$.
+            \item \textbf{Desiderata}: The regular description $\alpha$ should be reasonably concise and precise, i.e., $\Delta = |\mathcal{L}(\alpha) \setminus \mathcal{L}(G)|$ is approximately minimized up to $\Sigma^n$.
           \end{itemize}
     \end{minipage}
 
     \jointspacing
 
 % =========================================================
-\mysection{Nederhof's Regular Approximation}
+\mysection{Nederhof's Construction}
 
 \null\hspace*{2.8cm}\begin{minipage}[c]{0.87\columnwidth}
   A recursive transition network (RTN) of a CFG $\langle \Sigma,V, P, S\rangle$ is an automaton,
@@ -116,7 +128,7 @@
     \:\:
     \delta_A\subseteq Q_A\times\big(\Sigma\cup V\cup\{\varepsilon\}\big)\times Q_A,
   \]
-  where an arc labelled \(B\in V\) denotes a call to \(R_B\). For example, consider the CFG, $\texttt{S } \rightarrow \texttt{ x } \mid \texttt{ S S } \mid \texttt{ \{ S \}}$, which has the following RTN:
+  where an arc labelled \(B\in V\) denotes a call to \(R_B\). For example, consider the CFG, $\texttt{S } \rightarrow \texttt{ x } \mid \texttt{ S S } \mid \texttt{ \{ S \}}$, which has the following RTN:\vspace{0.6cm}
 
   % https://dreampuf.github.io/GraphvizOnline/?engine=dot#digraph%20RTN_S%20%7B%0A%20%20%20%20rankdir%3DLR%3B%0A%20%20%20%20nodesep%3D0.3%3B%0A%20%20%20%20node%20%5Bshape%3Dcircle%2C%20fontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D12%5D%3B%0A%20%20%20%20edge%20%5Bfontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D10%5D%3B%0A%0A%20%20%20%20entry%20%5Blabel%3D%22%22%2C%20shape%3Dnone%2C%20width%3D0%5D%3B%0A%20%20%20%20s_S%20%20%20%5Blabel%3D%22q0%22%5D%3B%0A%20%20%20%20f_S%20%20%20%5Blabel%3D%22qf%22%2C%20shape%3Ddoublecircle%5D%3B%0A%0A%20%20%20%20entry%20-%3E%20s_S%3B%0A%0A%20%20%20%20s_S%20-%3E%20f_S%20%5Blabel%3D%22%20x%20%22%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q1%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q1%20%20-%3E%20f_S%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q2%20%5Blabel%3D%22%20%7B%20%22%5D%3B%0A%20%20%20%20q2%20%20-%3E%20q3%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q3%20%20-%3E%20f_S%20%5Blabel%3D%22%20%7D%20%22%5D%3B%0A%7D
 
@@ -189,7 +201,7 @@
   \end{minipage}
     \vspace{0.7em}
 
-    \mysection{Our Method}
+    \mysection{Method}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
     We propose a counterexample-guided abstraction refinement (CEGAR) loop that incrementally refines $\alpha_{\hat\theta}$ until a desired precision or $|Q|_\max$ is reached:\vspace{0.4cm}
@@ -210,12 +222,12 @@
     \jointspacing\newpage
 
 % =========================================================
-    \mysection{Maximum Probability Intersection Decoding}
+    \mysection{Intersection Decoding}
 
     \vspace{-2.5cm}
     \null\hspace*{2.8cm}\begin{minipage}[t]{0.86\columnwidth}
       \begin{minipage}[t]{0.48\linewidth}\vspace{0pt}
-        We will evaluate our learned WFA on a constrained decoding task: given a dataset of near-words $\err\sigma \notin \mathcal{L}(G)$ and pairwise repairs $\sigma$ within a small edit distance, sample uniformly WoR repairs within $\ell_\cap$, score and rank each repair according to $P_{\hat\theta}(\sigma)$, then measure mean reciprocal rank{\parfillskip=0pt\par}
+        We will evaluate our learned WFA on a constrained decoding task: given a dataset of near-words $\err\sigma \notin \mathcal{L}(G)$ and pairwise human repairs $\sigma'$ within a small edit distance, sample uniformly WoR repairs within $\ell_\cap$, score and rank each repair according to $P_{\hat\theta}(\sigma)$, then measure the true repair's rank.{\parfillskip=0pt\par}
       \end{minipage}%
       \hfill
       \begin{minipage}[t]{0.48\linewidth}
@@ -226,89 +238,78 @@
       \end{minipage}
 
       \vspace{0.4em}
-      (MRR) of true repairs across the validation set. Optionally, we may rerank the top-1,000 repairs using a neural reranker, $P_\theta(\sigma \mid \err \sigma)$, and report MRR.
+%      across the validation set. Optionally, we may rerank the top-1,000 repairs using a Levenshtein-aligned transformer reranker (LATR) which takes a word and a list of candidates and estimates, $P_\theta(\sigma \mid \err \sigma)$.\\
+      \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
+        Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., if $\Delta_L$ is the Levenshtein metric and $\mathcal{L}\big(\text{L}(\err\sigma, d)\big) = \{\sigma' \mid \Delta_L(\err{\sigma}, \sigma') \leq d\}$ is the Levenshtein $d$-ball, we seek to find $\ell_\cap = \mathcal{L}\big(\text{L}(\err\sigma, d)\big) \cap \ell$.
+      \end{definition}
 
+      \vspace{0.1cm}Moreover, we want a procedure that surfaces \textit{both} natural and valid repairs:\vspace{0.1cm}
+
+      \begin{definition}[Ranked repair]\label{def:ranked-repair}
+        Given a finite language $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$ and LM, $\text{P}_\theta: \Sigma^* \rightarrow \mathbb{R}$, find the top-$k$ maximum probability repairs, i.e.,
+        \begin{equation*}
+          R(\ell_\cap, P_\theta): 2^{\Sigma^+} \times (\Sigma^+ \rightarrow \mathbb{R}) \rightarrow (\Sigma^+)^{\leq k} = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+        \end{equation*}
+      \end{definition}
+      \end{minipage}
+
+    \jointspacing
+
+    \mysection{Evaluation}
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+    We will compare four different methods for constrained decoding from $\ell_\cap$:
+
+    \begin{enumerate}
+      \itemsep0em
+      \itemindent=4cm
+      \sloppy
+      \setlength{\emergencystretch}{5cm}
+      \item \phantom{.} A \textbf{4-gram} model with Laplace smoothing trained on $\sigma \in \mathcal{L}(G)$
+      \item \phantom{.} A \textbf{GPT}-style model trained on $\err\sigma\sigma'$ with LTR $\sigma'$ masking
+      \item \phantom{.} A \textbf{PDFA} distilled from $P_\theta$ overapproximating $\mathcal{L}(G)$
+      \item \phantom{.} A \textbf{LATeR} (PDFA decoding + top-512 reranker)
+    \end{enumerate}
+      Let $\text{E}_\theta: \Sigma^+ \rightarrow \mathbb{R}^p$ be a transformer encoder and $E'_\theta: \Sigma^+ \times \mathbb{Z}_4^+ \rightarrow \mathbb{R}^p$ be an encoder which takes in a Levenshtein alignment $(\text{LA}: \Sigma^+ \times \Sigma^+ \rightarrow \mathbb{Z}_4^+)$ for each $\langle\err\sigma, \sigma\rangle$ pair. Now add an MLP and output a scalar relevance score:
+      \begin{equation*}
+        \Delta_\theta(\err\sigma, \sigma) = \text{MLP}_{\theta}\Big(\text{E}_\theta\big(\err\sigma\big), \text{E}_\theta'\big(\sigma, \text{LA}(\err\sigma, \sigma)\big)\Big)
+      \end{equation*}
+
+      We call this model a Levenshtein-Aligned Transformer Reranker (LATeR) and train on $\langle\err\sigma, \sigma'\rangle$ with PDFA-sampled confounders and a listwise CE loss.
     \end{minipage}
 
     \jointspacing
 
 % =========================================================
-%    \mysection{Evaluation Snapshot}
-%
-%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-%                          We evaluate for small arity $k\in[1,3]$ with $|\Gamma|=18$ and $|\T|=7$, producing CNF grammars roughly
-%                          $|G_\Gamma'|\in[1.9\times 10^4,\ 9.9\times 10^5]$ and measuring time-to-first-sample (TTFS) on an Apple M4 (16GB).
-%    \end{minipage}
-%
-%    \vspace{0.2cm}
-%    \begin{center}
-%      \begin{minipage}{0.98\columnwidth}
-%        \begin{tikzpicture}
-%          \begin{axis}[
-%          width=\linewidth, height=4.0cm,
-%          xlabel={$|\sigma|=n$},
-%          ylabel={$\mu$ TTFS (ms)},
-%          title={\textbf{Slice sampling delay (log-scale)}},
-%          ymode=log,
-%          xmajorgrids, ymajorgrids,
-%          tick align=outside,
-%          tick label style={font=\scriptsize},
-%          label style={font=\scriptsize},
-%          legend columns=3,
-%          legend style={draw=none, fill=none, font=\scriptsize, at={(0.02,0.98)}, anchor=north west, nodes={scale=0.8, transform shape}},
-%          scaled y ticks=false,
-%          ]
-%% k=1
-%          \addplot+[only marks, mark=*, mark size=1.5pt]
-%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
-%            n,mean_ttfs_ms
-%            20,27.05 21,20.75 22,22.65 23,25.65 24,34.85 25,43.5 26,49.6 27,42.75 28,47.85 29,69.75
-%            30,66.25 31,66.9 32,77.65 33,82.4 34,92.5 35,101.0 36,114.3 37,122.15 38,138.9 39,145.8
-%            40,159.55 41,171.85 42,189.55 43,205.7 44,220.0 45,242.15 46,257.8 47,281.75 48,308.35 49,327.75 50,353.4
-%          };
-%% k=2
-%          \addplot+[only marks, mark=square*, mark size=1.5pt]
-%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
-%            n,mean_ttfs_ms
-%            20,145.25 21,147.9 22,174.6 23,202.6 24,235.15 25,269.35 26,312.8 27,351.45 28,398.8 29,461.9
-%            30,507.95 31,569.5 32,644.9 33,715.6 34,786.05 35,963.7 36,1073.4 37,1339.9 38,1546.9 39,1627.15
-%            40,1734.3 41,1938.4 42,2115.55 43,2267.0 44,2490.35 45,2717.05 46,2878.45 47,3065.9 48,3383.15 49,3580.85 50,3907.65
-%          };
-%% k=3
-%          \addplot+[only marks, mark=triangle*, mark size=1.5pt]
-%          table[col sep=comma, x=n, y=mean_ttfs_ms]{
-%            n,mean_ttfs_ms
-%            20,1005.5 21,1132.15 22,1333.05 23,1633.95 24,1856.05 25,1978.3 26,2900.25 27,3344.15 28,3864.75 29,4355.9
-%            30,4744.05 31,5341.85 32,5986.6 33,6762.95 34,7468.8 35,8270.4 36,9174.45 37,10416.85 38,11540.75 39,12119.55
-%            40,13643.15 41,15313.7 42,17913.25 43,21658.65 44,22495.4 45,22996.15 46,23839.55 47,27062.25 48,28112.65 49,28886.45 50,38244.9
-%          };
-%          \legend{$k=1$,$k=2$,$k=3$}
-%          \end{axis}
-%        \end{tikzpicture}
-%      \end{minipage}
-%    \end{center}
-%
-%    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
-%                          After the first sample, we observe bounded per-sample delay on the order of microseconds or better, enabling high-throughput generation of well-typed functions.
-%    \end{minipage}
-%
-%    \jointspacing
+    \mysection{Results}
+
+    \vspace{-0.5cm}
+    \null\hspace*{2.8cm}%
+    \begin{minipage}[t]{0.86\columnwidth}
+      \noindent
+        \vspace{0pt}%
+        \resizebox{0.52\linewidth}{!}{\input{plot_rank_cdf}}
+      \hfill
+      \begin{minipage}[t]{0.48\linewidth}
+        \vspace{-14.5cm}%
+        \resizebox{\linewidth}{!}{\input{plot_volumes}}
+      \end{minipage}
+
+      We depict cumulative rank and intersection volume across the test set.
+    \end{minipage}
+
+
+    \jointspacing
 
 % =========================================================
-    \mysection{Evaluation}
-
-    \resizebox{\linewidth}{!}{\input{plot_rank_cdf}}
-
-% =========================================================
-    \mysection{Takeaways \& Next Steps}
+    \mysection{Conclusion}
 
     \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
         \renewcommand\labelitemi{$\vcenter{\hbox{\small\bullet}}$}
         \begin{itemize}[labelsep=0.8cm]
-          \item A fixed-parameter $\langle k, |\mathbb{T}|\rangle$ tractable embedding from a syntax-directed type system to a CFG with soundness and completeness guarantees.
-          \item Intersection with an acyclic FSA yields a star-free regular expression.
-          \item Brzozowski derivatives enable incremental autoregressive decoding.
-          \item Future work: lazy CNF materialization, quotienting (e.g., $\alpha$-equivalence), richer type theories (subtyping, polymorphism, substructural constraints).
+          \item Single-threaded PDFA sampling exhibits $10^3-10^5\times$ higher throughput than constrained LLM decoding, often saturating $\ell_\cap$ in under 100ms.
+          \item The size-k subset maximizing $P_{\theta}$ over $\ell_\cap$ can far outweigh the mass from an LLM-guided subsampling. We call this the \textbf{decoder-retriever gap}.
+          \item Hence, exhaustive ranking with a low-fidelity but fast $P_\theta$ approximation is preferable to decoding a highly calibrated but low-throughput LLM.
+          \item Is there a succinct construction (possibly with a very different topology) that soundly overapproximates $\mathcal{L}(G)$ and more faithfully reconstructs $P_\theta$?
         \end{itemize}
     \end{minipage}
 
