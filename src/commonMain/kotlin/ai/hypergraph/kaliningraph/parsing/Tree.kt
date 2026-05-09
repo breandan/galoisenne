@@ -41,9 +41,9 @@ class Tree constructor(
       children[1].quintuples(root, children[0].root, children[1].root + "*")
 
   fun logProb(pcfgMap: Map<Π3A<Σᐩ>, Int>, pcfgNorm: Map<Σᐩ, Int>): Double =
-    if (children.isEmpty()) 0.0
+    (if (children.isEmpty()) 0.0
     else ln((pcfgMap[root to children[0].root to children[1].root]?.toDouble() ?: 0.00001) / (pcfgNorm[root]?.toDouble() ?: 1.0)) +
-      children.sumOf { it.logProb(pcfgMap, pcfgNorm) }
+      children.sumOf { it.logProb(pcfgMap, pcfgNorm) })
 
   fun toGraph(j: Σᐩ = "0"): LabeledGraph =
     LabeledGraph { LGVertex(root, "$root.$j").let { it - it } } +

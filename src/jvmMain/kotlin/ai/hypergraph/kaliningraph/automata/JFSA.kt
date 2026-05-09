@@ -6,14 +6,28 @@ import ai.hypergraph.kaliningraph.automata.GRE.EPS
 import ai.hypergraph.kaliningraph.automata.GRE.SET
 import ai.hypergraph.kaliningraph.graphs.LabeledGraph
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.parsing.approximations.WFA
+import ai.hypergraph.kaliningraph.repair.MAX_BM_WID
 import ai.hypergraph.kaliningraph.sampling.FastMC
 import ai.hypergraph.markovian.mcmc.MarkovChain
 import dk.brics.automaton.Automaton.*
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
+import java.util.Collections
+import java.util.LinkedHashMap
 import java.util.PriorityQueue
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.PriorityBlockingQueue
 import java.util.stream.Stream
+import kotlin.math.ln
 import kotlin.random.Random
+import kotlin.text.contains
+import kotlin.text.get
+import kotlin.text.isEmpty
+import kotlin.text.iterator
+import kotlin.text.orEmpty
 import kotlin.time.*
 
 typealias BState = dk.brics.automaton.State
@@ -114,7 +128,7 @@ fun BAutomaton.decodeDFA(
   dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings
   callback: (Σᐩ) -> Unit = {},
   timeout: Duration = Duration.INFINITE,
-  beamWidth: Long = 40_000_000L, // Maximum number of trajectories to keep at each step
+  beamWidth: Long = MAX_BM_WID, // Maximum number of trajectories to keep at each step
 ): List<Σᐩ> {
   val startTime = TimeSource.Monotonic.markNow()
   val fullTrajectories = ConcurrentLinkedQueue<FSATrajectory>() // Max-heap for full trajectories
@@ -322,6 +336,187 @@ fun DFSM.decodeDFA(
   return deduped
 }
 
+fun DFSM.decodeDFAWithWDFA(
+  wdfa: WFA,
+  dec: Map<Char, Σᐩ>,
+  callback: (Σᐩ) -> Unit = {},
+  timeout: Duration = Duration.INFINITE,
+  beamWidth: Long = MAX_BM_WID,
+  penalty: Double = -20.0,
+): List<Σᐩ> {
+  val startTime = TimeSource.Monotonic.markNow()
+
+  val entriesInOrder: List<Map.Entry<Char, Σᐩ>> = dec.entries.toList()
+  val byIndex: List<Σᐩ> = entriesInOrder.map { it.value }
+
+  val byCode: Map<Int, Σᐩ> = entriesInOrder.associate { (ch, tok) -> ch.code to tok }
+  val codesSorted: IntArray = entriesInOrder.map { it.key.code }.sorted().toIntArray()
+  val contiguousBase: Int? = codesSorted.firstOrNull()
+
+  val hasContiguousBlock: Boolean = run {
+    val b = contiguousBase ?: return@run false
+    if (dec.size < width) return@run false
+    var i = 0
+    while (i < width) {
+      if (!byCode.containsKey(b + i)) return@run false
+      i++
+    }
+    true
+  }
+
+  fun decodeSym(a: Int): Σᐩ? {
+    if (hasContiguousBlock) {
+      val tok = byCode[(contiguousBase!! + a)]
+      if (tok != null) return tok
+    }
+    return byIndex.getOrNull(a)
+  }
+
+  // Precompute label -> token once.
+  val tokByLabel = arrayOfNulls<String>(width)
+  for (a in 0 until width) {
+    val tok = decodeSym(a) ?: continue
+    tokByLabel[a] = tok
+  }
+
+  data class DFSMTrajectory(
+    val wdfaState: Int,
+    val lastState: String,
+    val score: Double,
+    val out: String
+  ) {
+    fun isComplete(dfsm: DFSM): Boolean = lastState in dfsm.F
+    fun hasOutgoing(dfsm: DFSM): Boolean = dfsm.deltaMap[lastState]?.isNotEmpty() == true
+
+    fun finalScore(wdfa: WFA): Double {
+      val fw = wdfa.tokenFinalWeight(wdfaState)
+      return if (fw == Double.NEGATIVE_INFINITY) {
+        Double.NEGATIVE_INFINITY
+      } else {
+        score + fw
+      }
+    }
+  }
+
+  data class ExpansionBatch(
+    val next: MutableList<DFSMTrajectory>,
+    val complete: MutableList<DFSMTrajectory>
+  )
+
+  val fullTrajectories = ArrayList<DFSMTrajectory>()
+
+  var frontier = arrayListOf(
+    DFSMTrajectory(
+      wdfaState = wdfa.tokenStartState(),
+      lastState = q_alpha,
+      score = wdfa.tokenStartWeight(),
+      out = ""
+    )
+  )
+
+  while (
+    fullTrajectories.size.toLong() < beamWidth &&
+    frontier.isNotEmpty() &&
+    startTime.elapsedNow() < timeout
+  ) {
+    val batches =
+      if (frontier.size < 256) {
+        // small frontiers: avoid parallel overhead
+        frontier.map { partTraj ->
+          val next = ArrayList<DFSMTrajectory>()
+          val complete = ArrayList<DFSMTrajectory>()
+          val row = deltaMap[partTraj.lastState].orEmpty()
+
+          for ((a, nxt) in row) {
+            if (a !in 0 until width) continue
+            val tok = tokByLabel[a] ?: continue
+
+            val step = wdfa.stepTokenState(partTraj.wdfaState, tok, penalty)
+            val nextScore = partTraj.score + step.delta
+            val nextOut = if (partTraj.out.isEmpty()) tok else "${partTraj.out} $tok"
+
+            val traj = DFSMTrajectory(
+              wdfaState = step.target,
+              lastState = nxt,
+              score = nextScore,
+              out = nextOut
+            )
+
+            if (traj.isComplete(this)) {
+              complete.add(traj)
+              if (traj.hasOutgoing(this)) next.add(traj)
+            } else {
+              next.add(traj)
+            }
+          }
+
+          ExpansionBatch(next, complete)
+        }
+      } else {
+        frontier.parallelStream().unordered().map { partTraj ->
+          val next = ArrayList<DFSMTrajectory>()
+          val complete = ArrayList<DFSMTrajectory>()
+          val row = deltaMap[partTraj.lastState].orEmpty()
+
+          for ((a, nxt) in row) {
+            if (a !in 0 until width) continue
+            val tok = tokByLabel[a] ?: continue
+
+            val step = wdfa.stepTokenState(partTraj.wdfaState, tok, penalty)
+            val nextScore = partTraj.score + step.delta
+            val nextOut = if (partTraj.out.isEmpty()) tok else "${partTraj.out} $tok"
+
+            val traj = DFSMTrajectory(
+              wdfaState = step.target,
+              lastState = nxt,
+              score = nextScore,
+              out = nextOut
+            )
+
+            if (traj.isComplete(this)) {
+              complete.add(traj)
+              if (traj.hasOutgoing(this)) next.add(traj)
+            } else {
+              next.add(traj)
+            }
+          }
+
+          ExpansionBatch(next, complete)
+        }.toList()
+      }
+
+    val nextFrontier = ArrayList<DFSMTrajectory>()
+    for (batch in batches) {
+      if (fullTrajectories.size.toLong() >= beamWidth) break
+
+      for (traj in batch.complete) {
+        if (fullTrajectories.size.toLong() >= beamWidth) break
+        fullTrajectories.add(traj)
+        callback(traj.out)
+      }
+
+      if (fullTrajectories.size.toLong() < beamWidth) {
+        nextFrontier.addAll(batch.next)
+      }
+    }
+
+    frontier = nextFrontier
+  }
+
+  val deduped =
+    fullTrajectories
+      .asSequence()
+      .map { it.out to it.finalScore(wdfa) }
+      // Matches your old reranker: p1.second.compareTo(p2.second)
+      .sortedWith { p1, p2 -> p1.second.compareTo(p2.second) }
+      .distinctBy { it.first }
+      .map { it.first }
+      .toList()
+
+  println("Took ${startTime.elapsedNow()} to decode ${deduped.size} WDFA-ranked trajectories, with ${frontier.size} in queue")
+  return deduped
+}
+
 fun BAutomaton.decodeDFA(
   dec: Map<Char, Σᐩ>, // Maps unicode characters back to strings because BAutomata uses Unicode
   take: Int = 10_000,
@@ -387,4 +582,412 @@ fun BAutomaton.toDFSM(): DFSM {
 
   // Construct and return the DFSM
   return DFSM(Q, deltaMap, q_alpha, F, width)
+}
+
+/**
+ * One HTTP request scores one conditional prefix against all valid next-token emissions
+ * from the current DFA state.
+ *
+ * Wire protocol, POST /complete, text/plain:
+ *   line 0: model-space prefix, e.g. charify(broken) + "|" + encode(partialRepair)
+ *   line 1..n: model-space candidate continuations, e.g. encode(nextGrammarToken),
+ *               or a full encoded repair when rescoring complete trajectories.
+ *
+ * Response:
+ *   one floating-point log-probability per candidate, one per line, aligned with candidates.
+ */
+data class ExternalCompleterScores(
+  val scores: DoubleArray,
+  val cacheHit: Boolean
+)
+
+class ExternalCompleterClient(
+  val url: String = "http://localhost:8083/complete",
+  val timeout: java.time.Duration = java.time.Duration.ofSeconds(30),
+  val fallbackLogProb: Double = -20.0,
+  val maxCacheEntries: Int = 50_000,
+) {
+  private val http: HttpClient = HttpClient.newBuilder().build()
+
+  private val cache: MutableMap<String, DoubleArray> = Collections.synchronizedMap(
+    object : LinkedHashMap<String, DoubleArray>(16, 0.75f, true) {
+      override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, DoubleArray>?): Boolean =
+        size > maxCacheEntries
+    }
+  )
+
+  private fun key(prefix: String, candidates: List<String>): String =
+    buildString {
+      append(prefix)
+      append('\u0000')
+      candidates.forEach {
+        append(it)
+        append('\u0001')
+      }
+    }
+
+  fun scoreNext(prefix: String, candidates: List<String>): DoubleArray =
+    scoreNextWithMeta(prefix, candidates).scores
+
+  fun scoreNextWithMeta(prefix: String, candidates: List<String>): ExternalCompleterScores {
+    if (candidates.isEmpty()) return ExternalCompleterScores(DoubleArray(0), cacheHit = true)
+
+    val k = key(prefix, candidates)
+    synchronized(cache) {
+      cache[k]?.let { return ExternalCompleterScores(it.copyOf(), cacheHit = true) }
+    }
+
+    val body = buildString {
+      append(prefix)
+      append('\n')
+      candidates.forEachIndexed { i, tok ->
+        append(tok)
+        if (i + 1 < candidates.size) append('\n')
+      }
+    }
+
+    val request = HttpRequest.newBuilder()
+      .uri(URI.create(url))
+      .timeout(timeout)
+      .header("Content-Type", "text/plain; charset=utf-8")
+      .POST(HttpRequest.BodyPublishers.ofString(body))
+      .build()
+
+    val scores = try {
+      val response = http.send(request, HttpResponse.BodyHandlers.ofString())
+      if (response.statusCode() !in 200..299) {
+        System.err.println("External completer HTTP ${response.statusCode()}: ${response.body().take(200)}")
+        uniformFallback(candidates.size)
+      } else {
+        parseScores(response.body(), candidates.size)
+      }
+    } catch (e: HttpTimeoutException) {
+      System.err.println("External completer timed out: ${e.message}")
+      uniformFallback(candidates.size)
+    } catch (e: Exception) {
+      System.err.println("External completer failed: ${e.message}")
+      uniformFallback(candidates.size)
+    }
+
+    synchronized(cache) { cache[k] = scores.copyOf() }
+    return ExternalCompleterScores(scores, cacheHit = false)
+  }
+
+  private fun uniformFallback(n: Int): DoubleArray {
+    if (n <= 0) return DoubleArray(0)
+    val lp = -ln(n.toDouble())
+    return DoubleArray(n) { lp }
+  }
+
+  private fun parseScores(body: String, expected: Int): DoubleArray {
+    val vals = body.lineSequence()
+      .filter { it.isNotBlank() }
+      .map { it.trim().toDoubleOrNull() ?: fallbackLogProb }
+      .toList()
+
+    if (vals.size != expected) {
+      System.err.println("External completer returned ${vals.size} scores for $expected candidates; falling back")
+      return uniformFallback(expected)
+    }
+
+    return DoubleArray(expected) { i ->
+      val x = vals[i]
+      if (x.isFinite()) x else fallbackLogProb
+    }
+  }
+}
+
+/** Encode a whitespace-delimited grammar-token string into the Makemore character stream. */
+private fun encodeTokenSequenceForMakemore(
+  toks: String,
+  tokToChar: Map<Σᐩ, Char>,
+): String {
+  if (toks.isBlank()) return ""
+  return toks.trim().split(Regex("\\s+")).joinToString("") { tok ->
+    tokToChar[tok]?.toString()
+      ?: error("No Makemore character for grammar token: '$tok'")
+  }
+}
+
+private fun encodeOneTokenForMakemore(
+  tok: Σᐩ,
+  tokToChar: Map<Σᐩ, Char>,
+): String = tokToChar[tok]?.toString()
+  ?: error("No Makemore character for grammar token: '$tok'")
+
+fun scoreNextGPUWithBrokenPrefix(
+  brokePrefix: String,
+  partialRepair: String,
+  nextTokens: List<String>,
+  tokToChar: Map<Σᐩ, Char>,
+  url: String = "http://localhost:8083/complete",
+): List<Double> {
+  val prefix = brokePrefix + "|" + encodeTokenSequenceForMakemore(partialRepair, tokToChar)
+  val cands = nextTokens.map { encodeOneTokenForMakemore(it, tokToChar) }
+  return ExternalCompleterClient(url = url).scoreNext(prefix, cands).toList()
+}
+
+private data class ExternalEdge(
+  val tok: Σᐩ,
+  val nextState: String,
+  val encoded: String,
+)
+
+/**
+ * External-model DFA decoder.
+ *
+ * IMPORTANT: this is intentionally branch-point driven. Unary DFA chains are collapsed without
+ * spending HTTP calls, then completed trajectories can be rescored exactly as full continuations.
+ * This avoids the common failure mode where 3000 calls are consumed walking deterministic suffixes
+ * before reaching an accepting state.
+ *
+ * [brokePrefix] should already be charified, e.g. "|...}".
+ * [tokToChar] is MakeMore.PyTokMap.tm.
+ * [charToTok] is MakeMore.PyTokMap.mt.
+ */
+fun DFSM.decodeDFAWithExternalModel(
+  brokePrefix: String,
+  tokToChar: Map<Σᐩ, Char>,
+  charToTok: Map<Char, Σᐩ>,
+  external: ExternalCompleterClient = ExternalCompleterClient(),
+  callback: (Σᐩ) -> Unit = {},
+  timeout: Duration = Duration.INFINITE,
+  beamWidth: Long = MAX_BM_WID,
+  frontierBeam: Int = 512,
+  modelCallBudget: Int = 3000,
+  fallbackScore: Double = -20.0,
+  progressEveryCalls: Int = 100,
+  collapseUnaryChains: Boolean = true,
+  maxUnaryCollapseSteps: Int = 256,
+  unaryStepScore: Double = 0.0,
+  rescoreComplete: Boolean = true,
+  rescoreBatchSize: Int = 4096,
+  debugWire: Boolean = false,
+): List<Σᐩ> {
+  val startTime = TimeSource.Monotonic.markNow()
+
+  val entriesInOrder: List<Map.Entry<Char, Σᐩ>> = charToTok.entries.toList()
+  val byIndex: List<Σᐩ> = entriesInOrder.map { it.value }
+
+  val byCode: Map<Int, Σᐩ> = entriesInOrder.associate { (ch, tok) -> ch.code to tok }
+  val codesSorted: IntArray = entriesInOrder.map { it.key.code }.sorted().toIntArray()
+  val contiguousBase: Int? = codesSorted.firstOrNull()
+
+  val hasContiguousBlock: Boolean = run {
+    val b = contiguousBase ?: return@run false
+    if (charToTok.size < width) return@run false
+    var i = 0
+    while (i < width) {
+      if (!byCode.containsKey(b + i)) return@run false
+      i++
+    }
+    true
+  }
+
+  fun decodeSym(a: Int): Σᐩ? {
+    if (hasContiguousBlock) {
+      val tok = byCode[(contiguousBase!! + a)]
+      if (tok != null) return tok
+    }
+    return byIndex.getOrNull(a)
+  }
+
+  val tokByLabel = arrayOfNulls<String>(width)
+  for (a in 0 until width) tokByLabel[a] = decodeSym(a)
+
+  fun edgesFrom(state: String): List<ExternalEdge> {
+    val row = deltaMap[state].orEmpty()
+    if (row.isEmpty()) return emptyList()
+
+    val out = ArrayList<ExternalEdge>(row.size)
+    for ((a, nxt) in row) {
+      if (a !in 0 until width) continue
+      val tok = tokByLabel[a] ?: continue
+      val enc = encodeOneTokenForMakemore(tok, tokToChar)
+      out.add(ExternalEdge(tok = tok, nextState = nxt, encoded = enc))
+    }
+    return out
+  }
+
+  data class DFSMTrajectory(
+    val lastState: String,
+    val score: Double,
+    val out: String,
+  ) {
+    fun isComplete(dfsm: DFSM): Boolean = lastState in dfsm.F
+    fun hasOutgoing(dfsm: DFSM): Boolean = dfsm.deltaMap[lastState]?.isNotEmpty() == true
+  }
+
+  fun betterFirst(): Comparator<DFSMTrajectory> =
+    compareByDescending<DFSMTrajectory> { it.score }.thenBy { it.out.length }.thenBy { it.out }
+
+  fun appendTok(traj: DFSMTrajectory, edge: ExternalEdge, delta: Double): DFSMTrajectory =
+    DFSMTrajectory(
+      lastState = edge.nextState,
+      score = traj.score + delta,
+      out = if (traj.out.isEmpty()) edge.tok else "${traj.out} ${edge.tok}",
+    )
+
+  val fullTrajectories = ArrayList<DFSMTrajectory>()
+  val completeSeen = HashSet<String>()
+
+  fun recordComplete(traj: DFSMTrajectory) {
+    if (completeSeen.add(traj.out)) {
+      fullTrajectories.add(traj)
+      callback(traj.out)
+    }
+  }
+
+  /**
+   * Follow deterministic/unary stretches without model calls. This is a search optimization only;
+   * final ranking can be made exact by [rescoreComplete].
+   */
+  fun collapseUnary(traj0: DFSMTrajectory): DFSMTrajectory? {
+    if (!collapseUnaryChains) return traj0
+
+    var traj = traj0
+    var steps = 0
+    while (steps < maxUnaryCollapseSteps && startTime.elapsedNow() < timeout) {
+      if (traj.isComplete(this)) {
+        recordComplete(traj)
+        if (fullTrajectories.size.toLong() >= beamWidth) return null
+        if (!traj.hasOutgoing(this)) return null
+      }
+
+      val edges = edgesFrom(traj.lastState)
+      if (edges.size != 1) return traj
+
+      traj = appendTok(traj, edges.single(), unaryStepScore)
+      steps++
+    }
+    return traj
+  }
+
+  fun modelPrefix(out: String): String =
+    brokePrefix + "|" + encodeTokenSequenceForMakemore(out, tokToChar)
+
+  var frontier = arrayListOf(DFSMTrajectory(lastState = q_alpha, score = 0.0, out = ""))
+  var modelCalls = 0
+  var cacheHits = 0
+  var unaryCollapsed = 0
+  var firstRequestPrinted = false
+
+  while (
+    fullTrajectories.size.toLong() < beamWidth &&
+    frontier.isNotEmpty() &&
+    modelCalls < modelCallBudget &&
+    startTime.elapsedNow() < timeout
+  ) {
+    val active = frontier
+      .asSequence()
+      .sortedWith(betterFirst())
+      .take(minOf(frontierBeam, modelCallBudget - modelCalls))
+      .toList()
+
+    val nextFrontier = ArrayList<DFSMTrajectory>()
+
+    for (rawTraj in active) {
+      if (fullTrajectories.size.toLong() >= beamWidth) break
+      if (modelCalls >= modelCallBudget) break
+      if (startTime.elapsedNow() >= timeout) break
+
+      val beforeOutLen = rawTraj.out.length
+      val partTraj = collapseUnary(rawTraj) ?: continue
+      if (partTraj.out.length != beforeOutLen) unaryCollapsed++
+
+      if (partTraj.isComplete(this)) {
+        recordComplete(partTraj)
+        if (fullTrajectories.size.toLong() >= beamWidth) break
+        if (!partTraj.hasOutgoing(this)) continue
+      }
+
+      val edges = edgesFrom(partTraj.lastState)
+      if (edges.isEmpty()) continue
+
+      // If collapseUnaryChains is true, this should usually be a branch point.
+      if (collapseUnaryChains && edges.size == 1) {
+        nextFrontier.add(appendTok(partTraj, edges.single(), unaryStepScore))
+        continue
+      }
+
+      val prefix = modelPrefix(partTraj.out)
+      val cands = edges.map { it.encoded }
+
+      if (debugWire && !firstRequestPrinted) {
+        firstRequestPrinted = true
+        println(
+          "External decoder first request: state=${partTraj.lastState}, row=${deltaMap[partTraj.lastState].orEmpty().size}, " +
+              "decodedCandidates=${edges.size}, prefixChars=${prefix.length}, " +
+              "outToks=${if (partTraj.out.isEmpty()) 0 else partTraj.out.trim().split(Regex("\\s+")).size}, " +
+              "firstCandidates=${edges.take(8).map { it.tok }}, firstEncoded=${cands.take(8)}"
+        )
+        println("External decoder wire prefix sample=${prefix.take(120)}")
+      }
+
+      val scored = external.scoreNextWithMeta(prefix, cands)
+      if (scored.cacheHit) cacheHits++ else modelCalls++
+      val deltas = scored.scores
+
+//      if (progressEveryCalls > 0 && modelCalls > 0 && modelCalls % progressEveryCalls == 0) {
+//        println(
+//          "External decoder progress: calls=$modelCalls/$modelCallBudget, cacheHits=$cacheHits, " +
+//              "complete=${fullTrajectories.size}, frontier=${frontier.size}, active=${active.size}, " +
+//              "nextFrontier=${nextFrontier.size}, unaryCollapsed=$unaryCollapsed, elapsed=${startTime.elapsedNow()}"
+//        )
+//      }
+
+      for (i in edges.indices) {
+        val delta = deltas.getOrNull(i)?.takeIf { it.isFinite() } ?: fallbackScore
+        val traj = appendTok(partTraj, edges[i], delta)
+
+        if (traj.isComplete(this)) {
+          recordComplete(traj)
+          if (fullTrajectories.size.toLong() >= beamWidth) break
+          if (traj.hasOutgoing(this)) nextFrontier.add(traj)
+        } else {
+          nextFrontier.add(traj)
+        }
+      }
+    }
+
+    frontier = nextFrontier
+      .asSequence()
+      .sortedWith(betterFirst())
+      .distinctBy { "${it.lastState}\u0000${it.out}" }
+      .take(frontierBeam)
+      .toCollection(ArrayList())
+  }
+
+  val completed = fullTrajectories
+    .asSequence()
+    .distinctBy { it.out }
+    .toList()
+
+  val ranked = if (rescoreComplete && completed.isNotEmpty()) {
+    val rescored = ArrayList<DFSMTrajectory>(completed.size)
+    val prefix = brokePrefix + "|"
+
+    for (chunk in completed.chunked(rescoreBatchSize)) {
+      val cands = chunk.map { encodeTokenSequenceForMakemore(it.out, tokToChar) }
+      val scored = external.scoreNextWithMeta(prefix, cands)
+      if (scored.cacheHit) cacheHits++ else modelCalls++
+      for (i in chunk.indices) {
+        val score = scored.scores.getOrNull(i)?.takeIf { it.isFinite() } ?: chunk[i].score
+        rescored.add(chunk[i].copy(score = score))
+      }
+    }
+    rescored.sortedWith(betterFirst())
+  } else {
+    completed.sortedWith(betterFirst())
+  }
+
+  val deduped = ranked.map { it.out }
+
+  println(
+    "Took ${startTime.elapsedNow()} to decode ${deduped.size} external-model-ranked trajectories, " +
+        "with ${frontier.size} in queue, modelCalls=$modelCalls/$modelCallBudget, " +
+        "cacheHits=$cacheHits, unaryCollapsed=$unaryCollapsed, rescoreComplete=$rescoreComplete"
+  )
+
+  return deduped
 }

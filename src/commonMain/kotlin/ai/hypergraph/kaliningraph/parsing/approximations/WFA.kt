@@ -610,6 +610,27 @@ data class WFA(
     )
   }
 
+  data class TokenStep(val target: Int, val delta: Double)
+
+  fun tokenStartState(): Int = detTokScorer.start
+
+  fun tokenStartWeight(): Double = detTokScorer.startWeight
+
+  fun stepTokenState(state: Int, tok: String, penalty: Double = -20.0): TokenStep {
+    val C = detTokScorer
+    val edge = C.next[state]?.get(tok)
+
+    return if (edge == null) {
+      // Match scoreTokens semantics: pay penalty, stay in same state.
+      TokenStep(state, penalty)
+    } else {
+      TokenStep(edge.target, edge.weight)
+    }
+  }
+
+  fun tokenFinalWeight(state: Int): Double =
+    detTokScorer.finalWeights[state] ?: Double.NEGATIVE_INFINITY
+
   fun scoreTokens(toks: List<String>, penalty: Double = -20.0): Double {
     val C = detTokScorer
 

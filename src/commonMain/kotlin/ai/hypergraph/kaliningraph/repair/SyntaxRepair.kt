@@ -21,7 +21,8 @@ var MAX_RADIUS = 3
 var LED_BUFFER = 1 // Distance to search past the language edit distance
 var TIMEOUT_MS = 10_000 // Timeout for each repair attempt (default, modify elsewhere)
 var MAX_REPAIR = 2 // Maximum number of edits per repair
-var RERANK_THR = 64
+var RERANK_THR = 512
+var MAX_BM_WID = 40_000_000L
 
 typealias Reconstructor = MutableList<Π2A<Σᐩ>>
 // Takes a string and a set of invariant indices and returns mutated strings
