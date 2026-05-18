@@ -13,6 +13,7 @@ import kotlin.js.JsName
 import kotlin.math.sqrt
 import kotlin.properties.ReadOnlyProperty
 import kotlin.random.Random
+import kotlin.reflect.KProperty
 
 // Provides caching and inheritable constructors for reified parameters <G, E, V>
 // Interfaces are our only option because we need multiple inheritance
@@ -264,15 +265,6 @@ val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.edgMap: Map<V, Set<E>>  by cache { vertices.associateWith { it.outgoing } }
 val <G: IGraph<G, E, V>, E: IEdge<G, E, V>, V: IVertex<G, E, V>> IGraph<G, E, V>.histogram: Map<V, Int>  by cache { associateWith { it.neighbors.size } }
 
-val cache = LRUCache<String, Any>()
-
-// If you see a JS error get_first_irdx8n_k, DEPTH is set incorrectly or something is funny with the stacktrace
-object PlatformVars { var PLATFORM_CALLER_STACKTRACE_DEPTH: Int = 3 }
-// This is somewhat of a hack and may break depending on the platform.
-// We do this because Kotlin Common has poor reflection capabilities.
-fun getCaller() = Throwable().stackTraceToString()
-  .lines()[PlatformVars.PLATFORM_CALLER_STACKTRACE_DEPTH].hashCode()
-
 // Lazily evaluates and caches result for later use, until cache expiry,
 // after which said value will be reevaluated and cached if it is needed
 // again. If you believe there may be a bug here, it is really important
@@ -292,14 +284,40 @@ fun getCaller() = Throwable().stackTraceToString()
 // It also allows us to add persistent properties to interfaces, see:
 // https://stackoverflow.com/questions/43476811/can-a-kotlin-interface-cache-a-value/71632459#71632459
 
-fun <T, Y> cache(caller: Int = getCaller(), fn: Y.() -> T) =
-  ReadOnlyProperty<Y, T> { y, _ ->
-    val id = if (y is IGF<*, *, *>) y.deepHashCode else y.hashCode()
-    val csg = "$id$caller"
-//    val csg = "${y!!::class.simpleName}${id}$caller"
-    (cache.getOrPut(csg) { y.fn() as Any } as T)
-//    .also { println("$id :: $caller :: $it") }
+val cache = LRUCache<CacheKey, Any>()
+
+data class CacheKey(val receiverHash: Long, val delegateId: Int, val propertyName: String)
+
+private object CacheIds {
+  private var nextId: Int = 0
+
+  fun next(): Int {
+    val id = nextId
+    nextId += 1
+    return id
   }
+}
+
+private class CacheDelegate<Y, T>(private val fn: Y.() -> T) : ReadOnlyProperty<Y, T> {
+  private val delegateId: Int = CacheIds.next()
+
+  override fun getValue(thisRef: Y, property: KProperty<*>): T {
+    val receiverHash: Long =
+      if (thisRef is IGF<*, *, *>) thisRef.deepHashCode
+      else thisRef.hashCode().toLong()
+
+    val key = CacheKey(
+      receiverHash = receiverHash,
+      delegateId = delegateId,
+      propertyName = property.name
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    return cache.getOrPut(key) { thisRef.fn() as Any } as T
+  }
+}
+
+fun <T, Y> cache(fn: Y.() -> T): ReadOnlyProperty<Y, T> = CacheDelegate(fn)
 
 class RandomWalk<G, E, V>(
   val rand: Random = Random.Default,

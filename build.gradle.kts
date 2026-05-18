@@ -9,8 +9,7 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  // Updating to 2.2.0+ causes an error because the stacktrace format is different (see getCaller() in Graph.kt)
-  kotlin("multiplatform") version "2.1.21"
+  kotlin("multiplatform") version "2.3.21"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.54.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -81,8 +80,8 @@ kotlin {
 //    }
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common:2.1.21"))
-        implementation(kotlin("reflect:2.1.21"))
+        implementation(kotlin("stdlib-common:2.3.21"))
+        implementation(kotlin("reflect:2.3.21"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
 
@@ -124,7 +123,7 @@ kotlin {
 
         implementation("com.google.ortools:ortools-java:9.15.6755")
 
-        val multikVersion = "0.2.3"
+        val multikVersion = "0.3.1"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
@@ -132,9 +131,16 @@ kotlin {
 
     val jvmTest by getting {
       dependencies {
-        implementation("org.junit.jupiter:junit-jupiter:5.13.1")
+        implementation(kotlin("test-junit5"))
 
-        implementation("junit:junit:4.13.2")
+        implementation(project.dependencies.platform("org.junit:junit-bom:6.0.3"))
+        implementation("org.junit.jupiter:junit-jupiter-api")
+        implementation("org.junit.jupiter:junit-jupiter-params")
+        runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
+        runtimeOnly("org.junit.platform:junit-platform-launcher")
+
+//        implementation("org.junit.jupiter:junit-jupiter:5.13.1")
+//        implementation("junit:junit:4.13.2")
         implementation("org.jetbrains:annotations:26.1.0")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
