@@ -12,7 +12,7 @@ plugins {
   // Updating to 2.2.0+ causes an error because the stacktrace format is different (see getCaller() in Graph.kt)
   kotlin("multiplatform") version "2.1.21"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.53.0"
+  id("com.github.ben-manes.versions") version "0.54.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -86,7 +86,7 @@ kotlin {
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
 
-        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
       }
     }
 
@@ -96,9 +96,9 @@ kotlin {
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
-        implementation("org.graalvm.js:js:25.0.1")
+        implementation("org.graalvm.js:js:25.0.3")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.4.1")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.13.0")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.12.1")
 
         // Updating to 9.0 requires updating MarkovChain
@@ -124,7 +124,7 @@ kotlin {
 
         implementation("com.google.ortools:ortools-java:9.15.6755")
 
-        val multikVersion = "0.2.3"
+        val multikVersion = "0.3.1"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
@@ -135,23 +135,12 @@ kotlin {
         implementation("org.junit.jupiter:junit-jupiter:5.13.1")
 
         implementation("junit:junit:4.13.2")
-        implementation("org.jetbrains:annotations:26.0.2-1")
+        implementation("org.jetbrains:annotations:26.1.0")
         implementation("org.slf4j:slf4j-simple:2.1.0-alpha1")
 
         // https://github.com/jgralab/jgralab/wiki
         // implementation("de.uni-koblenz.ist:jgralab:8.1.0")
 
-        implementation("com.redislabs:jredisgraph:2.6.0-RC2")
-        implementation("io.lacuna:bifurcan:0.2.0-rc1")
-
-        val jgraphtVersion by extra { "1.5.2" }
-        implementation("org.jgrapht:jgrapht-core:$jgraphtVersion")
-        implementation("org.jgrapht:jgrapht-opt:$jgraphtVersion")
-        implementation("org.jgrapht:jgrapht-ext:$jgraphtVersion")
-
-        val tinkerpopVersion by extra { "3.7.3" }
-        implementation("org.apache.tinkerpop:gremlin-core:$tinkerpopVersion")
-        implementation("org.apache.tinkerpop:tinkergraph-gremlin:$tinkerpopVersion")
         implementation("info.debatty:java-string-similarity:2.0.0")
         val eccVersion = "13.0.0"
         implementation("org.eclipse.collections:eclipse-collections-api:$eccVersion")

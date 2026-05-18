@@ -148,17 +148,6 @@ The above snippet should display something like the following:
 
 ![](pdg_demo.svg)
 
-## Translation
-
-Bidirectional translation to various graph formats, including [Graphviz](https://github.com/nidi3/graphviz-java), [JGraphT](https://jgrapht.org/guide/UserOverview), [Tinkerpop](https://tinkerpop.apache.org/docs/current/reference/) and [RedisGraph](https://oss.redislabs.com/redisgraph/) is supported:
-
-```kotlin
-val g = LabeledGraph { a - b - c - a }
-        .toJGraphT().toKaliningraph()
-        .toTinkerpop().toKaliningraph()
-        .toGraphviz().toKaliningraph()
-```
-
 ## Code2Vec
 
 Code2Vec generation and visualization is supported. The following demo was generated using message passing on the adjacency matrix, for graphs of varying height. The technique to create the embeddings is described [here](https://www.cs.mcgill.ca/~wlh/grl_book/files/GRL_Book-Chapter_5-GNNs.pdf#page=6). We use TSNE to visualize the resulting vectors in 2D, and can clearly distinguish the clusters.
