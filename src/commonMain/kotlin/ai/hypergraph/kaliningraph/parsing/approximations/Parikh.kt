@@ -4,11 +4,11 @@ import ai.hypergraph.kaliningraph.parsing.*
 import kotlin.time.TimeSource
 
 // Immutable key: multiset of nonterminals (counts vector) + cached sum(counts)
-private class VecKey(val counts: IntArray, val sum: Int) {
-  override fun equals(other: Any?): Boolean =
-    other is VecKey && sum == other.sum && counts.contentEquals(other.counts)
-  override fun hashCode(): Int = 31 * sum + counts.contentHashCode()
-}
+//private class VecKey(val counts: IntArray, val sum: Int) {
+//  override fun equals(other: Any?): Boolean =
+//    other is VecKey && sum == other.sum && counts.contentEquals(other.counts)
+//  override fun hashCode(): Int = 31 * sum + counts.contentHashCode()
+//}
 
 private data class ParikhProd(
   val lhsIdx: Int,
