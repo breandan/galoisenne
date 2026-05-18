@@ -223,7 +223,7 @@ def main() -> None:
     parser.add_argument(
         "--log",
         type=Path,
-        default=Path(__file__).with_name("reconstruct_cdf8.log"),
+        default=Path(__file__).with_name("reconstruct_cdf9.log"),
         help="Path to the log file",
     )
     parser.add_argument(

@@ -128,7 +128,7 @@
     \:\:
     \delta_A\subseteq Q_A\times\big(\Sigma\cup V\cup\{\varepsilon\}\big)\times Q_A,
   \]
-  where an arc labelled \(B\in V\) denotes a call to \(R_B\). For example, consider the CFG, $\texttt{S } \rightarrow \texttt{ x } \mid \texttt{ S S } \mid \texttt{ \{ S \}}$, which has the following RTN:\vspace{0.6cm}
+  where an arc labeled \(B\in V\) denotes a call to \(R_B\). For example, consider the CFG, $\texttt{S } \rightarrow \texttt{ x } \mid \texttt{ S S } \mid \texttt{ \{ S \}}$, which has the following RTN:\vspace{0.6cm}
 
   % https://dreampuf.github.io/GraphvizOnline/?engine=dot#digraph%20RTN_S%20%7B%0A%20%20%20%20rankdir%3DLR%3B%0A%20%20%20%20nodesep%3D0.3%3B%0A%20%20%20%20node%20%5Bshape%3Dcircle%2C%20fontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D12%5D%3B%0A%20%20%20%20edge%20%5Bfontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D10%5D%3B%0A%0A%20%20%20%20entry%20%5Blabel%3D%22%22%2C%20shape%3Dnone%2C%20width%3D0%5D%3B%0A%20%20%20%20s_S%20%20%20%5Blabel%3D%22q0%22%5D%3B%0A%20%20%20%20f_S%20%20%20%5Blabel%3D%22qf%22%2C%20shape%3Ddoublecircle%5D%3B%0A%0A%20%20%20%20entry%20-%3E%20s_S%3B%0A%0A%20%20%20%20s_S%20-%3E%20f_S%20%5Blabel%3D%22%20x%20%22%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q1%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q1%20%20-%3E%20f_S%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q2%20%5Blabel%3D%22%20%7B%20%22%5D%3B%0A%20%20%20%20q2%20%20-%3E%20q3%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q3%20%20-%3E%20f_S%20%5Blabel%3D%22%20%7D%20%22%5D%3B%0A%7D
 
@@ -140,7 +140,7 @@
 
   % https://arxiv.org/pdf/cs/9910022#page=8
 
-  \textbf{Nederhof's \(d\)-RTN approximation} is a depth-bounded RTN unfolding. A nonterminal arc \(p \overset{B}{\longrightarrow} q\) is replaced by a fresh copy of the RTN for \(B\), adding \(\varepsilon\)-arcs from \(p\) to the copy's initial state and the copy's final state back to \(q\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B', \:\: \omega_B' \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B'\in F_B')\). Unfold calls for \(d\) rounds. At depth \(d\), every remaining nonterminal arc \(p\overset{B}{\longrightarrow}q\) is woven into a shared copy of \(R_B\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B, \:\: \omega_B \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B\in F_B) \). Below is the $\varepsilon$-removed, determinized and minimized DFA depicted for $1 \leq d \leq 4$:\vspace{0.5cm}
+  \textbf{Nederhof's \(d\)-RTN approximation} is a depth-bounded RTN unfolding. A nonterminal arc \(p \overset{B}{\longrightarrow} q\) is replaced by a fresh copy of the RTN for \(B\), adding \(\varepsilon\)-arcs from \(p\) to the copy's initial state and the copy's final state back to \(q\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B', \:\: \omega_B' \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B'\in F_B')\). Unfold calls for \(d\) rounds. At depth \(d\), every remaining nonterminal arc \(p\overset{B}{\longrightarrow}q\) is woven into a shared copy of \(R_B\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B, \:\: \omega_B \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B\in F_B) \). Shown below is the $\varepsilon$-removed, determinized and minimized DFA rendered for $1 \leq d \leq 4$:\vspace{0.5cm}
 
   \begin{center}
     \setlength{\tabcolsep}{0.15cm}
@@ -294,7 +294,7 @@
         \resizebox{\linewidth}{!}{\input{plot_volumes}}
       \end{minipage}
 
-      We depict cumulative rank and intersection volume across the test set.
+      Depicted is the cumulative rank and intersection volume across the test set.
     \end{minipage}
 
 
