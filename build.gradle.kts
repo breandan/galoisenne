@@ -98,7 +98,7 @@ kotlin {
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
         implementation("org.graalvm.js:js:25.0.3")
 
-        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.13.0")
+        implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.5.2")
         implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.12.1")
 
         // Updating to 9.0 requires updating MarkovChain
@@ -124,7 +124,7 @@ kotlin {
 
         implementation("com.google.ortools:ortools-java:9.15.6755")
 
-        val multikVersion = "0.3.1"
+        val multikVersion = "0.2.3"
         implementation("org.jetbrains.kotlinx:multik-core:$multikVersion")
         implementation("org.jetbrains.kotlinx:multik-default:$multikVersion")
       }
