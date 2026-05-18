@@ -1,0 +1,336 @@
+% https://www.staples.com/services/printing/posters/
+% $20 off poster orders of $70 or more. Coupon code 84987. Expires 1/3/26.
+
+\documentclass[portrait,a0b,final,a4resizeable]{a0poster}
+
+\setlength{\paperwidth}{36in}
+\setlength{\paperheight}{48in}
+
+\usepackage{atbegshi}% http://ctan.org/pkg/atbegshi
+\AtBeginDocument{\AtBeginShipoutNext{\AtBeginShipoutDiscard}}
+
+\usepackage[margin=0.5in]{geometry}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{amsmath, amsthm, amssymb, bm}
+\usepackage{multirow}
+\usepackage{nicematrix}
+\usepackage{bussproofs}
+\usepackage{wrapfig}
+\makeatletter
+\def\defaultHypSeparation{\hskip 65pt}
+\def\extraVskip{6pt}
+\makeatother
+\usepackage{pgfplots}
+\pgfplotsset{
+  compat=1.18,
+  every tick label/.append style={font=\large}
+}
+\usepackage{dsfont}
+\usepackage{qrcode}
+\usepackage{svg}
+\usetikzlibrary{automata, positioning, arrows.meta}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{amsthm}
+
+\newtheorem{definition}{Definition}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+%\setlength{\proofhsep}{55pt}   % default is smaller
+%\setlength{\proofvsep}{50pt}   % optional
+
+\usetikzlibrary{cd,shapes.geometric,arrows,chains,matrix,positioning,scopes,calc,trees}
+
+\input{include/jlposter}
+\usepackage{include/preamble}
+
+% ----------------------------
+% Paper/Poster notation
+% ----------------------------
+\definecolor{Light}{gray}{.90}
+\usepackage{soul}
+\sethlcolor{Light}
+
+\makeatletter
+\providecommand{\leftsquigarrow}{%
+  \mathrel{\mathpalette\reflect@squig\relax}%
+}
+\newcommand{\reflect@squig}[2]{%
+  \reflectbox{$\m@th#1\rightsquigarrow$}%
+}
+\makeatother
+
+\newcommand{\codett}[1]{\texttt{\hl{#1}}}
+\newcommand{\nt}[1]{\texttt{#1}}
+\newcommand{\tok}[1]{\codett{#1}}
+\newcommand{\gap}{\;\;}
+
+\newcommand{\T}{\mathbb{T}}
+
+\DeclareMathOperator*{\largecomma}{\mathop{\vcenter{\hbox{\Huge\texttt{,}}}}}
+\newcommand{\cjoin}[2]{\mathop{\largecomma}\limits_{#1}^{#2}}
+\newcommand{\jointspacing}{\vspace{0.3in}}
+
+\newcommand{\bs}{\blacksquare}
+\newcommand{\ws}{\square}
+
+\begin{document}
+\begin{poster}
+  \vspace{1cm}
+
+%%% Header (same structure)
+  \begin{center}
+    \begin{pcolumn}{1.03}
+      \begin{minipage}[c][9cm][c]{0.85\textwidth}
+        \begin{center}
+        {\Huge \textbf{Weighted Automata Learning with a Hard Inductive Bias}}\\[8mm]
+        {\huge Breandan Considine}
+        \end{center}
+      \end{minipage}
+    \end{pcolumn}
+  \end{center}
+
+  \vspace*{-0.5cm}
+  \large
+  \Large
+
+  \begin{multicols}{2}
+
+% =========================================================
+    \mysection{Main Idea}
+
+    \vspace*{-0.8cm}
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+          \renewcommand\labelitemi{$\vcenter{\hbox{\small\bullet}}$}
+          \begin{itemize}
+            \labelsep=0.8cm
+%            \itemindent=-0.6cm
+            \item \textbf{Assume}: we are given a learned distribution, $P_{\theta}(\sigma)$, with support over $\sigma: \Sigma^+$ but largely concentrated within $\mathcal{L}(G)$, where $G$ is a known CFG.
+            \item \textbf{Our goal}: distill a surrogate WFA, $\alpha_{\hat\theta}$, such that for all $\sigma \in \mathcal{L}(G)$, $P_{\hat\theta}(\sigma) \propto P_{\theta}\big(\sigma \mid \sigma \in \mathcal{L}(G)\big)$, while preserving inclusion $\big(\mathcal{L}(\alpha)\supseteq \mathcal{L}(G)\big)$.
+            \item \textbf{Desiderata}: The regular description $\alpha$ should be reasonably concise and precise, i.e., $\Delta = |\mathcal{L}(\alpha) \setminus \mathcal{L}(G)|$ is approximately minimized up to $\Sigma^n$.
+          \end{itemize}
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+\mysection{Nederhof's Construction}
+
+\null\hspace*{2.8cm}\begin{minipage}[c]{0.87\columnwidth}
+  A recursive transition network (RTN) of a CFG $\langle \Sigma,V, P, S\rangle$ is an automaton,
+  \[
+    \mathcal R=\big\{R_A=(Q_A,\delta_A,\alpha_A,F_A)\big\}_{A\in V},
+    \:\:
+    \delta_A\subseteq Q_A\times\big(\Sigma\cup V\cup\{\varepsilon\}\big)\times Q_A,
+  \]
+  where an arc labeled \(B\in V\) denotes a call to \(R_B\). For example, consider the CFG, $\texttt{S } \rightarrow \texttt{ x } \mid \texttt{ S S } \mid \texttt{ \{ S \}}$, which has the following RTN:\vspace{0.6cm}
+
+  % https://dreampuf.github.io/GraphvizOnline/?engine=dot#digraph%20RTN_S%20%7B%0A%20%20%20%20rankdir%3DLR%3B%0A%20%20%20%20nodesep%3D0.3%3B%0A%20%20%20%20node%20%5Bshape%3Dcircle%2C%20fontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D12%5D%3B%0A%20%20%20%20edge%20%5Bfontname%3D%22JetBrains%20Mono%22%2C%20fontsize%3D10%5D%3B%0A%0A%20%20%20%20entry%20%5Blabel%3D%22%22%2C%20shape%3Dnone%2C%20width%3D0%5D%3B%0A%20%20%20%20s_S%20%20%20%5Blabel%3D%22q0%22%5D%3B%0A%20%20%20%20f_S%20%20%20%5Blabel%3D%22qf%22%2C%20shape%3Ddoublecircle%5D%3B%0A%0A%20%20%20%20entry%20-%3E%20s_S%3B%0A%0A%20%20%20%20s_S%20-%3E%20f_S%20%5Blabel%3D%22%20x%20%22%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q1%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q1%20%20-%3E%20f_S%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%0A%20%20%20%20s_S%20-%3E%20q2%20%5Blabel%3D%22%20%7B%20%22%5D%3B%0A%20%20%20%20q2%20%20-%3E%20q3%20%5Blabel%3D%22%20S%20%22%2C%20color%3Dblue%2C%20penwidth%3D2.0%5D%3B%0A%20%20%20%20q3%20%20-%3E%20f_S%20%5Blabel%3D%22%20%7D%20%22%5D%3B%0A%7D
+
+  \begin{center}
+%  \includegraphics[width=0.65\linewidth]{rtn.png}
+    \hspace{-3cm}
+    \input{fig0}
+  \end{center}
+
+  % https://arxiv.org/pdf/cs/9910022#page=8
+
+  \textbf{Nederhof's \(d\)-RTN approximation} is a depth-bounded RTN unfolding. A nonterminal arc \(p \overset{B}{\longrightarrow} q\) is replaced by a fresh copy of the RTN for \(B\), adding \(\varepsilon\)-arcs from \(p\) to the copy's initial state and the copy's final state back to \(q\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B', \:\: \omega_B' \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B'\in F_B')\). Unfold calls for \(d\) rounds. At depth \(d\), every remaining nonterminal arc \(p\overset{B}{\longrightarrow}q\) is woven into a shared copy of \(R_B\): \( p \overset{\varepsilon}{\longrightarrow} \alpha_B, \:\: \omega_B \overset{\varepsilon}{\longrightarrow} q \quad(\forall \omega_B\in F_B) \). Shown below is the $\varepsilon$-removed, determinized and minimized DFA rendered for $1 \leq d \leq 4$:\vspace{0.5cm}
+
+  \begin{center}
+    \setlength{\tabcolsep}{0.15cm}
+    \renewcommand{\arraystretch}{1.15}
+
+    \begin{tabular}{@{}ccccccc@{}}
+      \begin{minipage}{0.09\linewidth}
+        \centering
+        \includegraphics[width=0.85\linewidth]{d1.png}
+      \end{minipage}
+      &&
+      \begin{minipage}{0.20\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{d2.png}
+      \end{minipage}
+      &&
+      \begin{minipage}{0.26\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{d3.png}
+      \end{minipage}
+      &&
+      \begin{minipage}{0.38\linewidth}
+        \centering
+        \includegraphics[width=\linewidth]{d4.png}
+        \vspace{-0.9cm}
+      \end{minipage}\\
+      \textbf{$d=1$} && \textbf{$d=2$} && \textbf{$d=3$} && \textbf{$d=4$}
+    \end{tabular}
+    \vspace{0.1em}
+  \end{center}
+  \end{minipage}
+
+    \jointspacing
+
+    \mysection{Language Overapproximation}
+
+    \vspace{0.7em}\hspace{0.5cm}
+  \begin{minipage}[t]{0.35\linewidth}
+    \centering
+    \resizebox{0.9\linewidth}{!}{\input{fig1}}
+  \end{minipage}
+  \hspace{0.1cm}
+  \begin{minipage}[t]{0.52\linewidth}
+    \centering
+    \resizebox{1.2\linewidth}{!}{\input{fig2}}  \end{minipage}
+  \vspace{0.3em}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+  We can measure over-approximation tightness by considering finite models,\\
+    \[
+      \rho(\alpha, G, m) =
+      \frac{\sum_{n=1}^m |\mathcal{L}(G)\cap\Sigma^n|}
+      {\sum_{n=1}^m |\mathcal{L}(\alpha)\cap\Sigma^n|},
+      \:\:\alpha \sqsubset_G^m \alpha'
+      \iff
+      \rho(\alpha',G,m) < \rho(\alpha,G,m).
+    \]
+  \end{minipage}
+    \vspace{0.7em}
+
+    \mysection{Method}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+    We propose a counterexample-guided abstraction refinement (CEGAR) loop that incrementally refines $\alpha_{\hat\theta}$ until a desired precision or $|Q|_\max$ is reached:\vspace{0.4cm}
+    \end{minipage}
+
+    \begin{enumerate}
+      \itemsep0em
+      \itemindent=4cm
+      \sloppy
+      \setlength{\emergencystretch}{5cm}
+      \item \phantom{.}Initialize $\alpha_{\hat\theta}'\leftarrow \alpha_d$ using Nederhof's $d$-RTN construction.
+      \item \phantom{.}Propose a refinement $D_\text{KL}(P_{\theta}\|\alpha_{\hat\theta}) < D_\text{KL}(P_{\theta}\|\alpha_{\hat\theta}')$ and $\alpha_{\hat\theta} \sqsubset_G^m \alpha_{\hat\theta}'$.
+      \item \phantom{.}Binarize $\alpha_\hat\theta$ and verify $\mathcal{L}(\alpha) \supset \mathcal{L}(G)$ by checking $\varnothing =\mathcal{L}(G)\cap \overline{\mathcal{L}(\alpha)}$.
+      \item \phantom{.}If verification fails, collect $x \in \mathcal{L}(G)\cap \overline{\mathcal{L}(\alpha)}$, otherwise go to step 2.
+      \item \phantom{.}Repair $\alpha$ restoring inclusion, renormalize as $\alpha_{\hat\theta}'$, then go to step 2.
+    \end{enumerate}
+
+    \jointspacing\newpage
+
+% =========================================================
+    \mysection{Intersection Decoding}
+
+    \vspace{-2.5cm}
+    \null\hspace*{2.8cm}\begin{minipage}[t]{0.86\columnwidth}
+      \begin{minipage}[t]{0.48\linewidth}\vspace{0pt}
+        We will evaluate our learned WFA on a constrained decoding task: given a dataset of near-words $\err\sigma \notin \mathcal{L}(G)$ and pairwise human repairs $\sigma'$ within a small edit distance, sample uniformly WoR repairs within $\ell_\cap$, score and rank each repair according to $P_{\hat\theta}(\sigma)$, then measure the true repair's rank.{\parfillskip=0pt\par}
+      \end{minipage}%
+      \hfill
+      \begin{minipage}[t]{0.48\linewidth}
+        \vspace{-0.2cm}
+        \begin{center}
+          \resizebox{\linewidth}{!}{\input{fig3}}
+        \end{center}
+      \end{minipage}
+
+      \vspace{0.4em}
+%      across the validation set. Optionally, we may rerank the top-1,000 repairs using a Levenshtein-aligned transformer reranker (LATR) which takes a word and a list of candidates and estimates, $P_\theta(\sigma \mid \err \sigma)$.\\
+      \begin{definition}[Bounded Levenshtein-CFL reachability]\label{def:bcflr}
+        Given a CFL, $\ell$, and an invalid string, $\err{\sigma}: \bar\ell$, find every valid string reachable within $d$ edits of $\err{\sigma}$, i.e., if $\Delta_L$ is the Levenshtein metric and $\mathcal{L}\big(\text{L}(\err\sigma, d)\big) = \{\sigma' \mid \Delta_L(\err{\sigma}, \sigma') \leq d\}$ is the Levenshtein $d$-ball, we seek to find $\ell_\cap = \mathcal{L}\big(\text{L}(\err\sigma, d)\big) \cap \ell$.
+      \end{definition}
+
+      \vspace{0.1cm}Moreover, we want a procedure that surfaces \textit{both} natural and valid repairs:\vspace{0.1cm}
+
+      \begin{definition}[Ranked repair]\label{def:ranked-repair}
+        Given a finite language $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$ and LM, $\text{P}_\theta: \Sigma^* \rightarrow \mathbb{R}$, find the top-$k$ maximum probability repairs, i.e.,
+        \begin{equation*}
+          R(\ell_\cap, P_\theta): 2^{\Sigma^+} \times (\Sigma^+ \rightarrow \mathbb{R}) \rightarrow (\Sigma^+)^{\leq k} = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+        \end{equation*}
+      \end{definition}
+      \end{minipage}
+
+    \jointspacing
+
+    \mysection{Evaluation}
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+    We will compare four different methods for constrained decoding from $\ell_\cap$:
+
+    \begin{enumerate}
+      \itemsep0em
+      \itemindent=4cm
+      \sloppy
+      \setlength{\emergencystretch}{5cm}
+      \item \phantom{.} A \textbf{4-gram} model with Laplace smoothing trained on $\sigma \in \mathcal{L}(G)$
+      \item \phantom{.} A \textbf{GPT}-style model trained on $\err\sigma\sigma'$ with LTR $\sigma'$ masking
+      \item \phantom{.} A \textbf{PDFA} distilled from $P_\theta$ overapproximating $\mathcal{L}(G)$
+      \item \phantom{.} A \textbf{LATeR} (PDFA decoding + top-512 reranker)
+    \end{enumerate}
+      Let $\text{E}_\theta: \Sigma^+ \rightarrow \mathbb{R}^p$ be a transformer encoder and $E'_\theta: \Sigma^+ \times \mathbb{Z}_4^+ \rightarrow \mathbb{R}^p$ be an encoder which takes in a Levenshtein alignment $(\text{LA}: \Sigma^+ \times \Sigma^+ \rightarrow \mathbb{Z}_4^+)$ for each $\langle\err\sigma, \sigma\rangle$ pair. Now add an MLP and output a scalar relevance score:
+      \begin{equation*}
+        \Delta_\theta(\err\sigma, \sigma) = \text{MLP}_{\theta}\Big(\text{E}_\theta\big(\err\sigma\big), \text{E}_\theta'\big(\sigma, \text{LA}(\err\sigma, \sigma)\big)\Big)
+      \end{equation*}
+
+      We call this model a Levenshtein-Aligned Transformer Reranker (LATeR) and train on $\langle\err\sigma, \sigma'\rangle$ with PDFA-sampled confounders and a listwise CE loss.
+    \end{minipage}
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Results}
+
+    \vspace{-0.5cm}
+    \null\hspace*{2.8cm}%
+    \begin{minipage}[t]{0.86\columnwidth}
+      \noindent
+        \vspace{0pt}%
+        \resizebox{0.52\linewidth}{!}{\input{plot_rank_cdf}}
+      \hfill
+      \begin{minipage}[t]{0.48\linewidth}
+        \vspace{-14.5cm}%
+        \resizebox{\linewidth}{!}{\input{plot_volumes}}
+      \end{minipage}
+
+      Depicted is the cumulative rank and intersection volume across the test set.
+    \end{minipage}
+
+
+    \jointspacing
+
+% =========================================================
+    \mysection{Conclusion}
+
+    \null\hspace*{2.8cm}\begin{minipage}[c]{0.86\columnwidth}
+        \renewcommand\labelitemi{$\vcenter{\hbox{\small\bullet}}$}
+        \begin{itemize}[labelsep=0.8cm]
+          \item Single-threaded PDFA sampling exhibits $10^3-10^5\times$ higher throughput than constrained LLM decoding, often saturating $\ell_\cap$ in under 100ms.
+          \item The size-k subset maximizing $P_{\theta}$ over $\ell_\cap$ can far outweigh the mass from an LLM-guided subsampling. We call this the \textbf{decoder-retriever gap}.
+          \item Hence, exhaustive ranking with a low-fidelity but fast $P_\theta$ approximation is preferable to decoding a highly calibrated but low-throughput LLM.
+          \item Is there a succinct construction (possibly with a very different topology) that soundly overapproximates $\mathcal{L}(G)$ and more faithfully reconstructs $P_\theta$?
+        \end{itemize}
+    \end{minipage}
+
+  \end{multicols}
+
+  \bottombox{
+    \phantom{
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \qrcode[height=2.6in]{https://tidyparse.github.io/}
+    \end{minipage}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=2.6in]{../figures/tidyparse_logo.png}
+    \end{minipage}
+    \hspace{-4cm}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=3in]{../figures/mcgill.png}
+    \end{minipage}
+    \hspace{2cm}
+    \begin{minipage}[c][0.1\paperheight][c]{0.1\textwidth}
+      \includegraphics[height=3.2in]{../figures/mila.png}
+    \end{minipage}}
+  }
+\end{poster}
+\end{document}

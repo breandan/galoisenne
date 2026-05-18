@@ -1,0 +1,63 @@
+\begin{tikzpicture}[
+  shorten >=1pt,
+  on grid,
+  >=Stealth,
+  initial text=,
+% 1. Bolder nodes with smaller diameter
+  every state/.style={
+    draw,
+    circle,
+    font=\small\ttfamily,
+    minimum size=0.6cm,
+    line width=1.2pt
+  },
+% 2. Thick standard edges
+  every edge/.append style={
+    line width=1.2pt
+  },
+% 3. Extra thick blue dashed edges (corresponds to original penwidth 2.0)
+  rtn_call/.style={
+    draw=blue,
+    dashed,
+    line width=2.2pt
+  },
+  label_font/.style={
+    font=\small\ttfamily
+  },
+% 4. Final state with clear 2pt separation gap
+  accepting/.style={
+    state,
+    double,
+    double distance=4pt,
+    line width=1.5pt % Thickness of the two individual circles
+  }
+]
+
+  % Grid-aligned Nodes (Total Width: 12 units)
+  \node[state, initial] (q0) at (-3, 0) {$\alpha_S$};
+  \node[state, accepting] (qf) at (17, 0) {$\omega_S$};
+
+  % Top path (Recursive S calls)
+  \node[state] (q1) at (7, 2) {$q_1$};
+
+  % Bottom path (Brackets)
+  % Increased horizontal distance from q0 to q2 and q3 to qf
+  \node[state] (q2) at (3.5, -2) {$q_2$};
+  \node[state] (q3) at (10.5, -2) {$q_3$};
+
+  % Edges
+  \path[->]
+  % Base case transition
+  (q0) edge node[below, label_font] {x} (qf)
+
+  % Top recursive path: S -> S
+  (q0) edge[rtn_call, dash pattern=on 15pt off 12pt, bend left=10] node[above left, label_font, black] {S} (q1)
+  (q1) edge[rtn_call, dash pattern=on 15pt off 12pt, bend left=10] node[above right, label_font, black] {S} (qf)
+
+  % Bottom bracket path: { -> S -> }
+  % Higher bend and wider horizontal spacing for better label clearance
+  (q0) edge[bend right=12] node[below left=0.1cm and -0.1cm, label_font] {\{} (q2)
+  (q2) edge[rtn_call, dash pattern=on 15pt off 12pt] node[below, label_font, black] {S} (q3)
+  (q3) edge[bend right=12] node[below right=0.1cm and -0.1cm, label_font] {\}} (qf);
+
+\end{tikzpicture}
