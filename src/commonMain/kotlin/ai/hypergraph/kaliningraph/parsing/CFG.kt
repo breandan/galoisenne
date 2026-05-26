@@ -89,33 +89,6 @@ val CFG.vindex2: Array<List<List<Int>>> by cache {
   }
 }
 
-val CFG.leftAdjEncoding: Pair<IntArray, IntArray> by cache {
-  val ladj = leftAdj
-  val offsets = IntArray(nonterminals.size)
-  val flat = ArrayList<Int>()
-
-  var b = 0
-  while (b < ladj.size) {
-    offsets[b] = flat.size
-
-    val adj = ladj[b]
-    if (adj != null) {
-      val os = adj.other
-      val asz = adj.aIdx
-      var i = 0
-      while (i < os.size) {
-        flat += os[i]
-        flat += asz[i]
-        i++
-      }
-    }
-
-    b++
-  }
-
-  flat.toIntArray() to offsets
-}
-
 data class PackedAdj(val other: IntArray, val aIdx: IntArray) {
   inline fun forEachIfIn(bitset: KBitSet, f: (c: Int, a: Int) -> Unit) {
     val os = other; val asz = aIdx
@@ -201,6 +174,329 @@ fun CFG.stats() = if (this is FrozenCFG) stats else calcStats()
 //}
 
 val CFG.unitReachability: Map<Σᐩ, Set<Σᐩ>> by cache { unitReachabilityFast() }
+
+val CFG.noNonterminalStubs: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
+  println("Disabling nonterminal stubs!")
+  filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet().freeze()
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+val CFG.noEpsilon: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
+  println("Disabling ε!")
+  filter { "ε" !in it.toString() }.toSet().freeze()
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
+//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
+  println("Disabling nonterminal stubs!")
+  filter { it.RHS.none { it.isNonterminalStubIn(this) } }
+    .filter { "ε" !in it.toString() }.toSet().freeze()
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+val CFG.parikhFPCache: Map<Σᐩ, BitvecPosetInterval> by cache { TODO() }
+
+// Maps each symbol to the set of nonterminals that can generate it
+val CFG.generators: Map<Σᐩ, Set<Σᐩ>> by cache {
+  flatMap { prod -> prod.RHS.map { it to prod.LHS } }
+    .groupBy { it.first }.mapValues { it.value.map { it.second }.toSet() }
+}
+
+val CFG.nonterminalFormulas: Map<Σᐩ, Σᐩ> by cache {
+  nonterminals.associateWith { nt -> toFormula(nt) }
+}
+
+/**
+ * Maps each nonterminal to terminals that can be reached from it. At least one of
+ * each of these terminals must be present in the input string for the nonterminal
+ * to be matched. If a string does not contain any of these terminals, we know the
+ * nonterminal is not contained in the parse tree, and can prune it from the CFG.
+ *
+ *       Γ |- A -> a
+ *       -----------------------
+ *       Γ |- φ[A] = a
+ *
+ *       Γ |- A -> B C
+ *       -----------------------
+ *       Γ |- φ[A] = φ[B] ʌ φ[C]
+ *
+ *       Γ |- A -> B | C
+ *       -----------------------
+ *       Γ |- φ[A] = φ[B] v φ[C]
+ */
+
+fun CFG.toFormula(nt: Σᐩ): Σᐩ =
+  when (nt) {
+    in terminals -> nt
+    !in nonterminals -> "false"
+    else -> bimap[nt].joinToString(" or ", "( ", " )") {
+      it.joinToString(" and ", "( ", " )") { toFormula(it) }
+    }
+  } // TODO: fix stack blowup when there is a cycle in the CFG
+
+
+// Prunes all nonterminals that represent a finite set of terminals down to the root
+// Usually this is a tree-like structure, but it can also be a DAG of nonterminals
+val CFG.pruneTreelikeNonterminals: CFG by cache {
+  println("Pruning treelike nonterminals!")
+  filter { it.RHS.any { !it.isTreelikeNonterminalIn(this) } || "ε" in it.LHS }.toSet()
+    .let { cfg ->
+      val brokenReferences = cfg.terminals
+      cfg +
+        // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
+        brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
+        cfg.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
+        // Restore old nonterminal stubs for unreferenced unit productions
+        brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
+          .map { l -> filter { it.LHS == l }.map { l to it.RHS } }
+          .flatten()
+//          .first()
+          .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
+    }
+    .let { it.transformIntoCNF() }
+    .also { rewriteHistory.put(it, freeze().let { listOf(rewriteHistory[it]!![0]) + listOf(it)}) }
+    .also { it.blocked.addAll(blocked) }
+}
+
+// Returns true iff the receiver is a nonterminal whose descendants
+// are themselves either (1) treelike nonterminals or (2) terminals
+private fun Σᐩ.isTreelikeNonterminalIn(
+  cfg: CFG,
+  reachables: Set<Σᐩ> = cfg.reachableSymbols(this) - this,
+  nonTreeLike: Set<Σᐩ> = setOf(this)
+): Bln = when {
+  "ε" in this -> true
+  (reachables intersect nonTreeLike).isNotEmpty() -> false
+  else -> reachables.all { it in cfg.terminals ||
+      it.isTreelikeNonterminalIn(cfg, nonTreeLike = nonTreeLike + reachables) }
+}
+
+val CFG.joinMap: JoinMap by cache { JoinMap(this) }
+class JoinMap(val CFG: CFG) {
+  // TODO: Doesn't appear to confer any significant speedup? :/
+  val precomputedJoins: MutableMap<Π2A<Set<Σᐩ>>, Set<Π3A<Σᐩ>>> =
+    CFG.nonterminals.choose(1..3).let { it * it }
+      .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
+      .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
+
+  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Bln = false): Set<Π3A<Σᐩ>> =
+    if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
+    else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
+
+  @JvmName("setJoin")
+  operator fun get(l: Set<Σᐩ>, r: Set<Σᐩ>): Set<Σᐩ> =
+    join(l, r, false).map { it.first }.toSet()
+
+  @JvmName("treeJoin")
+  operator fun get(left: Forest, right: Forest): Forest =
+    join(left.map { it.root }.toSet(), right.map { it.root }.toSet(), false)
+      .map { (rt, l, r) ->
+        Tree(rt, null, left.first { it.root == l }, right.first { it.root == r })
+      }.toSet()
+}
+
+// Maps indices to nonterminals and nonterminals to indices
+class Bindex<T>(
+  val set: Set<T>,
+  val indexedNTs: List<T> = set.toList(),
+  val ntIndices: Map<T, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
+): List<T> by indexedNTs {
+  constructor(map: Map<Int, T>) : this(map.values.toSet(), map.values.toList(), map.entries.associate { it.value to it.key })
+  operator fun get(s: T): Int = ntIndices[s] ?: 1.also {
+    println("Unknown nonterminal: $s");
+    try {
+      throw IllegalArgumentException("Unknown nonterminal: $s")
+    } catch (e: IllegalArgumentException) {e.printStackTrace()}
+    null!! }
+  fun getUnsafe(s: T): Int? = ntIndices[s]
+  override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
+}
+// Maps variables to expansions and expansions to variables in a grammar
+class BiMap(val cfg: CFG) {
+  val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
+  val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
+  val R2LHSV by lazy { cfg.filter { it.RHS.all { it in cfg.nonterminals } }.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
+  val R2LHSI by lazy {
+    val mmap = List(cfg.nonterminals.size) { List(cfg.nonterminals.size) { mutableListOf<Int>() } }
+    R2LHSV.forEach {
+      val rhs = it.key.map { cfg.bindex[it] }
+      mmap[rhs[0]][rhs[1]] += it.value.map { cfg.bindex[it] }
+    }
+//    R2LHSV.map { it.key.map { cfg.bindex[it] } to it.value.map { cfg.bindex[it] } }.toMap()
+    mmap
+  }
+
+  val TDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
+    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+      for ((l, r) in cfg) for (symbol in r)
+          getOrPut(symbol) { mutableSetOf() }.add(l)
+    }
+  }
+  val NDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all NTs to the symbols they can generate
+    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
+      for ((l, r) in cfg) for (symbol in r)
+        getOrPut(l) { mutableSetOf() }.add(symbol)
+    }
+  }
+  val TRIPL: List<Π3A<Σᐩ>> by lazy {
+    R2LHS.filter { it.key.size == 2 }
+      .map { it.value.map { v -> Triple(v, it.key[0], it.key[1]) } }.flatten()
+  }
+  val X2WZ: Map<Σᐩ, List<Π3A<Σᐩ>>> by lazy {
+    TRIPL.groupBy { it.second }.mapValues { it.value }
+  }
+  val UNITS by lazy {
+    cfg.filter { it.RHS.size == 1 && it.RHS[0] !in cfg.nonterminals }
+      .groupBy({ it.LHS }, { it.RHS[0] }).mapValues { it.value.toSet() }
+  }
+  operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
+  operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
+  operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
+}
+
+// n.b., this only works if the CFG is acyclic, i.e., L(G) is finite otherwise it will loop forever
+fun CFG.toPTree(from: Σᐩ = START_SYMBOL, origCFG: CFG = this): PTree =
+  PTree(from, bimap[from].map { toPTree(it[0], origCFG) to if (it.size == 1) PTree() else toPTree(it[1], origCFG) })
+    .also { it.ntIdx = (origCFG.symMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }
+
+/*
+Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
+----------------------- □β     yield β, then α necessarily yields β"
+Γ ⊢ □ α→[β]
+
+Γ ⊢ □ ω→[α] □ α→[β]
+----------------------- trans
+Γ ⊢ □ ω → [α]∪[β]
+
+Γ ⊢ s∈Σ\Σ'  v'∈V.□v'→[s]      "Any production containing a nonterminal that
+----------------------- elim   necessarily generates a terminal that is not
+Γ ⊢ ∀ρ,v∈ρ  G' ← G'\ρ          in the subgrammar can be safely removed."
+*/
+
+val CFG.mustGenerate by cache { inevitableSymbols() }
+
+fun CFG.inevitableSymbols(map: Map<Σᐩ, Set<Σᐩ>> = emptyMap()): Map<Σᐩ, Set<Σᐩ>> {
+  val newMap = map.toMutableMap()
+  symbols.forEach { smb ->
+//    println("Testing $smb")
+    bimap.TDEPS[smb]?.forEach { nt ->
+//      println("Testing $smb -> $nt")
+      if (bimap[nt].all { smb in it || nt in it }) {
+//        println("Worked! $nt => $smb")
+        newMap[nt] = newMap.getOrPut(nt) { setOf(nt) } +
+            newMap.getOrPut(smb) { setOf(smb) }
+      }
+//      else {
+//        if (smb == "NEWLINE")
+//        println("Failed! $nt !=> $smb, first ${bimap[nt].first { smb !in it }}")
+//      }
+    }
+    newMap[smb] = newMap.getOrPut(smb) { setOf(smb) }
+  }
+  return if (newMap == map) map else inevitableSymbols(newMap)
+}
+
+fun Bln.explain(cfg: CFG, prod: Production, reason: String = "") = this.also{
+  if(it) {
+    println("Removed [${prod.LHS} -> ${prod.RHS.joinToString(" ")}] because $reason")
+    if (cfg.count { it.first == prod.LHS } == 1) println("And no other productions were left for `${prod.LHS}`!")
+  }
+}
+
+fun CFG.removeTerminalsVerbose(allowed: Set<Σᐩ>, otps: Set<Production> = this.terminalUnitProductions, origTerms: Set<Σᐩ> = this.terminals, mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate): CFG {
+  val deadNTs = mutableSetOf<Σᐩ>()
+  val next = toMutableSet().apply { removeAll { prod ->
+    (
+//        (prod in otps && (prod.RHS.first() !in allowed))
+//          .explain(this, prod, "the terminal `${prod.RHS.first()}` is not allowed") ||
+        (mustGenerate[prod.LHS]?.any { (it in origTerms && it !in allowed)
+          .explain(this, prod, "LHS value `${prod.LHS}` must generate `$it` and `$it` was not allowed") } == true) ||
+        prod.RHS.any { rhs -> mustGenerate[rhs]?.any { (it in origTerms && it !in allowed)
+          .explain(this, prod, "RHS value `$rhs` must generate `$it` and `$it` was not allowed") } == true }
+    ).also { if (it && this.count { it.first == prod.first } == 1) {
+        println("Added `${prod.first}` to deadNTs!")
+        deadNTs.add(prod.LHS) }
+      }
+  } }
+
+  next.removeAll { prod ->
+    prod.RHS.any { rhs ->
+      (rhs in deadNTs).explain(next, prod, "the RHS value `$rhs` is a dead NT!") ||
+        (rhs !in origTerms).explain(next, prod, "the RHS terminal `$rhs` was a chopped NT")
+    }
+  }
+
+  return if (next.size == size) this else next.removeTerminalsVerbose(allowed, otps, origTerms, mustGenerate)
+}
+
+fun CFG.removeTerminals(
+  allowed: Set<Σᐩ>,
+  deadNTs: Set<Σᐩ> = emptySet(),
+  origTerms: Set<Σᐩ> = this.terminals,
+  mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate
+): CFG {
+  val deadNTs = deadNTs.toMutableSet()
+  val next = toMutableSet().apply {
+    removeAll { prod ->
+      (prod.RHS + prod.LHS).toSet().any { mustGenerate[it]?.any { it in origTerms && it !in allowed || it in deadNTs } == true }
+        .also { if (it && count { it.first == prod.first } == 1) deadNTs.add(prod.LHS) }
+    }
+  }
+
+  next.removeAll { prod -> prod.RHS.any { rhs -> rhs in deadNTs || (rhs in next.terminals && rhs !in origTerms) } }
+
+  val new = next.removeUselessSymbols()
+
+  return if (new.size == size) this else new.removeTerminals(allowed, deadNTs, origTerms, mustGenerate)
+}
+
+/*
+ Specializes the CFG to a set of terminals X, by recursively pruning
+ every nonterminal v which necessarily generates a terminal t' ∉ X and
+ every nonterminal that necessarily generates v. We call the set of all
+ productions that remain after pruning, the preimage of G under T or the "subgrammar".
+ */
+fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
+  removeTerminals(image)
+    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
+    .freeze()
+
+fun CFG.directSubgrammar(toRemove: Set<Σᐩ>): CFG =
+  filter { (it.RHS + it.LHS).all { it !in toRemove } }
+    .normalize().noEpsilonOrNonterminalStubs.freeze()
+    .also { println("Reduced CFG from $size to ${it.size} rules") }
+
+fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
+fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
+fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
+
+fun CFG.dependencyGraph() =
+  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
+
+fun CFG.revDependencyGraph() =
+  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> rhs - prod.LHS } } }
+
+fun CFG.jsonify() = "cfg = {\n" +
+  bimap.L2RHS.entries.joinToString("\n") {
+    ("\"${it.key}\": [${it.value.joinToString(", ") {
+      it.joinToString(", ", "(", ")") { "\"$it\"" }
+    }}],")
+  } + "\n}"
+
+class TermDict(
+  val terms: Set<Σᐩ>,
+  val dict: Map<Char, Σᐩ> = terms.associateBy { Random(it.hashCode()).nextInt().toChar() },
+  val revDict: Map<Σᐩ, Char> = dict.entries.associate { (k, v) -> v to k }
+) : Map<Char, Σᐩ> by dict {
+  fun encode(str: String) = str.tokenizeByWhitespace().map { revDict[it]!! }.joinToString("")
+  fun encode(str: List<String>) = str.map { revDict[it]!! }.joinToString("")
+}
 
 private fun CFG.unitReachabilityFast(): Map<Σᐩ, Set<Σᐩ>> {
   class IVec(cap: Int = 8) {
@@ -400,363 +696,4 @@ private fun CFG.unitReachabilityFast(): Map<Σᐩ, Set<Σᐩ>> {
   }
 
   return res
-}
-
-val CFG.noNonterminalStubs: CFG by cache {
-//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
-  println("Disabling nonterminal stubs!")
-  filter { it.RHS.none { it.isNonterminalStubIn(this) } }.toSet().freeze()
-    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
-    .also { it.blocked.addAll(blocked) }
-}
-
-val CFG.noEpsilon: CFG by cache {
-//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
-  println("Disabling ε!")
-  filter { "ε" !in it.toString() }.toSet().freeze()
-    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
-    .also { it.blocked.addAll(blocked) }
-}
-
-val CFG.noEpsilonOrNonterminalStubs: CFG by cache {
-//  try { throw Exception() } catch (e: Exception) { e.printStackTrace() }
-  println("Disabling nonterminal stubs!")
-  filter { it.RHS.none { it.isNonterminalStubIn(this) } }
-    .filter { "ε" !in it.toString() }.toSet().freeze()
-    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
-    .also { it.blocked.addAll(blocked) }
-}
-
-val CFG.parikhFPCache: Map<Σᐩ, BitvecPosetInterval> by cache { TODO() }
-
-// Maps each symbol to the set of nonterminals that can generate it
-val CFG.generators: Map<Σᐩ, Set<Σᐩ>> by cache {
-  map { prod -> prod.RHS.map { it to prod.LHS } }.flatten()
-    .groupBy { it.first }.mapValues { it.value.map { it.second }.toSet() }
-}
-
-val CFG.nonterminalFormulas: Map<Σᐩ, Σᐩ> by cache {
-  nonterminals.associateWith { nt -> toFormula(nt) }
-}
-
-/**
- * Maps each nonterminal to terminals that can be reached from it. At least one of
- * each of these terminals must be present in the input string for the nonterminal
- * to be matched. If a string does not contain any of these terminals, we know the
- * nonterminal is not contained in the parse tree, and can prune it from the CFG.
- *
- *       Γ |- A -> a
- *       -----------------------
- *       Γ |- φ[A] = a
- *
- *       Γ |- A -> B C
- *       -----------------------
- *       Γ |- φ[A] = φ[B] ʌ φ[C]
- *
- *       Γ |- A -> B | C
- *       -----------------------
- *       Γ |- φ[A] = φ[B] v φ[C]
- */
-
-fun CFG.toFormula(nt: Σᐩ): Σᐩ =
-  when (nt) {
-    in terminals -> nt
-    !in nonterminals -> "false"
-    else -> bimap[nt].joinToString(" or ", "( ", " )") {
-      it.joinToString(" and ", "( ", " )") { toFormula(it) }
-    }
-  } // TODO: fix stack blowup when there is a cycle in the CFG
-
-
-// Prunes all nonterminals that represent a finite set of terminals down to the root
-// Usually this is a tree-like structure, but it can also be a DAG of nonterminals
-val CFG.pruneTreelikeNonterminals: CFG by cache {
-  println("Pruning treelike nonterminals!")
-  filter { it.RHS.any { !it.isTreelikeNonterminalIn(this) } || "ε" in it.LHS }.toSet()
-    .let { cfg ->
-      val brokenReferences = cfg.terminals
-      cfg +
-        // Restore preexisting nonterminal stubs for all remaining treelike nonterminals
-        brokenReferences.filter { "<$it>" in terminals }.map { it to listOf("<$it>") } +
-        cfg.nonterminals.filter { it.isOrganicNonterminal() }.map { it to listOf("<$it>") } +
-        // Restore old nonterminal stubs for unreferenced unit productions
-        brokenReferences.filter { it.isSyntheticNonterminal() && it in nonterminals }
-          .map { l -> filter { it.LHS == l }.map { l to it.RHS } }
-          .flatten()
-//          .first()
-          .toSet().also { println("Restored productions: ${it.prettyPrint()}") }
-    }
-    .let { it.transformIntoCNF() }
-    .also { rewriteHistory.put(it, freeze().let { listOf(rewriteHistory[it]!![0]) + listOf(it)}) }
-    .also { it.blocked.addAll(blocked) }
-}
-
-// Returns true iff the receiver is a nonterminal whose descendants
-// are themselves either (1) treelike nonterminals or (2) terminals
-private fun Σᐩ.isTreelikeNonterminalIn(
-  cfg: CFG,
-  reachables: Set<Σᐩ> = cfg.reachableSymbols(this) - this,
-  nonTreeLike: Set<Σᐩ> = setOf(this)
-): Bln = when {
-  "ε" in this -> true
-  (reachables intersect nonTreeLike).isNotEmpty() -> false
-  else -> reachables.all { it in cfg.terminals ||
-      it.isTreelikeNonterminalIn(cfg, nonTreeLike = nonTreeLike + reachables) }
-}
-
-val CFG.joinMap: JoinMap by cache { JoinMap(this) }
-class JoinMap(val CFG: CFG) {
-  // TODO: Doesn't appear to confer any significant speedup? :/
-  val precomputedJoins: MutableMap<Π2A<Set<Σᐩ>>, Set<Π3A<Σᐩ>>> =
-    CFG.nonterminals.choose(1..3).let { it * it }
-      .associateWith { subsets -> subsets.let { (l, r) -> join(l, r) } }
-      .also { println("Precomputed join map has ${it.size} entries.") }.toMutableMap()
-
-  fun join(l: Set<Σᐩ>, r: Set<Σᐩ>, tryCache: Bln = false): Set<Π3A<Σᐩ>> =
-    if (tryCache) precomputedJoins[l to r] ?: join(l, r, false).also { precomputedJoins[l to r] = it }
-    else (l * r).flatMap { (l, r) -> CFG.bimap[listOf(l, r)].map { Triple(it, l, r) } }.toSet()
-
-  @JvmName("setJoin")
-  operator fun get(l: Set<Σᐩ>, r: Set<Σᐩ>): Set<Σᐩ> =
-    join(l, r, false).map { it.first }.toSet()
-
-  @JvmName("treeJoin")
-  operator fun get(left: Forest, right: Forest): Forest =
-    join(left.map { it.root }.toSet(), right.map { it.root }.toSet(), false)
-      .map { (rt, l, r) ->
-        Tree(rt, null, left.first { it.root == l }, right.first { it.root == r })
-      }.toSet()
-}
-
-// Maps indices to nonterminals and nonterminals to indices
-class Bindex<T>(
-  val set: Set<T>,
-  val indexedNTs: List<T> = set.toList(),
-  val ntIndices: Map<T, Int> = indexedNTs.zip(indexedNTs.indices).toMap()
-): List<T> by indexedNTs {
-  constructor(map: Map<Int, T>) : this(map.values.toSet(), map.values.toList(), map.entries.associate { it.value to it.key })
-  operator fun get(s: T): Int = ntIndices[s] ?: 1.also {
-    println("Unknown nonterminal: $s");
-    try {
-      throw IllegalArgumentException("Unknown nonterminal: $s")
-    } catch (e: IllegalArgumentException) {e.printStackTrace()}
-    null!! }
-  fun getUnsafe(s: T): Int? = ntIndices[s]
-  override fun toString(): String = indexedNTs.mapIndexed { i, it -> "$i: $it" }.joinToString("\n", "Bindex:\n", "\n")
-}
-// Maps variables to expansions and expansions to variables in a grammar
-class BiMap(val cfg: CFG) {
-  val L2RHS by lazy { cfg.groupBy({ it.LHS }, { it.RHS }).mapValues { it.value.toSet() } }
-  val R2LHS by lazy { cfg.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
-  val R2LHSV by lazy { cfg.filter { it.RHS.all { it in cfg.nonterminals } }.groupBy({ it.RHS }, { it.LHS }).mapValues { it.value.toSet() } }
-  val R2LHSI by lazy {
-    val mmap = List(cfg.nonterminals.size) { List(cfg.nonterminals.size) { mutableListOf<Int>() } }
-    R2LHSV.forEach {
-      val rhs = it.key.map { cfg.bindex[it] }
-      mmap[rhs[0]][rhs[1]] += it.value.map { cfg.bindex[it] }
-    }
-//    R2LHSV.map { it.key.map { cfg.bindex[it] } to it.value.map { cfg.bindex[it] } }.toMap()
-    mmap
-  }
-
-  val TDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all symbols to NTs that can generate them
-    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
-      for ((l, r) in cfg) for (symbol in r)
-          getOrPut(symbol) { mutableSetOf() }.add(l)
-    }
-  }
-  val NDEPS: Map<Σᐩ, MutableSet<Σᐩ>> by lazy { // Maps all NTs to the symbols they can generate
-    mutableMapOf<Σᐩ, MutableSet<Σᐩ>>().apply {
-      for ((l, r) in cfg) for (symbol in r)
-          getOrPut(l) { mutableSetOf() }.add(symbol)
-    }
-  }
-  val TRIPL: List<Π3A<Σᐩ>> by lazy {
-    R2LHS.filter { it.key.size == 2 }
-      .map { it.value.map { v -> Triple(v, it.key[0], it.key[1]) } }.flatten()
-  }
-  val X2WZ: Map<Σᐩ, List<Π3A<Σᐩ>>> by lazy {
-    TRIPL.groupBy { it.second }.mapValues { it.value }
-  }
-  val UNITS by lazy {
-    cfg.filter { it.RHS.size == 1 && it.RHS[0] !in cfg.nonterminals }
-      .groupBy({ it.LHS }, { it.RHS[0] }).mapValues { it.value.toSet() }
-  }
-  operator fun get(p: List<Σᐩ>): Set<Σᐩ> = R2LHS[p] ?: emptySet()
-  operator fun get(p: Σᐩ): Set<List<Σᐩ>> = L2RHS[p] ?: emptySet()
-  operator fun get(p: Set<Σᐩ>): Set<Σᐩ> = TDEPS.entries.filter { it.value == p }.map { it.key }.toSet()
-}
-
-// n.b., this only works if the CFG is acyclic, i.e., L(G) is finite otherwise it will loop forever
-fun CFG.toPTree(from: Σᐩ = START_SYMBOL, origCFG: CFG = this): PTree =
-  PTree(from, bimap[from].map { toPTree(it[0], origCFG) to if (it.size == 1) PTree() else toPTree(it[1], origCFG) })
-    .also { it.ntIdx = (origCFG.symMap[(if('~' in from) from.split('~')[1] else from)] ?: Int.MAX_VALUE) }
-
-/*
-Γ ⊢ ∀ v.[α→*]∈G ⇒ α→[β]       "If all productions rooted at α
------------------------ □β     yield β, then α necessarily yields β"
-Γ ⊢ □ α→[β]
-
-Γ ⊢ □ ω→[α] □ α→[β]
------------------------ trans
-Γ ⊢ □ ω → [α]∪[β]
-
-Γ ⊢ s∈Σ\Σ'  v'∈V.□v'→[s]      "Any production containing a nonterminal that
------------------------ elim   necessarily generates a terminal that is not
-Γ ⊢ ∀ρ,v∈ρ  G' ← G'\ρ          in the subgrammar can be safely removed."
-*/
-
-val CFG.mustGenerate by cache { inevitableSymbols() }
-
-fun CFG.inevitableSymbols(map: Map<Σᐩ, Set<Σᐩ>> = emptyMap()): Map<Σᐩ, Set<Σᐩ>> {
-  val newMap = map.toMutableMap()
-  symbols.forEach { smb ->
-//    println("Testing $smb")
-    bimap.TDEPS[smb]?.forEach { nt ->
-//      println("Testing $smb -> $nt")
-      if (bimap[nt].all { smb in it || nt in it }) {
-//        println("Worked! $nt => $smb")
-        newMap[nt] = newMap.getOrPut(nt) { setOf(nt) } +
-            newMap.getOrPut(smb) { setOf(smb) }
-      }
-//      else {
-//        if (smb == "NEWLINE")
-//        println("Failed! $nt !=> $smb, first ${bimap[nt].first { smb !in it }}")
-//      }
-    }
-    newMap[smb] = newMap.getOrPut(smb) { setOf(smb) }
-  }
-  return if (newMap == map) map else inevitableSymbols(newMap)
-}
-
-fun Bln.explain(cfg: CFG, prod: Production, reason: String = "") = this.also{
-  if(it) {
-    println("Removed [${prod.LHS} -> ${prod.RHS.joinToString(" ")}] because $reason")
-    if (cfg.count { it.first == prod.LHS } == 1) println("And no other productions were left for `${prod.LHS}`!")
-  }
-}
-
-fun CFG.removeTerminalsVerbose(allowed: Set<Σᐩ>, otps: Set<Production> = this.terminalUnitProductions, origTerms: Set<Σᐩ> = this.terminals, mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate): CFG {
-  val deadNTs = mutableSetOf<Σᐩ>()
-  val next = toMutableSet().apply { removeAll { prod ->
-    (
-//        (prod in otps && (prod.RHS.first() !in allowed))
-//          .explain(this, prod, "the terminal `${prod.RHS.first()}` is not allowed") ||
-        (mustGenerate[prod.LHS]?.any { (it in origTerms && it !in allowed)
-          .explain(this, prod, "LHS value `${prod.LHS}` must generate `$it` and `$it` was not allowed") } == true) ||
-        prod.RHS.any { rhs -> mustGenerate[rhs]?.any { (it in origTerms && it !in allowed)
-          .explain(this, prod, "RHS value `$rhs` must generate `$it` and `$it` was not allowed") } == true }
-    ).also { if (it && this.count { it.first == prod.first } == 1) {
-        println("Added `${prod.first}` to deadNTs!")
-        deadNTs.add(prod.LHS) }
-      }
-  } }
-
-  next.removeAll { prod ->
-    prod.RHS.any { rhs ->
-      (rhs in deadNTs).explain(next, prod, "the RHS value `$rhs` is a dead NT!") ||
-        (rhs !in origTerms).explain(next, prod, "the RHS terminal `$rhs` was a chopped NT")
-    }
-  }
-
-  return if (next.size == size) this else next.removeTerminalsVerbose(allowed, otps, origTerms, mustGenerate)
-}
-
-fun CFG.removeTerminals(
-  allowed: Set<Σᐩ>,
-  deadNTs: Set<Σᐩ> = emptySet(),
-  origTerms: Set<Σᐩ> = this.terminals,
-  mustGenerate: Map<Σᐩ, Set<Σᐩ>> = this.mustGenerate
-): CFG {
-  val deadNTs = deadNTs.toMutableSet()
-  val next = toMutableSet().apply {
-    removeAll { prod ->
-      (prod.RHS + prod.LHS).toSet().any { mustGenerate[it]?.any { it in origTerms && it !in allowed || it in deadNTs } == true }
-        .also { if (it && count { it.first == prod.first } == 1) deadNTs.add(prod.LHS) }
-    }
-  }
-
-  next.removeAll { prod -> prod.RHS.any { rhs -> rhs in deadNTs || (rhs in next.terminals && rhs !in origTerms) } }
-
-  val new = next.removeUselessSymbols()
-
-  return if (new.size == size) this else new.removeTerminals(allowed, deadNTs, origTerms, mustGenerate)
-}
-
-/*
- Specializes the CFG to a set of terminals X, by recursively pruning
- every nonterminal v which necessarily generates a terminal t' ∉ X and
- every nonterminal that necessarily generates v. We call the set of all
- productions that remain after pruning, the preimage of G under T or the "subgrammar".
- */
-fun CFG.subgrammar(image: Set<Σᐩ>): CFG =
-  removeTerminals(image)
-    .also { rewriteHistory.put(it, freeze().let { rewriteHistory[it]!! + listOf(it)}) }
-    .freeze()
-
-fun CFG.directSubgrammar(toRemove: Set<Σᐩ>): CFG =
-  filter { (it.RHS + it.LHS).all { it !in toRemove } }
-    .normalize().noEpsilonOrNonterminalStubs.freeze()
-    .also { println("Reduced CFG from $size to ${it.size} rules") }
-
-fun CFG.forestHash(s: Σᐩ) = parseForest(s).map { it.structureEncode() }.hashCode()
-fun CFG.nonterminalHash(s: Σᐩ) = s.tokenizeByWhitespace().map { preimage(it) }.hashCode()
-fun CFG.preimage(vararg nts: Σᐩ): Set<Σᐩ> = bimap.R2LHS[nts.toList()] ?: emptySet()
-
-fun CFG.dependencyGraph() =
-  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> prod.LHS - rhs } } }
-
-fun CFG.revDependencyGraph() =
-  LabeledGraph { forEach { prod -> prod.second.forEach { rhs -> rhs - prod.LHS } } }
-
-fun CFG.jsonify() = "cfg = {\n" +
-  bimap.L2RHS.entries.joinToString("\n") {
-    ("\"${it.key}\": [${it.value.joinToString(", ") {
-      it.joinToString(", ", "(", ")") { "\"$it\"" }
-    }}],")
-  } + "\n}"
-
-class TermDict(
-  val terms: Set<Σᐩ>,
-  val dict: Map<Char, Σᐩ> = terms.associateBy { Random(it.hashCode()).nextInt().toChar() },
-  val revDict: Map<Σᐩ, Char> = dict.entries.associate { (k, v) -> v to k }
-) : Map<Char, Σᐩ> by dict {
-  fun encode(str: String) = str.tokenizeByWhitespace().map { revDict[it]!! }.joinToString("")
-  fun encode(str: List<String>) = str.map { revDict[it]!! }.joinToString("")
-}
-
-data class GrammarEncoding(val flat: IntArray, val offsets: IntArray)
-
-val CFG.grammarEncoding: GrammarEncoding by cache {
-  val W = nonterminals.size
-  val ntIdx = bindex.ntIndices   // Map<Σᐩ, Int>
-
-  val counts = IntArray(W)
-  for ((lhs, rhs) in this) {
-    if (rhs.size != 2) continue
-    val a = ntIdx[lhs] ?: continue
-    val b = ntIdx[rhs[0]] ?: continue
-    val c = ntIdx[rhs[1]] ?: continue
-    counts[a] += 2
-  }
-
-  val offsets = IntArray(W + 1)
-  var acc = 0
-  for (i in 0 until W) { offsets[i] = acc; acc += counts[i] }
-  offsets[W] = acc
-
-  val flat = IntArray(acc)
-  val cur = offsets.copyOf()
-  for ((lhs, rhs) in this) {
-    if (rhs.size != 2) continue
-    val a = ntIdx[lhs] ?: continue
-    val b = ntIdx[rhs[0]] ?: continue
-    val c = ntIdx[rhs[1]] ?: continue
-    val p = cur[a]
-    flat[p] = b
-    flat[p + 1] = c
-    cur[a] = p + 2
-  }
-
-  GrammarEncoding(flat, offsets)
 }
