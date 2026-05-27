@@ -417,8 +417,8 @@ fun CFL.admitsPrefix(prefix: List<Σᐩ>): IntRange {
     .any { (it.second in this).also { q -> if (q) minSuffLen = it.first } }
   return minSuffLen..(minSuffLen + MAX_SUFF_LEN)
 }
-fun CFG.enumSuffixes(tokens: List<Σᐩ>, toTake: Int, suffixLens: List<Int>?): Sequence<Σᐩ> =
-  suffixCompletions(tokens, suffixLens).flatMap { enumSeq(it.second) }.take(toTake)
+fun CFG.enumSuffixes(tokens: List<Σᐩ>, suffixLens: List<Int>?): Sequence<Σᐩ> =
+  suffixCompletions(tokens, suffixLens?.filter { it > 0 }).flatMap { enumSeq(it.second) }
 fun suffixCompletions(tokens: List<Σᐩ>, suffixLens: List<Int>?): Sequence<Pair<Int, List<String>>> =
   suffixLens?.map { it to tokens + List(it) { "_" } }?.asSequence() ?: emptySequence()
 
