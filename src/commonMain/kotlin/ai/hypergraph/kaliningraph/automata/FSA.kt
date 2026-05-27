@@ -141,7 +141,7 @@ open class FSA constructor(open val Q: TSA, open val init: Set<Σᐩ>, open val 
   }
 
   open val adjList: IntArray by lazy {
-    Q.map { (fromLabel, _, toLabel) -> listOf(stateMap[fromLabel]!!, stateMap[toLabel]!!) }.flatten().toIntArray()
+    Q.flatMap { (fromLabel, _, toLabel) -> listOf(stateMap[fromLabel]!!, stateMap[toLabel]!!) }.toIntArray()
   }
 
   open val midpoints: List<List<List<Int>>> by lazy { TODO() }
