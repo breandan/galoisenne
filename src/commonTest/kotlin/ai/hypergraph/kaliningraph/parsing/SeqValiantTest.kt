@@ -132,7 +132,7 @@ class SeqValiantTest {
   }
 
 /*
-./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SetValiantTest.testPythonRepairs"
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.parsing.SeqValiantTest.testPythonRepairs"
 */
   @Test
   fun testPythonRepairs() {

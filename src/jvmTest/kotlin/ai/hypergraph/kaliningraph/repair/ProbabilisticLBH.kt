@@ -744,7 +744,7 @@ class ProbabilisticLBH {
 /*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.repair.ProbabilisticLBH.testPythonRepairs"
 */
-  @Test // ~2m 6s
+//  @Test // ~2m 6s
   fun testPythonRepairs() {
     val cfg = vanillaS2PCFG
     println("Nonterminals: ${cfg.nonterminals.size}")

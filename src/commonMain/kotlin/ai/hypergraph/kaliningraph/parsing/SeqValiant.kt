@@ -410,17 +410,17 @@ fun CFG.enumNTSmall(nt: String): Sequence<Σᐩ> =
   })
 
 const val MAX_SUFF_LEN = 10
-// Returns whether the prefix concatenated with i wildcards up to MAX_SUFF_LEN fits in the langauge, return all i's
-fun CFG.admitsPrefix(prefix: List<Σᐩ>): IntRange = language.let { l ->
+// Returns whether the prefix concatenated with i wildcards up to MAX_SUFF_LEN fits in the language, return all i's
+fun CFL.admitsPrefix(prefix: List<Σᐩ>): IntRange {
   var minSuffLen = -1
   suffixCompletions(prefix, (0..MAX_SUFF_LEN).toList())
-    .any { (it.second in l).also { q -> if (q) minSuffLen = it.first } }
-  minSuffLen..(minSuffLen + MAX_SUFF_LEN)
+    .any { (it.second in this).also { q -> if (q) minSuffLen = it.first } }
+  return minSuffLen..(minSuffLen + MAX_SUFF_LEN)
 }
-fun CFG.enumSuffixes(tokens: List<Σᐩ>, toTake: Int, suffixLens: List<Int>): Sequence<Σᐩ> =
-  suffixCompletions(tokens, suffixLens).flatMap { enumSeq(it.second) }.take(toTake)
-fun suffixCompletions(tokens: List<Σᐩ>, suffixLens: List<Int>): Sequence<Pair<Int, List<String>>> =
-  suffixLens.map { it to tokens + List(it) { "_" } }.asSequence()
+fun CFG.enumSuffixes(tokens: List<Σᐩ>, suffixLens: List<Int>?): Sequence<Σᐩ> =
+  suffixCompletions(tokens, suffixLens?.filter { it > 0 }).flatMap { enumSeq(it.second) }
+fun suffixCompletions(tokens: List<Σᐩ>, suffixLens: List<Int>?): Sequence<Pair<Int, List<String>>> =
+  suffixLens?.map { it to tokens + List(it) { "_" } }?.asSequence() ?: emptySequence()
 
 var maxTrees = 50_000
 // This should never return duplicates and is the second fastest.

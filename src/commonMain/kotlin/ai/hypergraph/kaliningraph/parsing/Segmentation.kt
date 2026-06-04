@@ -115,9 +115,10 @@ fun preparseParseableLines(cfg: CFG, editorText: Σᐩ) =
   editorText.validLines().forEach { line ->
     val leadingWhiteSpace = line.takeWhile { it.isWhitespace() }
     val trailingWhiteSpace = line.takeLastWhile { it.isWhitespace() }
-    segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) {
-      Segmentation.build(cfg, line.trim()).toColorfulHTMLString()
-        .let { leadingWhiteSpace + it + trailingWhiteSpace }
+    segmentationCacheHTML.getOrPut(cfg.hashCode() + line.hashCode()) { try {
+        Segmentation.build(cfg, line.trim()).toColorfulHTMLString()
+          .let { leadingWhiteSpace + it + trailingWhiteSpace }
+      } catch(e: Exception) { e.printStackTrace(); "" }
     }
   }
 

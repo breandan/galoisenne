@@ -118,31 +118,25 @@ object Grammars {
 
 //  https://aclanthology.org/2020.conll-1.41.pdf#page=12
   val hardestCFL: CFG by lazy { """
-    S' -> R $ Q S L ;
-    L -> L' , U
-    L' -> , V L'
-    L' -> ε
-    R -> U , R'
-    R' -> R' V ,
-    R' -> ε
-    U -> W U
-    U -> ε
-    V -> W V
-    V -> W
-    W -> (
-    W -> )
-    W -> [
-    W -> ]
-    W -> $
-    Q -> L ; R
-    Q -> ε
-    S -> S Q T
-    S -> T
-    T -> ( Q S Q )
-    T -> [ Q S Q ]
-    T -> ( Q )
-    T -> [ Q ]
-  """.trimIndent().parseCFG().noNonterminalStubs }
+START -> R $ Q S L ; | R $ S L ;
+
+S -> S Q T | S T | T
+
+T -> ( Q S Q ) | ( S Q ) | ( Q S ) | ( S ) | ( Q ) | ( ) | [ Q S Q ] | [ S Q ] | [ Q S ] | [ S ] | [ Q ] | [ ]
+
+Q -> L ; R
+
+L -> LP , U | , U | LP , | ,
+LP -> , V LP | , V
+
+R -> U , RP | , RP | U , | ,
+RP -> RP V , | V ,
+
+U -> W U | W
+V -> W V | W
+
+W -> ( | ) | [ | ] | $
+""".trimIndent().parseCFG().noNonterminalStubs }
 
   val shortS2PParikhMap by lazy { ParikhMap(seq2parsePythonCFG, 20) }
   val seq2parsePythonCFGStr by lazy { """
