@@ -395,10 +395,6 @@ private class IntIntTable(initialCapacity: Int = 8) {
     z = z xor (z ushr 16)
     return z
   }
-
-  private companion object {
-    private const val EMPTY_KEY: Int = Int.MIN_VALUE
-  }
 }
 
 private class IntDoubleTable(initialCapacity: Int = 8) {
@@ -457,10 +453,9 @@ private class IntDoubleTable(initialCapacity: Int = 8) {
     return z
   }
 
-  private companion object {
-    private const val EMPTY_KEY: Int = Int.MIN_VALUE
-  }
 }
+
+const val EMPTY_KEY: Int = Int.MIN_VALUE
 
 private fun nextPow2(n: Int): Int {
   var x = if (n < 2) 2 else n - 1

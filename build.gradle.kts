@@ -9,7 +9,7 @@ import kotlin.time.DurationUnit.MILLISECONDS
 plugins {
   signing
   `maven-publish`
-  kotlin("multiplatform") version "2.3.21"
+  kotlin("multiplatform") version "2.4.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
   id("com.github.ben-manes.versions") version "0.54.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
@@ -80,8 +80,8 @@ kotlin {
 //    }
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("stdlib-common:2.3.21"))
-        implementation(kotlin("reflect:2.3.21"))
+        implementation(kotlin("stdlib-common:2.4.0"))
+        implementation(kotlin("reflect:2.4.0"))
 
         implementation("com.ionspin.kotlin:bignum:0.3.10")
 
@@ -91,14 +91,14 @@ kotlin {
 
     val jvmMain by getting {
       dependencies {
-        implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.21")
+        implementation("org.jetbrains.kotlin:kotlin-reflect:2.4.0")
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
         // https://github.com/mipt-npm/kmath/issues/449#issuecomment-1009660734
         implementation("guru.nidi:graphviz-kotlin:0.18.1")
         implementation("org.graalvm.js:js:25.0.3")
 
         implementation("org.jetbrains.lets-plot:platf-awt-jvm:4.5.2")
-        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.12.1")
+        implementation("org.jetbrains.lets-plot:lets-plot-kotlin-jvm:4.14.0")
 
         // Updating to 9.0 requires updating MarkovChain
         implementation("org.apache.datasketches:datasketches-java:8.0.0")
