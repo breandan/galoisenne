@@ -18,8 +18,7 @@ fun Σᐩ.matches(CFG: CFG): Bln = CFG.isValid(tokenizeByWhitespace())
 fun Σᐩ.matches(CJL: CJL): Bln = CJL.cfgs.all { matches(it) }
 fun List<Σᐩ>.matches(CFG: CFG): Bln = CFG.isValid(this)
 fun Σᐩ.parse(s: Σᐩ): Tree? = parseCFG().parse(s)
-fun CFG.parse(s: Σᐩ): Tree? =
-  try {
+fun CFG.parse(s: Σᐩ): Tree? = try {
 //    enumTree(s.tokenizeByWhitespace()).firstOrNull()?.denormalize()
     parseForest(s).firstOrNull { it.root == START_SYMBOL }?.denormalize()
   } catch (e: Exception) { checkUnitWord(s).ifEmpty { null }?.firstOrNull() }

@@ -8,6 +8,7 @@ import java.util.*
 import java.util.concurrent.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.stream.IntStream
+import kotlin.collections.ArrayList
 import kotlin.math.*
 import kotlin.time.TimeSource
 
@@ -561,9 +562,32 @@ fun negLogCost(w: Double, scale: Int): Int {
  * 1-based token id written into sampled packets. If cfg.tmMap is 0-based
  * in your build, change `tok = ...` to `tok = ... + 1`.
  */
-fun WFA.toWDFAInts(cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0): IntArray {
+fun WFA.toWDFAInts(
+  cfg: CFG,
+  subgrammar: CFG? = null,
+  scale: Int = 1000,
+  missingPenalty: Double = -20.0
+): IntArray {
   require(startWeights.size == 1) { "GPU WDFA path expects exactly one start state" }
-  require(transitions.values.none { es -> es.any { it.label == null } }) { "GPU WDFA path expects ε-free automata" }
+  require(transitions.values.none { es -> es.any { it.label == null } }) {
+    "GPU WDFA path expects ε-free automata"
+  }
+
+  val tokMap = cfg.frankenTokenMap(subgrammar)
+
+  if (subgrammar != null) {
+    println(
+      "WDFA Franken tokenization: " +
+          "subgrammar=${subgrammar.tmLst.size}, parent=${cfg.tmLst.size}, total=${tokMap.size}"
+    )
+
+    subgrammar.tmLst.take(40).forEachIndexed { i, tok ->
+      val franken = tokMap.getValue(tok)
+      require(franken == i) {
+        "Franken tokenization failed for $tok: expected $i, got $franken"
+      }
+    }
+  }
 
   val states = allStates.toIntArray().also { it.sort() }
   val n = states.size
@@ -595,7 +619,11 @@ fun WFA.toWDFAInts(cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0):
 
     for (e in outs) {
       val lab = e.label ?: error("epsilon edge not allowed")
-      val tok = (cfg.tmMap[lab] ?: error("WDFA label not in cfg.tmMap: $lab")) + 1
+
+      // Packet-compatible, 1-based token id.
+      // For overlap labels, this is exactly subgrammar.tmMap[lab] + 1.
+      val tok = (tokMap[lab] ?: error("WDFA label not in Franken token map: $lab")) + 1
+
       require(tok > 0) { "Expected packet-compatible 1-based token id for '$lab', got $tok" }
       require(seen.add(tok)) { "Non-deterministic WDFA row: state=$q0 has duplicate token=$tok label=$lab" }
 
@@ -638,20 +666,43 @@ fun WFA.toWDFAInts(cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0):
 
   val header = ArrayList<Int>(constants.size + payloads.size * 2)
   header += constants
-  for (i in payloads.indices) { header += offsets[i]; header += lens[i] }
+  for (i in payloads.indices) {
+    header += offsets[i]
+    header += lens[i]
+  }
 
   val out = IntArray(header.size + lens.sum())
   var p = 0
   for (x in header) out[p++] = x
-  for (buf in payloads) { for (x in buf) out[p++] = x }
+  for (buf in payloads) for (x in buf) out[p++] = x
 
   return out
 }
 
-fun WFA.writeWDFA(file: String, cfg: CFG, scale: Int = 1000, missingPenalty: Double = -20.0) {
-  val ints = toWDFAInts(cfg, scale, missingPenalty)
-  val bb = ByteBuffer .allocate(ints.size * 4).order(ByteOrder.LITTLE_ENDIAN)
+fun WFA.writeWDFA(file: String, cfg: CFG, subgrammar: CFG? = null, scale: Int = 1000, missingPenalty: Double = -20.0) {
+  val ints = toWDFAInts(cfg, subgrammar, scale, missingPenalty)
+  val bb = ByteBuffer.allocate(ints.size * 4).order(ByteOrder.LITTLE_ENDIAN)
 
   for (x in ints) bb.putInt(x)
   File(file).writeBytes(bb.array())
+}
+
+// Takes a CFG, g, and a subgrammar g' and creates a terminal map
+fun CFG.frankenTokenMap(subgrammar: CFG?): Map<String, Int> {
+  if (subgrammar == null) return tmMap
+  val parentTerms = tmLst.toSet()
+  val subTerms = subgrammar.tmLst.toSet()
+
+  require(parentTerms.containsAll(subTerms)) {
+    "subgrammar.terminals must be a subset of cfg.terminals; missing=" + (subTerms - parentTerms)
+  }
+
+  val ordered = ArrayList<String>(tmLst.size)
+  ordered += subgrammar.tmLst
+
+  for (tok in tmLst) { if (tok !in subTerms) ordered += tok }
+
+  require(ordered.size == ordered.toSet().size) { "Duplicate terminals in Franken vocabulary" }
+
+  return ordered.withIndex().associate { (i, tok) -> tok to i }
 }
