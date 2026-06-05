@@ -119,7 +119,7 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
-        implementation("org.logicng:logicng:2.6.0")
+        implementation("org.logicng:logicng:2.6.1")
 
         implementation("com.google.ortools:ortools-java:9.15.6755")
 
@@ -133,7 +133,7 @@ kotlin {
       dependencies {
         implementation(kotlin("test-junit5"))
 
-        implementation(project.dependencies.platform("org.junit:junit-bom:6.0.3"))
+        implementation(project.dependencies.platform("org.junit:junit-bom:6.1.0"))
         implementation("org.junit.jupiter:junit-jupiter-api")
         implementation("org.junit.jupiter:junit-jupiter-params")
         runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
