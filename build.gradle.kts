@@ -79,7 +79,7 @@ kotlin {
 //        languageVersion = "2.0"
 //      }
 //    }
-    val commonMain by getting {
+    getByName("commonMain") {
       dependencies {
         implementation(kotlin("stdlib-common:2.4.0"))
         implementation(kotlin("reflect:2.4.0"))
@@ -90,7 +90,7 @@ kotlin {
       }
     }
 
-    val jvmMain by getting {
+    getByName("jvmMain") {
       dependencies {
         implementation("org.jetbrains.kotlin:kotlin-reflect:2.4.0")
         // TODO: Figure out how to package viz.js directly for Kotlin Jupyter
@@ -130,7 +130,7 @@ kotlin {
       }
     }
 
-    val jvmTest by getting {
+    getByName("jvmTest") {
       dependencies {
         implementation(kotlin("test-junit5"))
 
@@ -158,7 +158,7 @@ kotlin {
       }
     }
 
-    val commonTest by getting {
+    getByName("commonTest") {
       dependencies {
         implementation(kotlin("test"))
         implementation(kotlin("test-common"))
@@ -273,5 +273,5 @@ tasks {
    * ./gradlew [build publishToMavenLocal] jupyterRun -x test
    */
 
-  val jupyterRun by registering(Exec::class) { commandLine("jupyter", "notebook", "--notebook-dir=notebooks") }
+  register<Exec>("jupyterRun") { commandLine("jupyter", "notebook", "--notebook-dir=notebooks") }
 }
