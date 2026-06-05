@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
+import org.gradle.api.tasks.testing.TestListener
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
@@ -67,7 +68,7 @@ repositories.mavenCentral {
 
 kotlin {
   jvm { compilerOptions.jvmTarget = JvmTarget.JVM_21 }
-  js(IR) {
+  js {
     browser { testTask { enabled = false } }
     binaries.executable()
   }
@@ -244,13 +245,15 @@ tasks {
       showStandardStreams = true
     }
 
-    afterTest(KotlinClosure2({ desc: TestDescriptor, result: TestResult ->
-      println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
-      testDurations.add(TestDuration(
-        name = "${desc.className}.${desc.name}",
-        duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
-      ))
-    }))
+    addTestListener(object : TestListener {
+      override fun afterTest(desc: TestDescriptor, result: TestResult) {
+        println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
+        testDurations.add(TestDuration(
+          name = "${desc.className}.${desc.name}",
+          duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
+        ))
+      }
+    })
 
     doLast {
       println("Longest 10 tests")
