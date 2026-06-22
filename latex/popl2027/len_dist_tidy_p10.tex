@@ -1,0 +1,34 @@
+\begin{tikzpicture}
+  \begin{axis}[
+  legend cell align={left},
+  legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204, legend columns=-1, legend pos=north east},
+  xlabel={Snippet length, $|\sigma|$},
+  ylabel={Precision@10},
+  title={\Large\textbf{Tidyparse Repair Precision@10}},
+  ybar,
+  axis lines*=left,
+  xtick={0, 10, 20, 30, 40, 50, 60, 70},
+  ytick={0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
+  xticklabels={{(}0{,}10{)}, {[}10{,}20{)}, {[}20{,}30{)}, {[}30{,}40{)}, {[}40{,}50{)}, {[}50{,}60{)}, {[}60{,}70{)}, {[}70{,}80{)}},
+  x tick label style={font=\scriptsize},
+  ymax=1.0,
+  ymin=0.0,
+  bar width=4pt,
+  ymajorgrids=true,
+  grid style=dashed,
+  tick align=outside,
+  tick pos=left,
+  ]
+  \addlegendimage{empty legend}
+  \addlegendentry{$\Delta(\err\sigma, \sigma')=$}
+  \addlegendimage{ybar,ybar legend,draw=none,green,fill=green!50}
+  \addlegendentry{1,}
+  \addlegendimage{ybar,ybar legend,draw=none,blue,fill=blue!50}
+  \addlegendentry{2,}
+  \addlegendimage{ybar,ybar legend,draw=none,orange,fill=orange!50}
+  \addlegendentry{3}
+  \addplot[green, fill=green!50] coordinates { (0, 0.8421052631578947) (10, 0.8888888888888888) (20, 0.8622754491017964) (30, 0.8320610687022901) (40, 0.7777777777777778) (50, 0.7868852459016393) (60, 0.7659574468085106) (70, 0.7843137254901961) };
+  \addplot[blue, fill=blue!50] coordinates { (0, 0.9354838709677419) (10, 0.8208955223880597) (20, 0.7272727272727273) (30, 0.6617647058823529) (40, 0.6) (50, 0.5961538461538461) (60, 0.7) (70, 0.56) };
+  \addplot[orange, fill=orange!50] coordinates { (0, 0.3275862068965517) (10, 0.2411764705882353) (20, 0.23563218390804597) (30, 0.2360248447204969) (40, 0.2932330827067669) (50, 0.3548387096774194) (60, 0.32727272727272727) (70, 0.24358974358974358) };
+  \end{axis}
+\end{tikzpicture}
