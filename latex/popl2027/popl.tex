@@ -345,6 +345,7 @@ Since the word is predetermined, we just need to keep track of nonterminal subse
 \noindent If we define $\hat\sigma_r = \{w \mid (w \rightarrow \sigma_r) \in P\}$, then construct a matrix with nonterminals on the superdiagonal representing each token, $M_0[r+1=c](G', \sigma) = \;\hat\sigma_r$, the fixpoint $M_{i+1} = M_i + M_i^2$ is uniquely determined by the superdiagonal entries. Omitting the exponentiation-by-squaring detail, the ordinary fixedpoint iteration simply fills successive diagonals:\vspace{-10pt}
 
 \begin{equation}
+\begin{aligned}
   \hspace{-0.2cm}M_0=
   \begin{pNiceMatrix}[nullify-dots,xdots/line-style=loosely dotted]
     \varnothing & \hat\sigma_1 & \varnothing & \Cdots & \varnothing  \\
@@ -367,6 +368,7 @@ Since the word is predetermined, we just need to keep track of nonterminal subse
                 &              &             &        & \hat\sigma_n     \\
     \varnothing & \Cdots       &             &        & \varnothing
   \end{pNiceMatrix}
+\end{aligned}
 \end{equation}
 
 Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sigma]$~\footnote{Hereinafter, we use Iverson brackets to denote the indicator function of a predicate with free variables, i.e., $[P] \Leftrightarrow \mathds{1}(P)$.} decides language membership, i.e., $[\sigma \in \mathcal{L}(G)]$. So far, this procedure is essentially the textbook CYK algorithm in a linear algebraic notation~\cite{goodman1999semiring} and a well-established technique in the parsing literature~\cite{grune2008}.
@@ -455,7 +457,7 @@ As the original construction defined by Schultz and Mihov~\cite{schulz2002fast} 
 
 \input{figures/arc_rules}
 
-Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_\max$.
+Note that the same patch can have multiple Levenshtein alignments. $\textsc{Done}$ constructs the final states, which are all states accepting strings $\sigma'$ whose Levenshtein distance $\Delta(\sigma, \sigma') \leq d_{\max}$.
 
 To avoid creating a parallel bundle of arcs for each insertion and substitution point, we instead decorate each arc with a symbolic predicate, accepting or rejecting $\sigma_i$. To distinguish this symbolic variant from the original construction, we highlight the modified rules in orange below.
 
@@ -480,7 +482,7 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
   \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
 \end{prooftree}
 
-Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_\max$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:gre_def}).
+Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_{\max}$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:gre_def}).
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
@@ -723,6 +725,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \EndFor
   \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
   \State \Return $\langle Q, \Sigma, \delta \subseteq Q \times (\Sigma\:{\color{orange}\rightarrow \mathbb{B}}) \times Q, q_\alpha, F\rangle$  \Comment{Returns a [symbolic] Levenshtein automaton.}
+\EndProcedure
 \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
@@ -747,10 +750,11 @@ The implementation essentially consists of four stages, each dependent on its pr
 \State $\textbf{if }\textsc{done} \textbf{ then break}$
 \EndFor
 \State \Return $M$ \Comment{Returns the completed Boolean parse chart.}
+\EndProcedure
   \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
-\noindent Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_\max$ should be enlarged before proceeding.
+\noindent Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_{\max}$ should be enlarged before proceeding.
 
 \noindent Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
 
@@ -772,6 +776,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
   \EndFor \vspace{0.2cm}
   \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q_\omega\,:\,F}} M[q_\alpha, q_\omega, S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.31cm}
+\EndProcedure
 \end{algorithmic}
 \end{algorithm}
 
@@ -792,6 +797,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
         \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
     \Until{interrupted or $\mathcal{E}$ is empty.}
     \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by $c$-gram probability.}
+\EndProcedure
   \end{algorithmic}
 \end{algorithm}
 
@@ -805,7 +811,7 @@ We will make the simplifying assumption that each GPU kernel is a pure function 
 
 For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define characteristic functions $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$, $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and index sets $\Sigma \leftharpoonrightarrow \mathbb{N}$, $V \leftharpoonrightarrow \mathbb{N}$, $Q \leftharpoonrightarrow \mathbb{N}$ for getting in and out of the \texttt{uint} domain, with $|V|, |Q| \lesssim 10^3$ adjustable upward if memory permits.
 
-The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout testifies to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3)~the next five bits memoize the minimum $i_{\min}$ such that $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
+The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout testifies to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3)~the next five bits memoize the minimum $i_{\min}$ such that $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
 
 \[
 \big[\overset{\overset{\scriptstyle{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s\,:\,2^\Sigma \,\leftharpoonrightarrow\,\mathbb{B}^{25}}, \overbrace{\ws, \ws, \ws, \ws, \bs}^{i_{\min}\,:\,\mathbb{N}_{\leq 32}\,\leftrightarrow\,\mathbb{B}^{5}}, \overset{\overset{\scriptstyle\exists\,v\mathrlap{\,:\,V.\,q\,\rightsquigarrow\,q'\,\vdash\,v}}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
@@ -843,7 +849,7 @@ f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ 
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
-\begin{equation*}
+\ensuremath{
   \begin{array}{r@{\hskip 0.5em}c|ccccccc}
     \text{$q$:}         & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \texttt{)} & \texttt{NAME} & & \\
     \text{PE:} & & 0 & 1 & 2 & 3 & 4 & & \\\hline
@@ -857,7 +863,7 @@ f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ 
     \text{PE:} & & 0 & 1 & 2 & 3 & 4 & 5 & 6 \\
     \text{LA:} & & 0 & 0 & 0 & 2 & 0 & 1 & 1 \\
   \end{array}
-\end{equation*}
+}
 }
 \caption{Transformer data encoding.}\label{fig:tx_data_encoding}
 \end{wrapfigure}

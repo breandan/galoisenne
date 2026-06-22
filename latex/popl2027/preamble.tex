@@ -6,6 +6,7 @@
 \usepackage{amsmath}
 \DeclareMathOperator*{\argmax}{argmax}
 \DeclareMathOperator*{\argmin}{argmin}
+\let\Bbbk\relax
 \usepackage{amssymb}
 
 \usepackage[dvipsnames, table]{xcolor}
@@ -53,6 +54,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{algorithmicx}
+\providecommand*\liningnums[1]{#1}
 \usepackage{sourcecodepro}
 \usepackage{tikz-qtree}
 \usepackage{amsthm}
@@ -86,7 +88,7 @@
 
 \setmonofont[Scale=0.8]{JetBrainsMono}[
 Contextuals={Alternate},
-Path=./font/,
+Path=../font/,
 Extension = .ttf,
 UprightFont=*-Regular,
 BoldFont=*-Bold,
@@ -320,8 +322,6 @@ literate={`}{{\char0}}1
 \usepackage{upquote}
 \tikzstyle{every picture}+=[remember picture]
 \usepackage{menukeys}
-\pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
-\pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings
 
 \makeatletter
 \DeclareRobustCommand{\cev}[1]{%
@@ -563,12 +563,6 @@ literate={`}{{\char0}}1
 \usetikzlibrary{automata, positioning, arrows}
 
 \newcommand{\nobarfrac}{\genfrac{}{}{0pt}{}}
-\pgfplotstableread[col sep=comma,]{timings_loc.csv}\loctimings
-\pgfplotstableread[col sep=comma,]{timings_unloc.csv}\unloctimings
-\pgfplotstableread[col sep=comma,]{natural_errors.csv}\naturalerrors
-\pgfplotstableread[col sep=comma,]{synthetic_errors.csv}\syntheticerrors
-
-\usepackage[all,pdf]{xy}
 
 \newcommand{\bs}{\blacksquare}
 \newcommand{\ws}{\square}

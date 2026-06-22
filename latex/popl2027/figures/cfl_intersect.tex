@@ -15,7 +15,9 @@
       \fill[black!35] \firstcircle;
     \end{scope}
 
-    \draw \firstcircle node[dot,label=$\err{\sigma}$](z0);
+    \draw \firstcircle;
+    \fill (-2.1,0) circle (1mm);
+    \node[above] at (-2.1,0) {$\err{\sigma}$};
     \draw [dashed] \firstcirclea;
     \draw [dashed] \firstcircleb;
     \draw [dashed] \firstcirclec;
