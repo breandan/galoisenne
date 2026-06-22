@@ -1,0 +1,181 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Implementation}\label{sec:implementation}
+
+The implementation essentially consists of four stages, each dependent on its predecessor.
+
+\begin{enumerate}
+  \item $\texttt{lev\_build}: \Sigma^n \times \mathbb{N} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
+  \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
+  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{GRE}$ -- constructs the regular expression for $G_\cap$.
+  \item $\texttt{reg\_dcode}: \text{GRE} \times \mathbb{N}^{|\Sigma|^{c\approx 4}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10^4}$ -- returns a short list of high-probability repairs.
+\end{enumerate}
+
+\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
+
+\begin{algorithm}[H]
+\caption{\texttt{lev\_build} pseudocode}
+\label{alg:lev_build}
+\begin{algorithmic}[1]
+  \Procedure{\texttt{lev\_build}$(\sigma: \Sigma^n, d_{\max}: \mathbb{N})$}{} \Comment{Takes a string and maximum edit distance.}
+  \State $Q \gets \varnothing, \delta \gets \varnothing$
+  \For{$\langle h, j, i, k \rangle \textbf{ in } [0, n]^2\times[0, d_{\max}]^2$\vspace{1.34cm}}
+    \State \vspace{-1.65cm}\[\hspace{1.15cm}\delta\,\gets \delta\,\cup\:\!\left\{
+        \begin{alignedat}{9}
+          &\;& q_{h,i} &\hspace{-0.1cm}\overset{{\color{orange}[\neq\sigma_{j+1}]}}{\rightarrow} &q_{j,k} &\qquad& \text{if}\;& h = j   &\:\land\:& i = k-1  &\qquad& \duparrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[\neq\sigma_j]}}{\rightarrow} &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k-1  &&       \ddiagarrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& h = j-1 &\:\land\:& i = k    &&       \drightarrow\\[-2pt]
+          && q_{h,i}   &\overset{{\color{orange}[=\sigma_j]}}{\rightarrow}    &q_{j,k} &&       \text{if}\;& 1 \leq j - h - 1 \leq d_{\max} &\:\land\:& 1 \leq k - i \leq d_{\max}   && \knightarrow\;
+        \end{alignedat}
+      \right\}\]
+    \State $Q \gets Q \cup \{q_{h,i}, q_{j,k}\}$
+  \EndFor
+  \State $I \gets \{q_{0,0}\}, F \gets \{q_{i, j} \mid n - i + j \leq d_{\max}\}$
+  \State \Return $\langle Q, \Sigma, \delta \subseteq Q \times (\Sigma\:{\color{orange}\rightarrow \mathbb{B}}) \times Q, q_\alpha, F\rangle$  \Comment{Returns a [symbolic] Levenshtein automaton.}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}\vspace{-0.2cm}
+
+\noindent Next, the chart parser expects an acyclic NFA, a CNF grammar and returns a Boolean 3-tensor.
+
+\begin{algorithm}[H]
+\caption{\texttt{cfl\_fixpt} pseudocode}
+\label{alg:cfl_fixpt}
+\begin{algorithmic}[1]
+\Require CFG must be in CNF and the NFA must be $\varepsilon$-free and acyclic (i.e., denote a finite language).
+\Procedure{\texttt{cfl\_fixpt}$\big(\langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
+\State $R: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists \sigma \in \Sigma^+ \mid q \overset{\sigma}{\rightsquigarrow} q' \textbf{ else } \ws\big]_{q,\,q'\,:\, Q}$ \Comment{Solve for reachability matrix.}
+\State $M: \mathbb{B}^{|Q|\times |Q| \times |V|} \gets \big[\bs \textbf{ if } \exists s: \Sigma \mid (v \rightarrow s) \in P \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land {\color{orange}\varphi(}s{\color{orange})} \textbf{ else } \ws\big]_{q,\,q'\,:\,Q,\,v\,:\,V}$
+\For{$i \textbf{ in } \big[0, \lceil\log_2(|Q||V|)\rceil\big]$} \Comment{Solves matrix exponential, $\exp(M_0)$.}
+\State $\textsc{done} \gets \bs$
+\For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$} \Comment{Iterates one step of $M_{i+1} = M_i + M_i^2$.}
+  \State $\textbf{if } M[p, r, w] \textbf{ or not } R[p, r] \textbf{ then continue}$
+  \State $Q_{pr} \gets \big\{q: Q \mid R[p, q] \land R[q, r]\big\}$ \Comment{Consider reachable states between p and r.}
+  \State $M[p, r, w] \gets \bs \textbf{ if } \exists q: Q_{pr}, x, z: V \mid M[p, q, x] \land M[q, r, z] \land (w \rightarrow x z) \in P \textbf { else } \ws$
+  \State $\textbf{if } M[p, r, w] \textbf{ then } \textsc{done} \gets \ws$
+\EndFor
+\State $\textbf{if }\textsc{done} \textbf{ then break}$
+\EndFor
+\State \Return $M$ \Comment{Returns the completed Boolean parse chart.}
+\EndProcedure
+  \end{algorithmic}
+\end{algorithm}\vspace{-0.2cm}
+
+\noindent Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_{\max}$ should be enlarged before proceeding.
+
+\noindent Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
+
+\begin{algorithm}[H]
+\caption{\texttt{reg\_build} pseudocode}
+\label{alg:reg_build}
+\begin{algorithmic}[1]
+  \Require Same as \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}), $M_{\mathbb{B}}[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$, and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
+  \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
+  \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
+  \State $M: \text{GRE}^{|Q|\times |Q| \times |V|} \gets \big[\{s: \Sigma \mid M[q, q', v] \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land (v\rightarrow s) \in P \land {\color{orange}\varphi(}s{\color{orange})}\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
+  \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q||V|)\rceil\big]$}
+  \State $M' \gets M$
+  \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
+  \State $\textbf{if not } M_\mathbb{B}[p, r, w] \textbf{ then continue}$
+  \State $Q_{pr} \gets \big\{q: Q \mid P[p, q] \land P[q, r]\big\}$ \Comment{Consider parseable states between p and r.}\vspace{0.2cm}
+  \State \vspace{-0.42cm}\[\hspace{0.62cm}M'[p, r, w] \gets M[p, r, w] \vee \bigvee_{\mathclap{\substack{q\,:\,Q_{pr}\\x,\,z\,:\,V}}} \big\{M[p, q, x]\cdot M[q, r, z] \mid (w \rightarrow x z) \in P\big\}\]\vspace{-0.2cm}
+  \EndFor
+  \State $\textbf{if } M=M' \textbf{ then break else } M \gets M'$
+  \EndFor \vspace{0.2cm}
+  \State \vspace{-0.42cm}\[\hspace{-8.5cm}\textbf{return }\bigvee_{\mathclap{q_\omega\,:\,F}} M[q_\alpha, q_\omega, S]\vspace{-0.8cm}\] \Comment{Union regexes for all total parses yielding S.}\vspace{0.31cm}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained $c$-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-$k$ total trajectories are returned.
+
+\begin{algorithm}[H]
+  \caption{\texttt{reg\_dcode} pseudocode}
+  \label{alg:reg_dcode}
+  \begin{algorithmic}[1]
+  \Require We expect the shortest word to exceed the Markov order in length, $c < |\sigma|, \forall\sigma: \mathcal{L}(e)$.
+  \Procedure{\texttt{reg\_dcode}$\big(e: \text{GRE}, C: \mathbb{N}^{|\Sigma|^{c\approx 4}}, k: \mathbb{N}\big)$}{}
+    \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon^{c-1}, e\cdot \varepsilon^{c-1}, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
+    \State \vspace{-0.55cm}\[\hspace{-4.58cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^{\geq c-1}) = \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
+    \Repeat
+        \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}_0 \textbf{ off }\mathcal{E}$
+        \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, p + \ln P(a\mid \sigma) \rangle \mid a \in \texttt{follow}(e)\big]$
+        \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
+        \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
+    \Until{interrupted or $\mathcal{E}$ is empty.}
+    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by $c$-gram probability.}
+\EndProcedure
+  \end{algorithmic}
+\end{algorithm}
+
+\noindent With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., 100ms, or else terminate early should we succeed in exhaustively generating it. After reranking, truncation, and cosmetic postprocessing, the resulting repairs can then be displayed.
+
+\clearpage\subsection{GPU translation}\label{sec:gpu_translation}
+
+The foregoing architecture can be translated to a series of high-performance GPU kernels. Our strategy will be to maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated portion of a shared buffer without locking or external communication.
+
+We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. On a GPU, all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. The main challenge of GPU programming then, becomes careful memory management and efficiently mapping aggregate datatypes to and from the integers. Conceptually, each $\langle r, c, v\rangle$ triple will be dispatched to a single GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Consistent with the PRAM model used in Theorem~\ref{thm:parallel_decision_complexity}, each thread will correspond to a single processor, with $|Q|^2|V|$ threads in total. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency.
+
+For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define characteristic functions $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$, $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and index sets $\Sigma \leftharpoonrightarrow \mathbb{N}$, $V \leftharpoonrightarrow \mathbb{N}$, $Q \leftharpoonrightarrow \mathbb{N}$ for getting in and out of the \texttt{uint} domain, with $|V|, |Q| \lesssim 10^3$ adjustable upward if memory permits.
+
+The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{uint32}^{|Q|\times|Q|\times|V|}$, whose layout testifies to four properties of each $\langle q, q', v\rangle$ triple: (1) the first bit encodes the dis/equality predicate ${\color{orange}\varphi}$, (2) the next 25 bits designate terminal participation $\big(\text{if }\exists s: \Sigma. \varphi(s) \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q')\in \delta\big)$, (3)~the next five bits memoize the minimum $i_{\min}$ such that $M_{i_{\min}}[q, q', v] \& 1 = \bs$ for short-circuiting (see Line \#7 of Alg.~\ref{alg:reg_build}), and (4) the lowest-order bit denotes parsability, i.e., $q\rightsquigarrow q'\vdash v$. Note the decoder must acknowledge the possibility that $v$ can simultaneously parse (a) an arc $q\rightarrow q'$ and (b) a path $q\rightsquigarrow q'$, so each branch can be explored. This is depicted below in little-endian format:\vspace{-0.1cm}
+
+\[
+\big[\overset{\overset{\scriptstyle{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s\,:\,2^\Sigma \,\leftharpoonrightarrow\,\mathbb{B}^{25}}, \overbrace{\ws, \ws, \ws, \ws, \bs}^{i_{\min}\,:\,\mathbb{N}_{\leq 32}\,\leftrightarrow\,\mathbb{B}^{5}}, \overset{\overset{\scriptstyle\exists\,v\mathrlap{\,:\,V.\,q\,\rightsquigarrow\,q'\,\vdash\,v}}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
+\]
+
+Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE can be flattened according to a variety of allocation models. We will use the following memory layout,\vspace{-0.1cm}
+
+\[
+\big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0}, \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n
+\]
+
+\noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers should also be tied to locations in the parse chart $M[q, q', v]$ to recover the terminal subsets for unit productions.
+
+In total, the GPU should have at least 4 GBs of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V| \lesssim 10^6\times10^3\times 32 \text{ bits} \approx \text{4 GBs}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
+
+\clearpage\subsection{Training the reranker}
+
+After decoding, we have a list of repair candidates that are all valid, nearby and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through more than a few dozen candidates to select their intended repair, especially since they could have presumably written it themselves in a few seconds. So, we will proceed to rerank the list. If we can guarantee the candidate repairs are sufficiently exhaustive, they should include with high probability the true repair, which then need only be surfaced into the user's field of view.
+
+The ensuing method falls under the umbrella of the \textit{learning-to-rank} (LTR) problem in machine learning -- using their terminology, the broken code snippet would be called a \textit{query} and the list of repairs, \textit{documents}. To discuss the reranker, we must now overload some concepts, so the reader is trusted to contextually interpret $\mathcal{L}$ as denoting a \textit{loss} instead of a language, and the derivative~\footnote{There is a connection to Brzozowski's derivative, but to refrain from digression here we refer the reader to ~\cite{elliott2019generalized} for details.} as the directional rate of change of a differentiable manifold over the parameter space of a neural network. Matrix multiplication remains more or less the same, except now over the reals.
+
+The reranker employs a transformer-encoder architecture to map both the query (broken code snippet, denoted $\err\sigma: \bar\ell$) and the document (candidate repair, denoted $\sigma: \ell_\cap$) to a $p$-dimensional real vector space, $\mathbb{R}^p$. We elide the definition of a transformer-encoder (see Strobl et al.'s survey~\cite{strobl2024formal}), except to say that it is a function, $\text{E}_\theta$, which takes a string and a positional encoding, and returns an embedding, $\text{E}_\theta: (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p$ where $\theta$ are learnable parameters. We introduce a second encoder, $E'_\theta: (\Sigma\times \mathbb{N} \times \mathbb{Z}_4)^{[m, n]} \rightarrow \mathbb{R}^p$, which takes in a Levenshtein alignment $(\text{LA}: \Sigma^n \times \Sigma^m \rightarrow \mathbb{Z}_4^{[m, n]})$ tracking edit locations and types for each query-document pair. Finally, a multilayer perceptron $(\text{MLP}_\theta: \mathbb{R}^p \times \mathbb{R}^p \rightarrow \mathbb{R}^+)$ processes the embedding to produce a scalar relevance score:
+
+\begin{equation}
+f_\theta(\err\sigma, \sigma): \Sigma^n \times \Sigma^m \rightarrow \mathbb{R}^+ = \text{MLP}_{\theta}\Big(\text{E}_\theta\big(\err\sigma, [i]_{i\in [0, n)}\big), \text{E}_\theta'\big(\sigma, [i]_{i \in [0, m)}, \text{LA}(\err\sigma, \sigma)\big)\Big)
+\end{equation}
+
+\noindent Our training objective will be to minimize the tempered \textit{softmax} or listwise cross-entropy loss,
+
+\begin{equation}
+\mathcal{L}(\theta) = -\sum_{q \in \mathcal{Q}} \log \left( \frac{\exp\big(f_\theta(q, d^*)\tau^{-1}\big)}{\sum_{d \in \mathcal{D}_q} \exp\big(f_\theta(q, d)\tau^{-1}\big)} \right)
+\end{equation}
+
+\noindent where $\mathcal{Q}$ is the set of training queries, $\mathcal{D}_q$ is the set of candidate repairs for query $q$, and $d^* \in \mathcal{D}_q$ is true repair. The temperature parameter, $\tau$ controls the sharpness of the softmax distribution, encouraging parameter settings that result in the true repair being assigned higher priority -- the closer to zero, the greater the loss will be for underestimating the relevance of the true repair.
+
+\begin{wrapfigure}{r}{0.40\textwidth}
+\resizebox{0.4\textwidth}{!}{%
+\ensuremath{
+  \begin{array}{r@{\hskip 0.5em}c|ccccccc}
+    \text{$q$:}         & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \texttt{)} & \texttt{NAME} & & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & & \\\hline
+    \text{$d_1$:}  & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \hlorange{\texttt{(}} & \texttt{NAME} &  \hlgreen{\texttt{)}} & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & 5 &\\
+    \text{LA:} & & 0 & 0 & 0 & 2 & 0 & 1 &\\\hline
+    \text{$d_2$:}  & & \texttt{NAME} & \hlorange{\texttt{(}} & \texttt{NAME} & \texttt{)} & \hlred{\texttt{NAME}} & & \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & &  \\
+    \text{LA:} & & 0 & 2 & 0 & 0 & 3 & & \\\hline
+    \text{$d_3$:}  & & \texttt{NAME} & \texttt{=} & \texttt{NAME} & \hlorange{\texttt{.}} & \texttt{NAME} & \hlgreen{\texttt{(}} & \hlgreen{\texttt{)}} \\
+    \text{PE:} & & 0 & 1 & 2 & 3 & 4 & 5 & 6 \\
+    \text{LA:} & & 0 & 0 & 0 & 2 & 0 & 1 & 1 \\
+  \end{array}
+}
+}
+\caption{Transformer data encoding.}\label{fig:tx_data_encoding}
+\end{wrapfigure}
+
+More concretely, we depict a single instance of the training data in Fig.~\ref{fig:tx_data_encoding}. The reranking model sees a (1)~query, (2)~document, (3)~positional encoding and (4)~Levenshtein alignment, and returns a numerical score. Once the relevance scores are obtained, we calculate the cross-entropy loss across the top-$k$ scoring documents and backpropagate. In practice, this update is averaged across a batch $\langle q_i, [d_j]_{0\ldots k}\rangle_{i=0\ldots |B|^{\approx 16}}$ of repair instances to reduce noise. The batch update rule is a standard variant of stochastic gradient descent $\big(\theta' \leftarrow \theta - \alpha \nabla_{\theta} \mathcal{L}(\theta)\big)$ with momentum (AdamW), where the learning rate is in the range $\alpha\approx10^{-4}$. A more exhaustive description of the architectural details and hyperparameter settings used for training the reranker can be found in Appendix~\ref{sec:hyperparams}.
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

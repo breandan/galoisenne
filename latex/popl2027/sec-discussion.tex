@@ -1,0 +1,48 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Discussion}\label{sec:discussion}
+
+The main lesson we draw from \S~\ref{sec:eval} is that it is feasible to significantly improve the precision of real-time syntax repair by incorporating syntactic constraints such as edit distance, then sampling and evaluating a large set of candidate repairs using a fast primary decoder and a more intensive secondary reranker. Though sample-efficient, transformer decoding comes at considerable cost to throughput, resulting in fewer repairs being discovered in a fixed amount of time.
+
+Our approach uses a grammar and a high-throughput $c$-gram decoder to fetch the initial candidate repairs, then employs the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in real-world programming languages and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs and ultimately, a smoother user experience.
+
+Our primary insight leading to state-of-the-art precision is that repairs are typically concentrated near the center of a small Levenshtein ball, and by enumerating or sampling it carefully, then reranking repairs by naturalness, one can achieve significantly higher precision than single-shot neural repair. This is especially true for small-radii Levenshtein balls, where the intersection language  is small enough to be completely enumerated and ranked. For larger radii, we can still achieve state-of-the-art precision by sampling a representative subset within a fixed timeout.
+
+There is a clear tradeoff between latency and precision for any repair model. While existing neural syntax repair models scale poorly with additional time, Tidyparse is highly effective at exchanging more time for higher precision. We find that the Precision@10 of our method is competitive with BIFI's Precision@$(2\times 10^4)$, while requiring only a fraction of the inference time. Unlike neural syntax repair models, Tidyparse can sample directly from the language specification, removing the possibility of hallucination. The emphasis on completeness is especially useful for discovering small or contextually improbable repairs, which are easily overlooked by neural models.
+
+Although latency and precision are ultimately the deciding usability factors, repair throughput is a crucial intermediate factor to consider when evaluating the performance of a repair system. Even with a perfectly accurate reranker, if the correct repair is never retrieved, it will be for naught. By maximizing the total number of unique valid repairs, we increase the probability of retrieving natural repairs to give the reranker the best chance of surfacing them to the user.
+
+One might be tempted to model syntax repair as a rejection sampling problem, but as Fig.~\ref{fig:volumetric_plot} portrays, this strategy would be mistaken. Even if checking a single repair for validity takes just 1 ms, complete enumeration could take 24+ hours, and we have mere seconds at most. While rejection sampling has lower latency to find admissible repairs, it wastes a tremendous amount of computation and scales poorly with edit distance. It is far better to spend more computation upfront by performing the intersection in a way that avoids rejection and returns natural repairs.
+
+Likewise, methods that rely on decoding large language models appear to face a similar dilemma. As shown in Fig.~\ref{fig:len_dist_prec_all}, even if we sample thousands of repairs from BIFI, an LLM specifically trained on syntax repair, it is possible to miss natural valid repairs of a given distance that would be easily found by an extensive $c$-gram search of $\ell_\cap$, plus reranking. This suggests completeness may be equally, if not more important, than sample efficiency for the purposes of evaluating candidate repairs. Indeed, if we compare the 4-gram Precision@100 in Fig.~\ref{fig:adaptive} with BIFI's Precision@$(2\times 10^4)$, 4-gram Precision@100 is highly competitive even without any post-decoder reranking.
+
+%As shown in Fig.~\ref{fig:sankey}, about 27\% of repairs with fewer than 4 edits were outside the language intersection, which is comprised of all repairs within distance LED+1. This could be fixed by increasing the edit distance, but we find that LED+2 reduces overall repair precision.
+
+Taken together, these results provide strong evidence to support the central claim made in the introduction (\S~\ref{sec:intro}): \textit{existing syntax repair methods simply generate far too few repairs to be effective}. By extensively generating and evaluating a large quantity of repairs within a fixed edit distance, we show it is possible to predict the author's intent far more reliably, with greater precision and lower latency than competing methods which rely solely on transformer-based neural networks.% A listing of repairs that were correctly predicted by our method can be found in Appendix~\ref{sec:exaple_repairs}.\vspace{-2cm}
+
+\clearpage\subsection{Limitations and future work}
+
+We identify three broad categories of limitations in Tidyparse and suggest directions for future work: naturalness, complexity, and toolchain integration.
+
+\subsubsection{Naturalness}
+
+Firstly, Tidyparse does not currently support intersections between weighted CFGs and weighted finite automata, a la Pasti et al.~\cite{pasti2023intersection}. This feature would allow us to put transition probabilities on the Levenshtein automaton corresponding to edit probability, then construct a weighted intersection grammar. With this, one could preemptively discard unlikely productions from $G_\cap$ to reduce the complexity of intersection in exchange for relaxed completeness. We also hope to explore alternate sampling strategies such as sequential Monte-Carlo~\cite{lew2023sequential} and denoising diffusion models~\cite{austin2021structured} with an inductive bias for structured sampling via Levenshtein edits.
+
+The reranker is currently evaluated over lexical tokens, but we expect that a more precise ranking function could be constructed by incorporating names and numbers from the original source code and then scoring plaintext. Furthermore, the decoder only considers each candidate repair $P_\theta(\sigma')$ in isolation, returning the most probable candidates independent of the original error. This could be improved by conditioning the decoding on the broken sequence ($\err\sigma$), parser error message ($m$), original source ($s$), and possibly other contextual priors to assist sample efficiency.
+
+\subsubsection{Complexity}
+
+Latency can vary depending on several factors including string length, grammar size, and critically the Levenshtein edit distance. This can be an advantage because, without any contextual or statistical information, syntax and minimal Levenshtein edits are often sufficiently constrained to identify a small number of valid repairs. It is also a limitation because the admissible set expands rapidly with edit distance and the Levenshtein metric diminishes in usefulness without a very precise metric to discriminate natural solutions in the cosmos of equidistant repairs.
+
+Space complexity increases sharply with edit distance and to a lesser extent with length. This can be partly alleviated with various encoding tricks and a more efficient GPU implementation, but the memory overhead is still considerable. Memory pressure can be attributed to engineering factors such as the grammar encoding, but is also an inherent challenge of language intersection. Therefore, managing the size of the intersection grammar by preprocessing the syntax and automaton and using an efficient representation, are critical factors in scaling up our technique.
+
+\subsubsection{Toolchain integration}
+
+Program slicing is an important preprocessing consideration that has so far gone unmentioned. The current implementation expects pre-sliced code fragments, however in a more practical scenario, it would be necessary to leverage editor information to identify the boundaries of the repairable fragment. One solution would be to just use the line surrounding the caret position, however a more complete solution requires careful editor integration.
+
+Lastly and perhaps most significantly, Tidyparse does not incorporate semantic constraints, so its repairs, whilst syntactically admissible, are not guaranteed to be type safe, and must be filtered by some form of compiler or incremental type checker before presenting them to the user. It may be possible to add a type-based semantic refinement to our language intersection, however this would require a more expressive grammatical formalism than CFGs naturally provide.
+
+Extending language intersections to handle type error repair requires leaving the domain of syntax and entering the much more daunting world of semantics -- here one must contend with difficult questions in mathematical logic and finite model theory. One direction would be to collapse these problems down to automata theory using MSO over words via the B\"uchi-Elgot-Trakhtenbrot theorem. Another direction would be to increase the expressivity of the grammar, using something like conjunctive grammars~\cite{okhotin2001conjunctive}. A third approach would be to adopt the framework of contextual modal type theory, then study the behavior of Levenshtein edit distance on modal accessibility in weak substructural type systems like the Lambek calculus~\cite{pshenitsyn2025first}. We leave this for future work.
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

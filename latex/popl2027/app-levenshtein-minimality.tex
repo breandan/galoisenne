@@ -1,0 +1,41 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\section{Levenshtein automata minimality}
+
+It is reasonable to ask whether the Levenshtein automaton defined in \S~\ref{sec:repair_ex} is minimal, in the sense of whether there exists an automaton with fewer states than $A$ yet still generates $\mathcal{L}(G_\cap)$ when intersected with $\mathcal{L}(G)$. In other words, given $G$ and $\err\sigma$, is there an $A'$ such that $|Q_{A'}| < |Q_{A}|$ yet $\mathcal{L}(G) \cap \mathcal{L}(A') = \mathcal{L}(G) \cap \mathcal{L}(A)$ still holds? In fact, there is a trivial example:
+
+\begin{theorem}
+  Let $Q_{A'}$ be defined as $Q_A \setminus \{q_{n, 0}\}$.
+\end{theorem}
+
+Since $q_{n, 0}$ accepts the original string $\err\sigma: \bar\ell \cap \Sigma^n$ which is by definition outside $\mathcal{L}(G)$, we can immediately rule out this state. Moreover, we can define a family of automata with strictly fewer states than the full LBH construction by making the following observation: if we can prove one edit must occur before the last $s$ tokens, we can rule out the last $s$ states absorbing editless trajectories.
+
+\begin{theorem}
+  $\varnothing = \mathcal{L}(\err\sigma_{1 \ldots (n-s)}\cdot\Sigma^s)\cap \mathcal{L}(G)$ implies the states $[q_{n-i, 0}]_{i \in 1\ldots s}$ are unnecessary.
+\end{theorem}
+
+Likewise, if we expend our entire edit budget in the first $p$ tokens, we will be unable to recover in a string where at least one repair must occur after the first $p$ tokens.
+
+\begin{theorem}
+  $\varnothing = \mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots n})\cap \mathcal{L}(G)$ implies the states $[q_{i, d_{\max}}]_{i \in 0\ldots p}$ are unnecessary.
+\end{theorem}
+
+\noindent Therefore, we can eliminate $p+s$ states from $A$ by proving emptiness of $\mathcal{L}(\Sigma^p\cdot\err\sigma_{p\ldots (n-s)}\cdot\Sigma^s) \cap \mathcal{L}(G)$, without affecting $\mathcal{L}(G_\cap)$. For example, let us consider the pruned L-NFA for the broken string $\err\sigma = \texttt{[ ( + ) ]}$ with $G = \{S \rightarrow ( S ) \mid [ S ] \mid S + S \mid 1\}$. Its longest parseable suffix and prefix are:\\
+
+\noindent(B.1)\phantom{..}\texttt{\_ \_ + ) ]}\phantom{.}$\not\in \mathcal{L}(G)$\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{\_ \_ \_ ) ]}\phantom{...}$\in \mathcal{L}(G)$\phantom{...}\emoji{check-mark-button}\phantom{...}$\Longrightarrow [q_{n-i, 0}]_{i \in 1\ldots s}$ are unnecessary.\\
+\noindent(B.2)\phantom{..}\texttt{[ ( + \_ \_}$\hspace{2pt}\not\in \mathcal{L}(G)$\phantom{...}\emoji{cross-mark}\phantom{...} $\land$ \phantom{...}\texttt{[ ( \_ \_ \_}\phantom{...}$\in \mathcal{L}(G)$\phantom{...}\emoji{check-mark-button}\phantom{...}$\Longrightarrow [q_{i, d_{\max}}]_{i \in 0\ldots p}$ are unnecessary.\\
+
+\noindent Now we can prune the top leftmost and bottom rightmost states. Pictorially, this looks as follows:
+
+\begin{figure}[H]
+  \resizebox{0.47\textwidth}{!}{
+    \input{figures/original_nfa}
+  }
+  \resizebox{0.47\textwidth}{!}{
+    \input{figures/pruned_nfa}
+  }
+  \caption{Levenshtein NFA before and after prefix and suffix pruning.}
+\end{figure}\vspace{-0.175cm}
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

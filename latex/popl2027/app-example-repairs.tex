@@ -1,0 +1,122 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Example Repairs}\label{sec:exaple_repairs}
+
+Below, we provide a few representative examples of broken code snippets and the corresponding human repairs that were successfully ranked first by our method. On the left is a complete snippet fed to the model, and on the right, the corresponding human repair that was correctly predicted.
+
+\begin{figure}[H]
+\begin{tabular}{|m{6.6cm}|m{6.6cm}|}
+\hline \rule{0pt}{2.5ex}\textbf{Original broken code}\rule[-1ex]{0pt}{2ex} &  \rule{0pt}{2.5ex}\textbf{First predicted repair}\rule[-1ex]{0pt}{2ex} \\\hline
+\begin{smallpy}
+
+(*@\hlorange{form}@*) sympy import *
+x = Symbol('x', real=True)
+x, re(x), im(x)
+
+\end{smallpy} & \begin{smallpy}
+
+(*@\hlorange{\textbf{from}}@*) sympy import *
+x = Symbol('x', real=True)
+x, re(x), im(x)
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+result = (*@\hlorange{yeald}@*) From(item.create())
+raise Return(result)
+
+\end{smallpy} & \begin{smallpy}
+
+result = (*@\hlorange{\textbf{yield}}@*) From(item.create())
+raise Return(result)
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+df.apply(lambda row: list(set(row['ids'(*@\hlorange{)}@*))))
+
+\end{smallpy} & \begin{smallpy}
+
+df.apply(lambda row: list(set(row['ids'(*@\hlorange{]}@*))))
+
+\end{smallpy} \\\hline
+%        \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{ad}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} & \begin{lstlisting}[basicstyle=\ttfamily\lst@ifdisplaystyle\footnotesize\fi, language=python]
+%
+%  import numpy (*@\hlorange{\textbf{as}}@*) np
+%  A_concate = np.array([a_0, a_1, a_2,..., a_n])
+%
+%        \end{lstlisting} \\\hline
+\begin{smallpy}
+
+sum(len(v) for v items.values())(*@\hlred{)}@*)
+
+\end{smallpy} & \begin{smallpy}
+
+sum(len(v) for v (*@\hlgreen{\textbf{in}}@*) items.values())
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+def average(values):
+  if values == (1,2,3):
+    return (1+2+3)/3
+  (*@\hlorange{else}@*) (*@\hlred{if}@*) values == (-3,2,8,-1):
+    return (-3+2+8-1)/4
+
+\end{smallpy} & \begin{smallpy}
+
+def average(values):
+  if values == (1,2,3):
+    return (1+2+3)/3
+  (*@\hlorange{elif}@*) values == (-3,2,8,-1):
+    return (-3+2+8-1)/4
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+dict = {
+  "Jan": 1
+  "January": 1
+  "Feb": 2 # and so on
+}
+
+\end{smallpy} & \begin{smallpy}
+
+dict = {
+  "Jan": 1(*@\hlgreen{,}@*)
+  "January": 1(*@\hlgreen{,}@*)
+  "Feb": 2 # and so on
+}
+
+\end{smallpy} \\\hline
+\begin{smallpy}
+
+class MixIn(object)
+  def m():
+    pass
+
+class classA(MixIn):
+
+class classB(MixIn):
+
+\end{smallpy} & \begin{smallpy}
+
+class MixIn(object)(*@\hlgreen{:}@*)
+  def m():
+    pass
+
+class classA(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+class classB(MixIn): (*@\hlgreen{\textbf{pass}}@*)
+
+\end{smallpy} \\\hline
+\end{tabular}
+\end{figure}
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

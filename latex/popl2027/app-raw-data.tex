@@ -1,0 +1,38 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Raw data}\label{sec:raw_prec_data}
+
+Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken and code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the intersection or a 10 second timeout is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
+
+\begin{table}[!h]
+\centering
+\begin{tabular}{c|c|cccccccc}
+\hline\hline
+& $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
+$|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
+Tidyparse
+& 1 & 0.37 & 0.52 & 0.44 & 0.40 & 0.38 & 0.34 & 0.43 & 0.27 \\
+& 2 & 0.65 & 0.64 & 0.56 & 0.50 & 0.42 & 0.48 & 0.30 & 0.32 \\
+& 3 & 0.21 & 0.15 & 0.12 & 0.13 & 0.13 & 0.18 & 0.15 & 0.10 \\ \hline
+Seq2Parse
+& 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
+& 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
+& 3 & 0.03 & 0.07 & 0.08 & 0.09 & 0.09 & 0.02 & 0.07 & 0.06 \\ \hline
+BIFI
+& 1 & 0.20 & 0.33 & 0.32 & 0.27 & 0.21 & 0.21 & 0.25 & 0.18 \\
+& 2 & 0.18 & 0.18 & 0.21 & 0.19 & 0.19 & 0.18 & 0.11 & 0.11 \\
+& 3 & 0.02 & 0.02 & 0.03 & 0.02 & 0.03 & 0.05 & 0.03 & 0.02 \\ \hline
+& & \multicolumn{8}{c}{Precision@All} \\ \hline
+Tidyparse
+& 1 & 1.00 & 1.00 & 1.00 & 0.99 & 0.99 & 1.00 & 0.97 & 0.97 \\
+& 2 & 1.00 & 0.99 & 0.98 & 1.00 & 1.00 & 1.00 & 0.94 & 0.90 \\
+& 3 & 1.00 & 0.98 & 0.80 & 0.70 & 0.55 & 0.42 & 0.42 & 0.31 \\ \hline
+BIFI
+& 1 & 0.65 & 0.67 & 0.70 & 0.65 & 0.60 & 0.62 & 0.60 & 0.64 \\
+& 2 & 0.52 & 0.41 & 0.37 & 0.32 & 0.27 & 0.27 & 0.21 & 0.24 \\
+& 3 & 0.20 & 0.13 & 0.08 & 0.17 & 0.15 & 0.18 & 0.17 & 0.07 \\ \hline\hline
+\end{tabular}
+\end{table}
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

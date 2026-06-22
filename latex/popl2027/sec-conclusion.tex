@@ -1,0 +1,20 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Conclusion}\label{sec:conclusion}
+
+Our work, while a case study on syntax repair, is part of a broader line of inquiry in program synthesis that investigates how to weave formal language theory and machine learning into helpful programming tools for everyday developers. In some ways, syntax repair serves as a test bench for integrating learning and language theory, as it lacks the intricacies of type-checking and semantic analysis, but is still rich enough to be an interesting challenge. By starting with syntax repair, we hope to lay the foundation for more organic hybrid approaches to program synthesis.
+
+Various codesign patterns have emerged to fuse the naturalness of neural language models with the precision and completeness of formal methods. One seeks to filter the outputs of a generative language model to satisfy a formal specification, typically by some form of rejection sampling. Alternatively, some attempt to steer language models to search for valid programs via a reinforcement learning or hybrid neurosymbolic approach. However, these approaches can introduce significant latency into the repair process and lack strong statistical guarantees.
+
+Our work takes a more pragmatic tack - by incorporating the distance metric into a formal language, we attempt to exhaustively enumerate repairs by increasing distance, then use the language model to sort the resulting solutions by naturalness. The more constraints we can incorporate into formal language, the more efficient sampling becomes, and the more precise control we have over the output. This reduces the need for training a large, expensive language model to relearn syntax, and frees up our limited compute budget for more efficient search and ranking at inference time.
+
+There is a delicate balance in formal methods between soundness and completeness. Often these two seem at odds because the target language is too expressive to achieve them both simultaneously. In syntax repair, we also care about naturalness. Fortunately, syntax repair is tractable enough to achieve all three by modeling the problem using language intersection. Completeness helps us to avoid missing simple repairs that might be easily overlooked, soundness guarantees all repairs will be valid, and naturalness ensures the most probable repairs receive the highest priority.
+
+We have implemented our approach and demonstrated its viability as a tool for syntax assistance in real-world programming languages. Tidyparse~\footnote{An artifact for Tidyparse is currently available as a browser application, supporting single-line syntax repairs in Python and other CFLs: \url{https://tidyparse.github.io/}.} is capable of generating repairs for invalid source code in a range of practical languages, in addition to Python. We plan to continue expanding the prototype's autocorrection functionality to cover an even broader range of real-world programming languages. We envision a few primary use cases for it: (1) helping novice programmers become more quickly familiar with a new programming language, (2) autocorrecting common typos among proficient but forgetful programmers, (3) as a prototyping tool for PL designers and educators, and (4) as a pluggable library or service for parser-generators and language servers.
+
+\subsection{Acknowledgements}
+
+The author is appreciative to Xujie Si for writing advice and helping him encode the syntax repair problem as a SAT instance, David Chiang for writing advice and prompting him to look into incremental parsing and model counting, Andy Yang for realizing the significance of star-free languages, Brigitte Pientka for oral feedback on an early software prototype, Max Kopinsky for catching a typo in Theorem~\ref{thm:recognition}, and David Bieber for mentioning analytic combinatorics.
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}

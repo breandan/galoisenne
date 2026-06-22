@@ -54,6 +54,7 @@
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{algorithmicx}
+\usepackage{subfiles}
 \providecommand*\liningnums[1]{#1}
 \usepackage{sourcecodepro}
 \usepackage{tikz-qtree}
@@ -319,6 +320,8 @@ literate={`}{{\char0}}1
 \usepackage{nicematrix}
 \usepackage{graphicx}
 \usepackage{ulem}
+\usepackage[outline]{contour}
+\contourlength{0.35pt}
 \usepackage{upquote}
 \tikzstyle{every picture}+=[remember picture]
 \usepackage{menukeys}
@@ -350,10 +353,31 @@ literate={`}{{\char0}}1
 \newcommand{\shur}{\shup\hspace{-5pt}\shri}
 
 \makeatletter
-\def\squigglyred{\bgroup \markoverwith{\textcolor{red}{\lower3\p@\hbox{\sixly \char58}}}\ULon}
+\@ifundefined{tenly}{\font\tenly=lasy10}{}
+\def\flann@rawwave{{\color{red}\kern-1.5pt\scalebox{1.25}[1.5]{\contour{red}{\tenly \char58}}\kern1.5pt}}
+\def\flann@mathwave{{\color{red}\contourlength{0.18pt}\scalebox{0.36}[0.56]{\contour{red}{\tenly \char58}}}}
+\def\flann@squigglemark{\lower8\p@\hbox{\flann@rawwave}}
+\def\squigglyred{%
+  \bgroup
+  \markoverwith{\flann@squigglemark}%
+  \ULon
+}
+\def\err@math#1#2{%
+  \mathord{\hbox{%
+    \setbox0=\hbox{$\m@th#1#2$}%
+    \copy0
+    \kern-\wd0
+    \smash{\lower3.5\p@\hbox to \wd0{\hss\flann@mathwave\flann@mathwave\hss}}%
+  }}%
+}
+\newcommand{\err}[1]{%
+  \ifmmode
+    \mathchoice{\err@math\displaystyle{#1}}{\err@math\textstyle{#1}}{\err@math\scriptstyle{#1}}{\err@math\scriptscriptstyle{#1}}%
+  \else
+    \smash{\squigglyred{#1}}%
+  \fi
+}
 \makeatother
-
-\newcommand{\err}[1]{\smash{\squigglyred{#1}{}}}
 \newcommand{\stirlingii}{\genfrac{\{}{\}}{0pt}{}}
 
 %======== Arrows =========
