@@ -245,15 +245,15 @@ tasks {
       showStandardStreams = true
     }
 
-    addTestListener(object : TestListener {
-      override fun afterTest(desc: TestDescriptor, result: TestResult) {
-        println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
-        testDurations.add(TestDuration(
-          name = "${desc.className}.${desc.name}",
-          duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
-        ))
-      }
-    })
+//    addTestListener(object : TestListener {
+//      override fun afterTest(desc: TestDescriptor, result: TestResult) {
+//        println("Completed `${desc.displayName}` in ${result.endTime - result.startTime}ms")
+//        testDurations.add(TestDuration(
+//          name = "${desc.className}.${desc.name}",
+//          duration = (result.endTime - result.startTime).toDuration(MILLISECONDS)
+//        ))
+//      }
+//    })
 
     doLast {
       println("Longest 10 tests")
