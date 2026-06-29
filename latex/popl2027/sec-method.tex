@@ -3,10 +3,12 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-The key to solving this problem is to treat finite language intersections as matrix exponentiation, exploiting a correspondence between the Bar-Hillel construction and CFL reachability. We show that if one of the participants in the language intersection is presented as an acyclic FSA, the finite intersection nonemptiness problem is polylogarithmic parallel time decidable. Formally,
+The key to solving this problem is to treat finite language intersections as matrix exponentiation, exploiting a correspondence between the Bar-Hillel construction and CFL reachability.
+We show that if one of the participants in the language intersection is presented as an acyclic FSA, finite intersection nonemptiness admits a parallel matrix-closure procedure whose closure phase converges after at most a linear number of squaring rounds.
+Formally,
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
-  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ requiring $\mathcal{O}\big(\log^2|Q|+\log|Q||V|\big)$ time using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel random access (PRAM) processors.
+  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ requiring an $\mathcal{O}(\log^2|Q|)$ topological-ordering phase followed by at most $\mathcal{O}(|Q||V|)$ parallel squaring rounds using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel random access (PRAM) processors.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -22,7 +24,7 @@ The key to solving this problem is to treat finite language intersections as mat
     M_0[r, c, w] = \bigvee_{a\in\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
   \end{align}
 
-  Now, our goal will be to find $M=M^2$ such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
+  Now, our goal will be to find the least fixed point \(M = M_0 \oplus M^2\) such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
   \begin{equation}
     [\ell \oplus r]_w  = [\ell_w \lor r_w]\hspace{0.5cm}\text{and}\hspace{0.5cm}
     [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}.
@@ -31,18 +33,20 @@ The key to solving this problem is to treat finite language intersections as mat
   \begin{align}
     \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M_0$ is SUT and thus nilpotent).}
   \end{align}
-  While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will use exponentiation-by-squaring:
+  While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will iterate a squaring recurrence:
   \begin{align}
-    \sum_{i = 0}^{2n} M_0^i = T(2n) \;=\; \begin{cases}
-       M_0, & \text{if } n = 1,\\
-       T(n) + T(n)^2 & \text{otherwise}.
-    \end{cases}
+    T_0 = M_0,\qquad T_{j+1}=T_j \oplus T_j^2.
   \end{align}
-  Therefore, the complexity can be reduced to at most $\lceil\log_2 |Q||V|\rceil$ sequential steps in the limit. Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
+  The sequence \(T_0 \preceq T_1 \preceq \cdots\) is monotone and bounded above by the nilpotent expansion of the strictly upper-triangular matrix \(M_0\).
+  If a squaring round changes the matrix, it contributes at least one new nonempty term from the finite expansion \(\sum_{i=0}^{|Q||V|}M_0^i\); once no such term is added, the fixed point has been reached.
+  Thus the recurrence cannot require a superlinear number of squaring rounds before convergence: after at most \(\mathcal{O}(|Q||V|)\) rounds it must stabilize at some \(T_\star\).
+  Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
   \begin{align}
-    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}\exp(M)[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
+    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}T_\star[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
   \end{align}
-  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case. Optimistically, this can occur in $\Omega(\log_2 p^*)$ time, where $p^*$ is the length of the shortest path through $\delta$, $p^*=\min_{q_\omega \in F}|q_\alpha\rightsquigarrow q_\omega|$. In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Eq.~\ref{eq:choose}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$. In either case, the decision procedure terminates in $\mathcal{O}(\log^2 |Q| + \log |Q||V|)$ parallel time with $\mathcal{O}(|Q|^2|V|)$ processors.
+  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case, as soon as a final state pair deriving \(S\) has been discovered.
+  In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Eq.~\ref{eq:choose}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$.
+  In either case, after topological sorting, the closure phase terminates after at most \(\mathcal{O}(|Q||V|)\) squaring rounds with $\mathcal{O}(|Q|^2|V|)$ processors.
 \end{proof}\clearpage
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

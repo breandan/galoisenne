@@ -55,7 +55,7 @@
 \title{Syntax Repair as Language Intersection}
 %
 \begin{abstract}
-We introduce a new technique for repairing syntax errors in arbitrary context-free languages. This technique models syntax repair as a language intersection problem by defining a finite language that provably generates every syntactically valid repair within a given edit distance. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we show that repairability in a finite number of typographic edits is polylogarithmic parallel time decidable and provide an enumeration algorithm based on the Brzozowski derivative. Finally, we evaluate this algorithm and its implementation, demonstrating state-of-the-art results on a Python syntax repair benchmark.\keywords{Error correction \and CFL reachability \and Language games.}
+We introduce a new technique for repairing syntax errors in arbitrary context-free languages. This technique models syntax repair as a language intersection problem by defining a finite language that provably generates every syntactically valid repair within a given edit distance. Leveraging a theoretical connection between the Bar-Hillel construction from formal language theory and CFL reachability from program analysis, we give a parallel matrix-closure procedure for deciding repairability in a finite number of typographic edits and provide an enumeration algorithm based on the Brzozowski derivative. Finally, we evaluate this algorithm and its implementation, demonstrating state-of-the-art results on a Python syntax repair benchmark.\keywords{Error correction \and CFL reachability \and Language games.}
 \end{abstract}
 
 %\titlerunning{Abbreviated paper title}
@@ -71,7 +71,7 @@ We introduce a new technique for repairing syntax errors in arbitrary context-fr
 \subfile{sec-method}
 \subfile{sec-examples}
 \subfile{sec-measuring-intersection}
-\subfile{sec-implementation}
+\subfile{sec-decoding-reranking}
 \subfile{sec-evaluation}
 \subfile{sec-discussion}
 \subfile{sec-related-work}
@@ -80,6 +80,7 @@ We introduce a new technique for repairing syntax errors in arbitrary context-fr
 
 \pagebreak\appendix
 
+\subfile{sec-implementation}
 \subfile{app-levenshtein-topology}
 \subfile{app-levenshtein-minimality}
 \subfile{app-hyperparameters}

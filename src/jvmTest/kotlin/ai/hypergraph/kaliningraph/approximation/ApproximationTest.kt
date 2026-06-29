@@ -1,20 +1,14 @@
 package ai.hypergraph.kaliningraph.approximation
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.languages.*
+import ai.hypergraph.kaliningraph.languages.Python
 import ai.hypergraph.kaliningraph.languages.Python.subwords
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
 import ai.hypergraph.kaliningraph.parsing.approximations.*
-import ai.hypergraph.kaliningraph.repair.dyck
-import ai.hypergraph.kaliningraph.repair.ifWhl
-import ai.hypergraph.kaliningraph.repair.loopyHeapless
-import ai.hypergraph.kaliningraph.repair.simpleLang
-import ai.hypergraph.kaliningraph.repair.toyPython
-import ai.hypergraph.kaliningraph.repair.vanillaS2PCFG
+import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.sat.TricliqueCoverSolver
 import ai.hypergraph.kaliningraph.tokenizeByWhitespace
-import ai.hypergraph.kaliningraph.visualization.render
 import ai.hypergraph.kaliningraph.visualization.show
 import ai.hypergraph.markovian.mcmc.toNgramMap
 import org.junit.jupiter.api.Test
@@ -163,9 +157,9 @@ class ApproximationTest {
 */
 //  @Test
   fun vizNederhof() {
-    val d2: NFA = simpleLang.toNederhofNFA(historyDepth = 2).determinize().minimize()
-    d2.show()
-    println(d2.recognizes("{ { x x } x }".tokenizeByWhitespace()))
+    val d2: NFA = dyck.toNederhofNFA(historyDepth = 3).determinize()
+    d2.print()
+//    println(d2.recognizes("{ { x x } x }".tokenizeByWhitespace()))
 //    println("NFA: ${d2.summary()}")
 //    d2.toGraphviz().show()
   }
@@ -184,8 +178,8 @@ class ApproximationTest {
 
   companion object {
     private fun NFA.show() = toGraphviz().graphvizUrl().show()
-
-    private val GRAPHVIZ_ONLINE =
+    private fun NFA.print() = toGraphviz().also { println(it) }
+   private val GRAPHVIZ_ONLINE =
       "https://dreampuf.github.io/GraphvizOnline/?engine="
 
     private fun String.urlFragmentEncode(): String {

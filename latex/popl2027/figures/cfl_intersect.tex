@@ -1,35 +1,55 @@
-\resizebox{0.42\textwidth}{!}{
-  \def\secondcirclepath{(1.15,0) coordinate (e) circle (2cm)}
-  \begin{tikzpicture}[
-    dot/.style = {circle, inner sep=0pt, minimum size=1mm, fill,
-    node contents={}}
-  ]
-    \def\firstcircle{(-2.1,0) coordinate (a) circle (2.4cm)}
-    \def\firstcirclea{(-2.1,0) coordinate (b) circle (0.6cm)}
-    \def\firstcircleb{(-2.1,0) coordinate (c) circle (1.2cm)}
-    \def\firstcirclec{(-2.1,0) coordinate (d) circle (1.8cm)}
-    \def\secondcircle{(1.2,0) coordinate (e) circle (1.5cm)}
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  scale=4.5,
+  >={Stealth[length=12pt, width=10pt]},
+  dot/.style = {circle, inner sep=0pt, minimum size=4mm, fill, node contents={}},
+  posterline/.style = {line width=3pt},
+  labeltext/.style = {overlay, transform shape}
+]
+  % 1. Draw the underlying layers
+  \draw[posterline] (-2.1,0) coordinate (a) circle (2.4) node[dot,label={[labeltext]above:$\err{\sigma}$},name=z0];
 
-    \begin{scope}
-      \clip[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
-      \fill[black!35] \firstcircle;
-    \end{scope}
+  \draw [posterline, dash pattern=on 15pt off 12pt] (a) circle (0.6);
+  \draw [posterline, dash pattern=on 15pt off 12pt] (a) circle (1.2);
+  \draw [posterline, dash pattern=on 15pt off 12pt] (a) circle (1.8);
 
-    \draw \firstcircle;
-    \fill (-2.1,0) circle (1mm);
-    \node[above] at (-2.1,0.15) {$\err{\sigma}$};
-    \draw [dashed] \firstcirclea;
-    \draw [dashed] \firstcircleb;
-    \draw [dashed] \firstcirclec;
-    \draw[-stealth] (-2.1,0) -- (-1.5, 0) node[midway,below]{$d_1$};
-    \draw[-stealth] (-1.5,0) -- (-0.9, 0) node[midway,below]{$d_2$};
-    \draw[-stealth] (-0.9,0) -- (-0.3, 0) node[midway,below]{$d_3$};
-%    \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,above]{$\tilde{\sigma}$};
-    \draw[-stealth] (-0.3,0) -- (0.3, 0) node[midway,below]{$d_4$};
+  \draw[->, posterline] (-2.1,0) -- (-1.5, 0) node[midway,below,labeltext,xshift=-1pt,yshift=2pt]{$d_1$};
+  \draw[->, posterline] (-1.5,0) -- (-0.9, 0) node[midway,below,labeltext,xshift=-1pt,yshift=2pt]{$d_2$};
+  \draw[->, posterline] (-0.9,0) -- (-0.3, 0) node[midway,below,labeltext]{$d_3$};
+  \draw[->, posterline] (-0.3,0) -- (0.3, 0) node[midway,below,labeltext]{$d_4$};
 
-    \draw[decorate, decoration={snake, amplitude=0.6mm, segment length=5.01mm}] \secondcirclepath;
-    \node [above] at (current bounding box.north -| a) {$\mathcal{L}\bigl(L(\err\sigma, d^* + 1)\bigr)$};
-    \node [above,yshift=2.1cm] at (e) {$\mathcal{L}(G)$};
-    \node [above,yshift=1.8cm, xshift=-1.4cm] at (e) {$\ell_\cap$};
-  \end{tikzpicture}
+  % 2. Gray background for the intersection region
+  \pgfmathsetseed{1234}
+  \begin{scope}
+    \clip (-2.1, 0) circle (2.4);
+    \clip[decorate, decoration={random steps, segment length=15pt, amplitude=8pt}] (1.15, 0) circle (2.0);
+    \fill[black!10] (-5,-5) rectangle (5,5);
+  \end{scope}
+
+  % 3. Draw the red dots strictly inside the mathematical boundary
+  \begin{scope}
+    \pgfmathsetseed{1234}
+    \clip (-2.1, 0) circle (2.4);
+    \clip[decorate, decoration={random steps, segment length=15pt, amplitude=8pt}] (1.15, 0) circle (2.0);
+
+    \pgfmathsetseed{2673}
+    \foreach \k in {1,...,400}{
+      \pgfmathsetmacro{\x}{rnd*1.2 - 0.9}
+      \pgfmathsetmacro{\y}{rnd*3.0 - 1.5}
+      \fill[red] (\x, \y) circle[radius=0.017];
+    }
+  \end{scope}
+
+  % 4. Redraw the boundaries
+  \draw[posterline] (-2.1,0) circle (2.4);
+  \pgfmathsetseed{1234}
+  \draw[posterline, decorate, decoration={random steps, segment length=15pt, amplitude=8pt}] (1.15,0) circle (2.0);
+
+  % 5. Draw external labels
+  \node [above,labeltext] at (current bounding box.north -| a) {$\mathcal{L}\bigl(\text{L}(\err\sigma, d^* + 1)\bigr)$};
+  \node [above,labeltext] at (1.15, 2.1) {$\mathcal{L}(G)$};
+  \node [above,labeltext] at (-0.25, 1.8) {$\ell_\cap$};
+
+  \path[use as bounding box] (-4.5,-2.4) rectangle (3.25,3.0);
+\end{tikzpicture}%
 }

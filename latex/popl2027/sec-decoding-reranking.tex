@@ -1,0 +1,178 @@
+\documentclass[popl.tex]{subfiles}
+\begin{document}
+
+\clearpage\section{Decoding and reranking}\label{sec:decoding_reranking}
+
+The construction above gives us an exact finite language,
+\(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose elements are precisely the valid repairs within the allowed edit radius.
+What remains is a ranking problem: among the strings that are already valid and nearby, which should be shown first?
+This separation is important.
+The grammar and Levenshtein automaton define the admissible set, while the probabilistic model is only responsible for choosing among admissible repairs.
+Thus a low-capacity but high-throughput decoder can retrieve a large candidate set, after which a more expensive conditional model can rerank only the most promising repairs.
+
+\subsection{Intersection decoding}
+
+We represent \(G_\cap\) as the star-free regular expression described in \S~\ref{sec:measurement}.
+Given a partial repair prefix \(\sigma_{0\ldots i}\) and residual expression \(e_i\), the Brzozowski derivative exposes the next legal symbols:
+\[
+  \texttt{follow}(e_i)=\{a\in\Sigma \mid \mathcal{L}(\partial_a e_i)\neq\varnothing\}.
+\]
+A decoder therefore maintains a priority queue of triples \(\langle \sigma,e,s\rangle\), where \(e\) is the residual expression and \(s\) is a running log score.
+Popping the highest-scoring prefix and pushing \(\langle\sigma a,\partial_a e,s+\log P(a\mid\sigma)\rangle\) for every legal \(a\) yields a best-first traversal of \(\ell_\cap\).
+Whenever \(\varepsilon\in\mathcal{L}(e)\), the prefix is a complete repair.
+Because every transition is guarded by the derivative, this procedure never proposes an invalid string and never wastes effort on rejection sampling.
+
+The choice of \(P(a\mid\sigma)\) controls the retrieval order.
+Our current implementation uses a smoothed \(c\)-gram model because it is small, cache-friendly and fast enough to saturate many intersections within an interactive latency budget.
+However, the \(c\)-gram score is not essential to the construction.
+Any left-to-right scoring function that can be queried at decoder speed may be substituted, including a weighted deterministic finite automaton trained as a regular overapproximation to the target programming language.
+
+\subsection{Path-dependent retrieval distributions}
+
+Several familiar decoding strategies are tempting at this point.
+One can view \(G_\cap\) as a finite hypergraph and apply \(k\)-best dynamic programming or cube pruning~\cite{huang2005better,chiang2007hierarchical}.
+One can also use non-autoregressive strategies, such as edit-based or diffusion-style denoisers, to propose repairs in parallel rather than committing to a left-to-right order~\cite{austin2021structured,havasi2025edit}.
+We found these approaches mismatched to the role of the first-stage decoder.
+The retriever must enumerate, or sample without replacement from, a finite language of unique strings; it must preserve completeness when the search is allowed to run to saturation; and, before saturation, its prefix order should approximate the distribution induced by a left-to-right language model over the same finite set.
+Cube pruning is useful when the scoring model decomposes over grammar items, but in practice it gives an approximate frontier over derivations.
+With ambiguous grammars, high-scoring derivations need not be high-scoring distinct strings, and duplicate strings must be merged to obtain sampling without replacement.
+Non-autoregressive proposals have the complementary problem: they can explore many edit locations at once, but they do not expose a prefix probability \(P(a\mid\sigma)\) that can drive derivative decoding, and they require an additional de-duplication and validity mechanism to recover the exact finite CFL.
+
+The target retrieval distribution is therefore not a distribution over parse trees or edit trajectories.
+Let \(P_\theta\) be a left-to-right string model.
+For a repair instance, the finite conditional distribution we would like to approximate is
+\[
+  P_\cap(\sigma)=
+  \frac{P_\theta(\sigma)}
+       {\sum_{\tau\in\ell_\cap}P_\theta(\tau)}
+  \qquad\text{for }\sigma\in\ell_\cap.
+\]
+The normalizer is constant for a fixed instance, so ranking by \(P_\cap\) is equivalent to ranking by the left-to-right string probability \(P_\theta(\sigma)\), while the support remains exactly context-free.
+This is the sense in which the distribution is structurally context-free but distributionally sequential: the grammar determines which strings exist, but the probability model should still be allowed to depend on the path taken through the string prefix.
+Derivative decoding gives precisely this interface.
+The residual expression \(e_i\) enforces the remaining CFL constraint, while the score attached to the prefix \(\sigma_{0\ldots i}\) can be supplied by any fast path-dependent model.
+
+This distinction is why a PCFG would not be a drop-in replacement for our decoder.
+A PCFG assigns probability to local production choices and induces a string probability only after summing over all derivations of that string.
+After intersection with the Levenshtein automaton, exact ranking would require weighted inside computations over the residual grammar and careful merging of ambiguous derivations.
+Top-down ancestral sampling from the PCFG samples derivations with replacement, not distinct strings from \(P_\cap\), and can place most of its mass on a small derivational mode even when many valid repairs remain hidden elsewhere in the finite language.
+Thus a PCFG is structurally natural but distributionally inconvenient for our retrieval objective.
+It gives the wrong primitive: grammar-local expansion probabilities, rather than a cheap left-to-right conditional \(P(a\mid\sigma)\) over the unique-string frontier.
+
+The \(c\)-gram model used in our current implementation is the simplest such path-dependent scorer.
+It is fast, deterministic, and compatible with duplicate-free enumeration, but its Markov assumption is too strong: all history beyond the last \(c-1\) symbols is discarded.
+Program naturalness often depends on weak longer-range signals, such as delimiter context, indentation regime, recently introduced identifiers, or the fact that a repair prefix has already committed to one side of an ambiguous syntactic pattern.
+A weighted finite automaton is a better compromise.
+Its state is still finite and cheap to update during derivative decoding, but it can learn a coarser latent summary of the prefix than an explicit \(c\)-gram suffix.
+The WFA is not responsible for recognizing the programming language; that remains the job of \(G_\cap\).
+Instead, it supplies a weakly path-dependent approximation to the left-to-right distribution on top of an exact CFL support.
+
+\subsection{Language-overapproximating WFDFA}
+
+The weighted intersection construction of Pasti et al.~\cite{pasti2023intersection} is the natural comparison point: if one had a weighted CFG and a weighted Levenshtein automaton, their intersection would give a weighted grammar for repairs.
+For syntax repair, however, the difficult weight assignment is exactly on the Levenshtein automaton.
+The automaton \(L(\err\sigma,d)\) is built from the broken string, so its transition weights would be an instance-specific error model over edit histories.
+Without a calibrated model of how the user produced \(\err\sigma\), those weights would be arbitrary; if they were then used to prune low-weight product rules, completeness would depend on an unprincipled, broken-string-dependent noise model.
+
+We instead separate support from scoring.
+This approach trains a weighted deterministic finite automaton (WFDFA), \(\alpha_{\hat\theta}\), as a fast surrogate for a larger language model \(P_\theta\).
+Let \(\alpha\) be a Nederhof-style regular overapproximation of the grammar~\cite{nederhof2000practical,mohri2001regular}, whose Boolean support preserves the hard syntactic invariant
+\[
+  \mathcal{L}(G)\subseteq\mathcal{L}(\alpha).
+\]
+The weighted automaton \(\alpha_{\hat\theta}\) has the same support, positive transition weights on every retained edge, and proper final weights so that it induces a probability distribution \(P_{\hat\theta}\) over \(\mathcal{L}(\alpha)\).
+Unlike the Levenshtein automaton, \(\alpha_{\hat\theta}\) is learned once from valid programs and is invariant to the broken string and the repair radius.
+By conditioning this distribution on the true grammar, it induces a language prior
+\[
+  P_{\hat\theta}^{G}(\sigma)=
+  \frac{P_{\hat\theta}(\sigma)}
+       {\sum_{\tau\in\mathcal{L}(G)}P_{\hat\theta}(\tau)}
+  \qquad\text{for }\sigma\in\mathcal{L}(G),
+\]
+whose weights approximate \(P_\theta(\sigma\mid\sigma\in\mathcal{L}(G))\) while the Boolean support remains an overapproximation.
+For a repair instance,
+\[
+  \ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big),
+\]
+we use \(P_{\hat\theta}\) only to order candidates that the exact intersection has already admitted.
+
+\noindent\textbf{Claim.}
+Every repair in \(\ell_\cap\) is recognized by the Nederhof overapproximation, and the WFDFA weights induce well-defined distributions on \(\mathcal{L}(G)\) and \(\ell_\cap\).
+
+\noindent\emph{Proof.}
+If \(\sigma\in\ell_\cap\), then by definition \(\sigma\in\mathcal{L}(G)\).
+Since \(\mathcal{L}(G)\subseteq\mathcal{L}(\alpha)\), it follows immediately that \(\sigma\in\mathcal{L}(\alpha)\).
+Thus no syntactically valid repair can be excluded by the overapproximation.
+Because \(\alpha_{\hat\theta}\) is deterministic and proper, each \(\sigma\in\mathcal{L}(\alpha)\) receives a nonnegative string probability \(P_{\hat\theta}(\sigma)\), and every \(\sigma\in\ell_\cap\) receives positive mass under the positive-edge assumption.
+Since \(\mathcal{L}(G)\subseteq\mathcal{L}(\alpha)\), conditioning \(P_{\hat\theta}\) on \(\mathcal{L}(G)\) gives \(P_{\hat\theta}^{G}\), whose normalizer is finite because \(P_{\hat\theta}\) is a probability distribution over \(\mathcal{L}(\alpha)\).
+Conditioning further on the finite repair language gives
+\[
+  P_{\hat\theta}^{\cap}(\sigma)=
+  \frac{P_{\hat\theta}(\sigma)}
+       {\sum_{\tau\in\ell_\cap}P_{\hat\theta}(\tau)}
+  \qquad\text{for }\sigma\in\ell_\cap,
+\]
+which is a distribution because the denominator is finite and positive whenever \(\ell_\cap\neq\varnothing\).
+\(\square\)
+
+The tradeoff is that \(P_{\hat\theta}^{\cap}\) is a language prior, not a complete conditional repair model.
+It approximates the true distribution over valid programs by learning weights on an overapproximating regular language, while the exact CFL--Levenshtein intersection continues to enforce validity and edit distance.
+This avoids excluding valid repairs and avoids assigning ad hoc weights to edit paths, but it leaves broken-string-specific preferences to the reranker.
+The overapproximation may contain strings outside \(\mathcal{L}(G)\), but those strings are harmless when the exact grammar intersection remains the admissibility filter.
+
+We measure the tightness of a finite-prefix overapproximation by comparing the number of strings admitted up to length \(m\):
+\[
+  \rho(\alpha,G,m)=
+  \frac{\sum_{n=1}^m |\mathcal{L}(G)\cap\Sigma^n|}
+       {\sum_{n=1}^m |\mathcal{L}(\alpha)\cap\Sigma^n|}.
+\]
+Higher \(\rho\) means less spurious regular language volume below the cutoff.
+The training objective therefore has two parts: fit weights to the teacher distribution, and keep the support tight without ever losing inclusion.
+We estimate the distributional term by samples from \(P_\theta\) and minimize
+\[
+  D_{\mathrm{KL}}\!\left(P_\theta(\cdot\mid\mathcal{L}(G))\,\middle\|\,P_{\hat\theta}\right),
+\]
+or its minibatch cross-entropy approximation.
+The structural term is enforced by counterexample-guided refinement rather than by a soft penalty.
+
+Concretely, we initialize \(\alpha\) with Nederhof's \(d\)-RTN approximation: recursive calls in the grammar are unfolded for \(d\) rounds, and any remaining call edges are routed through shared nonterminal automata.
+This produces a regular language that contains \(\mathcal{L}(G)\), with larger \(d\) typically giving a tighter but larger automaton.
+We then alternate between weight fitting and support refinement:
+
+\begin{enumerate}
+  \item Fit the outgoing transition weights of \(\alpha_{\hat\theta}\) against teacher samples by normalized path likelihood.
+  \item Propose a local topology refinement that improves held-out likelihood and increases \(\rho(\alpha,G,m)\), subject to a state budget \(|Q|_{\max}\).
+  \item Binarize the proposal and verify inclusion by checking whether \(\mathcal{L}(G)\cap\overline{\mathcal{L}(\alpha)}=\varnothing\).
+  \item If inclusion fails, add witnesses from \(\mathcal{L}(G)\cap\overline{\mathcal{L}(\alpha)}\) back into the automaton, renormalize affected transitions, and continue.
+\end{enumerate}
+
+The result is not meant to replace the exact repair language.
+Rather, it gives us a fast scoring automaton whose support is guaranteed to cover every syntactically valid program.
+At decoding time we can use \(P_{\hat\theta}\) in place of the \(c\)-gram model in the priority queue, or use it as a proposal model before exact derivative filtering.
+This is the main expected advantage over constrained LLM decoding: exhaustive ranking under a low-fidelity but high-throughput approximation can retrieve far more valid candidates than a highly calibrated model that only explores a narrow beam.
+
+\subsection{Reranking}
+
+The retriever is intentionally syntax-first and mostly context-free: it scores a repair candidate \(\sigma\) as a string, not as a fix for the particular broken input \(\err\sigma\).
+The reranker supplies this missing conditional information.
+For each training repair pair \(\langle\err\sigma,\sigma^\star\rangle\), we decode a confounder set \(\mathcal{D}_{\err\sigma}\subseteq\ell_\cap\) without replacement and train a Levenshtein-aligned transformer reranker to put \(\sigma^\star\) above the sampled alternatives.
+Let \(E_\theta(\err\sigma)\) encode the broken snippet and \(E'_\theta(\sigma,\mathrm{LA}(\err\sigma,\sigma))\) encode a candidate together with its edit alignment.
+The relevance score is
+\[
+  f_\theta(\err\sigma,\sigma)=
+  \mathrm{MLP}_\theta\!\left(E_\theta(\err\sigma),E'_\theta(\sigma,\mathrm{LA}(\err\sigma,\sigma))\right).
+\]
+We train with a listwise cross-entropy loss over the retrieved list:
+\[
+  \mathcal{L}_{\mathrm{rank}}(\theta)=
+  -\sum_{\err\sigma}
+  \log
+  \frac{\exp(f_\theta(\err\sigma,\sigma^\star)/\tau)}
+       {\sum_{\sigma\in\mathcal{D}_{\err\sigma}}\exp(f_\theta(\err\sigma,\sigma)/\tau)}.
+\]
+The final repair procedure is therefore retrieve-then-rerank:
+construct \(\ell_\cap\), decode a large prefix of it using either the \(c\)-gram model or the language-overapproximating WFDFA, then pass the top candidates to the conditional reranker.
+The admissible set remains exact throughout; learning only changes the order in which valid repairs are discovered and displayed.
+
+\ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
+\end{document}
