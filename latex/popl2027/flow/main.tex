@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{multirow,bigdelim}
+
+\newcommand{\hlbox}[2]{%
+  \begingroup
+  \setlength{\fboxsep}{1pt}%
+  \ensuremath{\text{\colorbox{#1}{#2}}}%
+  \endgroup
+}
+
+\newcommand{\hlorange}[1]{\hlbox{orange!30}{#1}}
+\newcommand{\hlgreen}[1]{\hlbox{green!25}{#1}}
+\newcommand{\hlred}[1]{\hlbox{red!25}{#1}}
+
+\begin{document}
+
+
+\ensuremath{
+  \begin{array}{r@{\hskip 0.5em}c|cccc@{\hskip 0.6em}l}
+    \text{$q$:}   & & \texttt{(} & \texttt{)} & \texttt{)} & & \\
+    \text{PE:}    & & 0 & 1 & 2 & & \\\cline{1-6}
+    \text{$d_1$:} & & \texttt{(} & \hlgreen{\texttt{(}} & \texttt{)} & \texttt{)} & \rdelim\}{3}{*}[\;0.131] \\
+    \text{PE:}    & & 0 & 1 & 2 & 3 & \\
+    \text{LA:}    & & 0 & 1 & 0 & 0 & \\\cline{1-6}
+    \text{$d_2$:} & & \texttt{(} & \texttt{)} & \hlorange{\texttt{(}} & \hlgreen{\texttt{)}} & \rdelim\}{3}{*}[\;0.588] \\
+    \text{PE:}    & & 0 & 1 & 2 & 3 & \\
+    \text{LA:}    & & 0 & 0 & 2 & 1 & \\\cline{1-6}
+    \text{$d_3$:} & & \texttt{(} & \texttt{)} & \hlred{\texttt{)}} & & \rdelim\}{3}{*}[\;0.727] \\
+    \text{PE:}    & & 0 & 1 & 2 & & \\
+    \text{LA:}    & & 0 & 0 & 3 & &
+  \end{array}
+}
+
+\end{document}

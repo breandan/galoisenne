@@ -13,104 +13,7 @@ Recall that a CFG, $\mathcal{G} = \langle \Sigma, V, P, S\rangle$, is a quadrupl
 
 Likewise, a finite state automaton (FSA) is a quintuple $\mathcal{A} = \langle Q, \Sigma, \delta, q_\alpha, F\rangle$, where $Q$ is a finite set of states, $\Sigma$ is a finite alphabet, $\delta \subseteq Q \times \Sigma \times Q$ is the transition function, $q_\alpha$ is the initial state, and $F \subseteq Q$ are the accepting states. These generally come in two varieties, deterministic and nondeterministic depending on whether or not $\delta$ maps each pair $\langle q, s \rangle$ to a unique $q'$.
 
-There is an equivalent characterization of the regular languages via an inductively defined datatype, which is often more elegant than FSAs to work with. Consider the generalized regular expression (GRE) fragment containing concatenation, conjunction and disjunction:
-
-\begin{definition}[Star-free GRE fragment]\label{thm:gre_def}
-  Let \( e: E \) be an expression defined by the grammar:
-  \[
-    e \rightarrow \varnothing \mid \varepsilon \mid \Sigma \mid e \cdot e \mid e \lor e \mid e \land e
-  \]
-
-where $\varepsilon$ is the empty symbol. Semantically, we interpret these expressions as denoting languages:\vspace{-0.8cm}
-
-  \setlength{\columnseprule}{0pt}
-  \setlength{\columnsep}{-3cm}
-  \begin{multicols}{2}
-    \begin{eqnarray*}
-      \mathcal{L}(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing \\
-      \mathcal{L}(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \{\varepsilon\} \\
-      \mathcal{L}(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \{a\}
-    \end{eqnarray*} \break\vspace{-0.45cm}
-    \begin{eqnarray*}
-      \mathcal{L}(&\hspace{-0.35cm} x\cdot z \hspace{-0.35cm}&) = \mathcal{L}(x) \circ \mathcal{L}(z)\text{\footnotemark}\\
-      \mathcal{L}(&\hspace{-0.35cm} x\vee  z \hspace{-0.35cm}&) = \mathcal{L}(x) \cup  \mathcal{L}(z)\\
-      \mathcal{L}(&\hspace{-0.35cm} x\land z \hspace{-0.35cm}&) = \mathcal{L}(x) \cap  \mathcal{L}(z)
-    \end{eqnarray*}
-  \end{multicols}
-  \footnotetext{Where $\mathcal{L}(x)\circ\mathcal{L}(z)$ is defined as $\big\{a \cdot b \mid a \in \mathcal{L}(x) \land b \in \mathcal{L}(z) \big\}$.}
-\end{definition}\vspace{-0.2cm}
-
-\noindent Brzozowski~\cite{brzozowski1964derivatives} introduces an operator, $\partial: E \times \Sigma \rightarrow E$, which quotients a language by some prefix,
-
-\begin{definition}[Brzozowski, 1964]
-  To compute the quotient \(\partial_a(L) = \{b \mid ab \in L\}\), we:
-
-  \vspace{-0.8cm}
-  \begin{multicols}{2}
-    \begin{eqnarray*}
-      \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
-      \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\
-      \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
-      \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
-      \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
-      \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
-    \end{eqnarray*} \break\vspace{-0.45cm}
-    \begin{eqnarray*}
-      \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
-      \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\
-      \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
-      \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
-      \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
-      \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
-    \end{eqnarray*}
-  \end{multicols}
-\end{definition}
-
-Primarily, this gadget was designed to handle membership queries, for which purpose it has  found a number of applications~\cite{might2011parsing,stanford2021symbolic,varatalu2025re} in recent years:
-
-\begin{theorem}[Recognition]\label{thm:recognition}
-  For any regex \(e\) and \(\sigma: \Sigma^*\), \(\sigma \in \mathcal{L}(e) \Longleftrightarrow \varepsilon \in \mathcal{L}(\partial_\sigma e)\), where:
-
-  \begin{equation}
-    \partial_\sigma (e): E \rightarrow E = \begin{cases}e &\text{ if } \sigma = \varepsilon\\\partial_b(\partial_a e) &\text{ if } \sigma = a \cdot b, a \in \Sigma, b \in \Sigma^* \end{cases}
-  \end{equation}
-\end{theorem}
-
-Variations on this basic procedure can also be used for functional parsing and regular expression tasks. Less well known, perhaps, is that Brzozowski's derivative can also be used to decode witnesses. We will first focus on the nonempty disjunctive fragment, and define this process in two steps:
-
-\begin{theorem}[Generation]\label{thm:generation}
-  For any nonempty $(\varepsilon, \land)$-free regex, \(e\), to witness $\sigma \in \mathcal{L}(e)$:
-
-\begin{equation}
-  \hspace{-1cm}\texttt{follow}(e): E \rightarrow 2^\Sigma = \begin{cases}
-   \{e\} &\text{ if } e \in \Sigma \\
-   \texttt{follow}(x) &\text{ if } e = x \cdot z\\
-   \texttt{follow}(x)\cup\texttt{follow}(z) &\text{ if } e = x \lor z
-  \end{cases}
-\end{equation}
-
-\begin{equation}\label{eq:choose}
-  \texttt{choose}(e): E \rightarrow \Sigma^+ = \begin{cases}
-   e &\text{ if } e \in \Sigma \\
-   \big(s \leftsquigarrow \texttt{follow}(e)\big)\cdot \texttt{choose}(\partial_s e) &\text{ if } e = x \cdot z\\
-   \texttt{choose}\big(e' \leftsquigarrow \{x, z\}\big) &\text{ if } e = x \lor z
-  \end{cases}
-\end{equation}
-\end{theorem}
-
-Here, we use the $\leftsquigarrow$ operator to denote probabilistic choice, however, any deterministic choice function will also suffice to generate a witness. Now we are equipped to handle conjunction.
-
-Recall that every regular language is also context-free a fortiori. So, given an $(\varepsilon, \land)$-free regular expression, we can construct an equivalent CFG with productions $P(e)$ as follows:
-
-\begin{equation}
-P(e): E \rightarrow \big(V \rightarrow (\Sigma \mid V \mid V^2)\big) = \begin{cases}
- \{ S_e \rightarrow e \} & \text{if } e \in \Sigma \\
- P(x) \cup P(z) \cup \{ S_e \rightarrow S_x S_z \} & \text{if } e = x \cdot z \\
- P(x) \cup P(z) \cup \{ S_e \rightarrow S_x, S_e \rightarrow S_z \} & \text{if } e = x \lor z \\
-\end{cases}
-\end{equation}\vspace{0.2cm}
-
-\noindent where the CFG is $G(e) = \langle V, \Sigma, P(e), S_e\rangle$ with $V$ being nonterminals in $P(e)$. Therefore, to intersect two regular languages, we can treat one of them as a CFL. Alternatively, we can take the intersection between some truly non-regular CFL (say, a programming language syntax) and a regular language.
+Alternatively, we can take the intersection between some truly non-regular CFL (say, a programming language syntax) and a regular language.
 
 \begin{theorem}[Bar-Hillel, 1961]
   For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and nondeterministic finite automata (NFA), $A = \langle Q, \Sigma, \delta, q_\alpha, F\rangle$, there is a CFG, \(G_\cap=\langle V_\cap, \Sigma_\cap, P_\cap, S_\cap\rangle\) s.t. $\mathcal{L}(G_\cap) = \mathcal{L}(G)\cap\mathcal{L}(A)$.
@@ -157,7 +60,7 @@ Now suppose we have a syntax, $\ell \subset \Sigma^*$, containing every acceptab
 \vspace{-0.3cm}
 \end{wrapfigure}
 
-Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of nearby strings: if intersected with the language of grammatically valid programs, $\mathcal{L}(G)$, the result ($\ell_\cap$) will contain every possible repair within the given edit distance, a subset of which will be natural or statistically probable. If we can locate these repairs, then we can map them back into Unicode, adding placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display them. Both the preprocessing and the cosmetic postprocessing steps are tangential to this work, in which we confine ourselves to a lexical alphabet.
+Given a lexical representation of a broken computer program $\err\sigma$ and a grammar $G$, our goal is to find every valid string $\sigma$ consistent with the grammar $G$ and within a certain edit distance, $d$. Consider the language of nearby strings: if intersected with the language of grammatically valid programs, $\mathcal{L}(G)$, the result ($\ell_\cap$) will contain every possible repair within the given edit distance, a subset of which will be natural or statistically probable. We will sample these repairs, map them back into Unicode, adding placeholders for fresh names, numbers, and string literals, then finally apply an off-the-shelf code formatter to display them. Both the preprocessing and the cosmetic postprocessing steps are ancillary to the scope of this work, in which we confine ourselves to a lexical alphabet.
 
 \subsection{Formal statement}\label{sec:problem}
 

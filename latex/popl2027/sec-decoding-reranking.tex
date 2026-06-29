@@ -6,9 +6,6 @@
 The construction above gives us an exact finite language,
 \(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose elements are precisely the valid repairs within the allowed edit radius.
 What remains is a ranking problem: among the strings that are already valid and nearby, which should be shown first?
-This separation is important.
-The grammar and Levenshtein automaton define the admissible set, while the probabilistic model is only responsible for choosing among admissible repairs.
-Thus a low-capacity but high-throughput decoder can retrieve a large candidate set, after which a more expensive conditional model can rerank only the most promising repairs.
 
 \subsection{Intersection decoding}
 
