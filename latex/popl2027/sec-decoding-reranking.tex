@@ -3,33 +3,24 @@
 
 \clearpage\section{Decoding and reranking}\label{sec:decoding_reranking}
 
-The construction above gives us an exact finite language,
-\(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose elements are precisely the valid repairs within the allowed edit radius.
-What remains is a ranking problem: among the strings that are already valid and nearby, which should be shown first?
+The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose contents are precisely the valid repairs within $d$ edits. What remains is a ranking problem: among the words that are valid and nearby, which should be shown first? In selecting these repairs, our primary design criteria will be (1) latency and (2) fidelity -- within a few hundred milliseconds, we should produce a set that anticipates with high probability the author's intended repair.
 
 \subsection{Intersection decoding}
 
-We represent \(G_\cap\) as the star-free regular expression described in \S~\ref{sec:measurement}.
-Given a partial repair prefix \(\sigma_{0\ldots i}\) and residual expression \(e_i\), the Brzozowski derivative exposes the next legal symbols:
+As suggested by the proof of Thm.~\ref{thm:witness_construction}, we can represent \(G_\cap\) as a star-free regular expression and decode it autoregressively using the Brzozowski derivative. Given a partial repair prefix \(\sigma_{0\ldots i}\) and residual expression \(e_i\), the Brzozowski derivative exposes the next legal symbols:
 \[
   \texttt{follow}(e_i)=\{a\in\Sigma \mid \mathcal{L}(\partial_a e_i)\neq\varnothing\}.
 \]
-A decoder therefore maintains a priority queue of triples \(\langle \sigma,e,s\rangle\), where \(e\) is the residual expression and \(s\) is a running log score.
-Popping the highest-scoring prefix and pushing \(\langle\sigma a,\partial_a e,s+\log P(a\mid\sigma)\rangle\) for every legal \(a\) yields a best-first traversal of \(\ell_\cap\).
-Whenever \(\varepsilon\in\mathcal{L}(e)\), the prefix is a complete repair.
-Because every transition is guarded by the derivative, this procedure never proposes an invalid string and never wastes effort on rejection sampling.
+A decoder therefore maintains a priority queue of triples \(\langle \sigma,e,s\rangle\), where \(e\) is the residual expression and \(s\) is a running log score. Popping the highest-scoring prefix and pushing \(\langle\sigma a,\partial_a e,s+\log P(a\mid\sigma)\rangle\) for every legal \(a\) yields a best-first traversal of \(\ell_\cap\). Whenever \(\varepsilon\in\mathcal{L}(e)\), the prefix is a complete repair. Because every transition is guarded by the derivative, this procedure never proposes an invalid string and never wastes effort on rejection sampling.
 
-The choice of \(P(a\mid\sigma)\) controls the retrieval order.
-Our current implementation uses a smoothed \(c\)-gram model because it is small, cache-friendly and fast enough to saturate many intersections within an interactive latency budget.
-However, the \(c\)-gram score is not essential to the construction.
-Any left-to-right scoring function that can be queried at decoder speed may be substituted, including a weighted deterministic finite automaton trained as a regular overapproximation to the target programming language.
+The choice of \(P(a\mid\sigma)\) controls the retrieval order. One approach would be to use a smoothed \(c\)-gram model because it is small, cache-friendly and fast enough to saturate many intersections within an interactive latency budget. However, any left-to-right scoring function that can be incrementally queried at nanosecond-latency may be substituted, including a weighted deterministic finite automaton trained as a regular overapproximation to the target programming language.
 
 \subsection{Path-dependent retrieval distributions}
 
 Several familiar decoding strategies are tempting at this point.
 One can view \(G_\cap\) as a finite hypergraph and apply \(k\)-best dynamic programming or cube pruning~\cite{huang2005better,chiang2007hierarchical}.
 One can also use non-autoregressive strategies, such as edit-based or diffusion-style denoisers, to propose repairs in parallel rather than committing to a left-to-right order~\cite{austin2021structured,havasi2025edit}.
-We found these approaches mismatched to the role of the first-stage decoder.
+After extensive evaluation, we found these approaches mismatched to the role of the first-stage decoder.
 The retriever must enumerate, or sample without replacement from, a finite language of unique strings; it must preserve completeness when the search is allowed to run to saturation; and, before saturation, its prefix order should approximate the distribution induced by a left-to-right language model over the same finite set.
 Cube pruning is useful when the scoring model decomposes over grammar items, but in practice it gives an approximate frontier over derivations.
 With ambiguous grammars, high-scoring derivations need not be high-scoring distinct strings, and duplicate strings must be merged to obtain sampling without replacement.
@@ -45,7 +36,7 @@ For a repair instance, the finite conditional distribution we would like to appr
   \qquad\text{for }\sigma\in\ell_\cap.
 \]
 The normalizer is constant for a fixed instance, so ranking by \(P_\cap\) is equivalent to ranking by the left-to-right string probability \(P_\theta(\sigma)\), while the support remains exactly context-free.
-This is the sense in which the distribution is structurally context-free but distributionally sequential: the grammar determines which strings exist, but the probability model should still be allowed to depend on the path taken through the string prefix.
+This is the sense in which the distribution is structurally context-free but distributionally sequential: the grammar determines which strings exist, but the probabilistic model should still be allowed to depend on the path taken through the string prefix.
 Derivative decoding gives precisely this interface.
 The residual expression \(e_i\) enforces the remaining CFL constraint, while the score attached to the prefix \(\sigma_{0\ldots i}\) can be supplied by any fast path-dependent model.
 
