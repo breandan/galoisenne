@@ -40,57 +40,101 @@ The key observation is that finite CFL--regular intersection can be treated as C
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
   Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the
   saturated chart can be refined to a finite star-free generalized regular
-  expression \(S_\cap\) such that
-
-  \[\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A).\]
-
-  Consequently, when \(\Psi(G,A)=\bs\), a word
-  \(\sigma\in\mathcal{L}(G)\cap\mathcal{L}(A)\) can be decoded by making one
-  nonempty structural choice at each union node of \(S_\cap\).
+  expression \(S_\cap\) satisfying
+  \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Consequently, when
+  \(\Psi(G,A)=\bs\), a word
+  \(\sigma\in\mathcal{L}(G)\cap\mathcal{L}(A)\) can be decoded by repeatedly
+  choosing a token whose Brzozowski derivative is nonempty.
 \end{theorem}
 
+\begin{definition}[Brzozowski derivative]\label{def:brzozowski_derivative}
+  Following Brzozowski~\cite{brzozowski1964derivatives}, let \(E\) be the star-free GREs
+  \(e ::= \varnothing\mid\varepsilon\mid a\mid e\vee e\mid e\land e\mid e\cdot e\).
+  Write \(\delta(e)\in\{\varnothing,\varepsilon\}\) for the nullable projection,
+  where \(\delta(e)=\varepsilon\) iff \(\varepsilon\in\mathcal{L}(e)\).  For
+  \(a,b\in\Sigma\), define:
+
+  \vspace{-0.8cm}
+  \begin{multicols}{2}
+    \begin{eqnarray*}
+      \phantom{--}\partial_a(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                           \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varnothing                                           \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} b           \hspace{-0.35cm}&) = \begin{cases}\varepsilon &\text{ if } a = b\\ \varnothing &\text{ if } a \neq b \end{cases}\\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = (\partial_a x)\cdot z \vee \delta(x)\cdot\partial_a z \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) =  \partial_a x \vee  \partial_a z                       \\
+      \phantom{--}\partial_a(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) =  \partial_a x \land \partial_a z
+    \end{eqnarray*} \break\vspace{-0.45cm}
+    \begin{eqnarray*}
+      \delta(&\hspace{-0.35cm} \varnothing \hspace{-0.35cm}&) = \varnothing                                      \\
+      \delta(&\hspace{-0.35cm} \varepsilon \hspace{-0.35cm}&) = \varepsilon                                      \\
+      \delta(&\hspace{-0.35cm} a           \hspace{-0.35cm}&) = \varnothing\phantom{\begin{cases}\varepsilon\\\varnothing\end{cases}}\\
+      \delta(&\hspace{-0.35cm} x\cdot z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)                        \\
+      \delta(&\hspace{-0.35cm} x\vee  z    \hspace{-0.35cm}&) = \delta(x) \vee  \delta(z)                        \\
+      \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
+    \end{eqnarray*}
+  \end{multicols}
+  Extend to strings by \(\partial_\varepsilon e=e\) and
+  \(\partial_{a\sigma}e=\partial_\sigma(\partial_a e)\); then
+  \(\mathcal{L}(\partial_\sigma e)=\sigma^{-1}\mathcal{L}(e)\).
+\end{definition}
+
+\begin{lemma}[Generation]\label{lem:generation}
+  For any finite GRE \(e\) with \(\mathcal{L}(e)\neq\varnothing\), the following
+  nondeterministic procedure terminates and returns a word in \(\mathcal{L}(e)\):
+  \begin{equation}\label{eq:choose}
+    \texttt{choose}(e)=
+    \begin{cases}
+      \varepsilon & \delta(e)=\varepsilon,\\
+      a\cdot\texttt{choose}(\partial_a e) &
+      a\in\Sigma,\ \mathcal{L}(\partial_a e)\neq\varnothing .
+    \end{cases}
+  \end{equation}
+\end{lemma}
+
 \begin{proof}
-  We keep the Boolean support \(T_\star\) fixed and attach syntax only to
-  reachable cells.  Work over expressions \(e ::= \varnothing \mid a \mid e\vee e \mid e\cdot e\),
-  where finite unions are written using \(\vee\), and the empty union denotes \(\varnothing\).  Initialize
-  \[
-    R_0[p,r,w]= \bigvee_{\mathclap{a\in\Sigma}} \{\,a \mid (p\overset{a}{\rightarrow}r)\in\delta \land (w\rightarrow a)\in P\,\}.
-  \]
-  Cells outside the support of \(T_\star\) are fixed to \(\varnothing\).  On the
-  remaining cells, we will iterate,
-  \[
-    R_{j+1}[p,r,w] = R_j[p,r,w]\vee \bigvee_{\mathclap{\substack{q\in Q,\;x,z\in V\\(w\rightarrow xz)\in P}}} R_j[p,q,x]\cdot R_j[q,r,z].
-  \]
-  the provenance semiring analogue of the Boolean recurrence defined in Thm.~\ref{thm:parallel_decision_complexity}. Here, terminal alternatives record single automaton arcs, and product alternatives record one grammar production together with one midpoint state.
+  If \(\delta(e)=\varepsilon\), the empty word is a valid witness.  Otherwise every
+  word in the nonempty finite language \(\mathcal{L}(e)\) has the form
+  \(a\sigma\), so \(\mathcal{L}(\partial_a e)\neq\varnothing\) for at least one
+  \(a\).  Taking such an \(a\) preserves nonemptiness and removes one leading
+  symbol from every selected witness.  Finiteness rules out an infinite descent.
+  If the emitted word is \(\tau\), the derivative law gives
+  \(\varepsilon\in\mathcal{L}(\partial_\tau e)\), hence
+  \(\tau\in\mathcal{L}(e)\).
+\end{proof}
 
-  The construction is most compactly represented as a DAG.  Each true chart
-  cell contributes one expression node, whose alternatives are terminal leaves
-  or concatenations of child cells.  Because \(A\) is topologically ordered,
-  every productive concatenation factors a nonempty path through a strict
-  midpoint, so these dependencies are acyclic.  Thus, no Kleene star or recursive
-  equation is required; sharing only prevents repeated subexpressions from being
-  printed multiple times.
+\begin{proof}
+  Let \(E\) be star-free regexes
+  \(e ::= \varnothing\mid\varepsilon\mid a\mid e\vee e\mid e\cdot e\), modulo
+  language equivalence, with provenance semiring operations
+  \(e\oplus f\coloneqq e\vee f\), \(e\otimes f\coloneqq e\cdot f\),
+  \(0_E\coloneqq\varnothing\), and \(1_E\coloneqq\varepsilon\).  Keeping the
+  Boolean support \(T_\star\) fixed, set unsupported cells to \(0_E\) and define
+  \[
+  \begin{gathered}
+    R_0[p,r,w]=
+    \bigoplus_{\mathclap{\substack{a\in\Sigma\\(p\overset{a}{\rightarrow}r)\in\delta\\(w\rightarrow a)\in P}}} a,\qquad
+    R_{j+1}=R_j\oplus(R_j\otimes R_j),\\
+    [X\otimes Y][p,r,w]=
+    \bigoplus_{\mathclap{\substack{q\in Q,\;x,z\in V\\(w\rightarrow xz)\in P}}}
+    X[p,q,x]\otimes Y[q,r,z],
+  \end{gathered}
+  \]
+  where empty sums are \(0_E\).  This is the Boolean closure lifted to regex
+  provenance: terminals record arcs, and products record a grammar rule plus a
+  midpoint.  Topological ordering of \(A\) makes every nonzero product factor
+  into strict subpaths, so the shared expression graph is acyclic and star-free.
 
-  As in the decision proof, induction on parse height gives
-  \[
-    \mathcal{L}(R_j[p,r,w]) = \{\sigma \mid p\overset{\sigma}{\rightsquigarrow}r \land w\Rightarrow^*\sigma \text{ by a tree of height }\leq j\}.
-  \]
-  Acyclicity bounds the necessary height, so the expression chart reaches a
-  fixed point \(R_\star\).  Define
-  \[
-    S_\cap= \bigvee_{\mathclap{q_\omega\in F}} R_\star[q_\alpha,q_\omega,S].
-  \]
-  The invariant immediately yields \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Finally, define a partial decoding function on nonempty expressions by
-  \[
-    \texttt{choose}(a)=a,\qquad \texttt{choose}(e_1\cdot e_2) =\texttt{choose}(e_1)\texttt{choose}(e_2),
-  \]
-  and
-  \[
-    \texttt{choose}(e_1\vee e_2)=\texttt{choose}(e_i)
-  \]
-  for any branch \(e_i\) with nonempty language.  When \(\Psi(G,A)=\bs\), the
-  expression \(S_\cap\) has at least one such branch.  Structural induction on
-  the star-free expression DAG then gives \(\texttt{choose}(S_\cap)\in\mathcal{L}(S_\cap)\), which is the desired witness.
+  Induction on parse height shows \(R_j[p,r,w]\) denotes exactly the words
+  labeling paths \(p\overset{\sigma}{\rightsquigarrow}r\) derivable from \(w\)
+  by height-\(\leq j\) trees.  Acyclicity bounds the necessary height, hence
+  \(R_j\) reaches \(R_\star\); with
+  \(S_\cap=\bigoplus_{q_\omega\in F} R_\star[q_\alpha,q_\omega,S]\), the invariant gives
+  \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\).
+
+  If \(\Psi(G,A)=\bs\), then \(S_\cap\) is nonempty.  Since it is finite and
+  star-free, Lemma~\ref{lem:generation} applies and
+  \(\texttt{choose}(S_\cap)\in\mathcal{L}(S_\cap)\), yielding the desired
+  witness.
 \end{proof}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

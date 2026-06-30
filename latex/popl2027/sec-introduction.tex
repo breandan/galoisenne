@@ -12,6 +12,7 @@ Classical error-correcting parsers return one repair, or the set minimizing a ha
 Our approach makes the local search space explicit. We construct an acyclic Levenshtein automaton denoting every string within distance \(d\) of \(\err\sigma\), then intersect it with the grammar. Directly materializing the classical Bar--Hillel product grammar introduces many unreachable and non-generating productions. Instead, we exploit a correspondence between Bar--Hillel intersection and CFL reachability to quickly construct the grammar. Note that, while finite, \(\ell_\cap\) may be very large.
 
 This representation turns repair into a constrained decoding problem, allowing any off-the-shelf autoregressive decoder to traverse \(\ell_\cap\) incrementally without rejection sampling. A lightweight WDFA-based decoder provides an initial ranking over up to millions of repair candidates, of which the top-512 are then scored with a pretrained transformer, reranked and finally truncated. Syntactic validity is enforced by construction, edit locality is exact, and transformer-based reranking is reserved for the highest-probability results, ensuring low latency and high naturalness.
+\clearpage
 
 \begin{figure}[H]
   \includegraphics[width=\textwidth]{flow/flow}\vspace{-0.1cm}

@@ -169,7 +169,7 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
   \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
 \end{prooftree}
 
-Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_{\max}$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:gre_def}).
+Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_{\max}$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:witness_construction}).
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
