@@ -3,50 +3,94 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-The key to solving this problem is to treat finite language intersections as matrix exponentiation, exploiting a correspondence between the Bar-Hillel construction and CFL reachability.
-We show that if one of the participants in the language intersection is presented as an acyclic FSA, finite intersection nonemptiness admits a parallel matrix-closure procedure whose closure phase converges after at most a linear number of squaring rounds.
-Formally,
+The key observation is that finite CFL--regular intersection can be treated as CFL reachability over an acyclic automaton. Given a CFG \(G\) and an acyclic NFA \(A\), we compute which nonterminals derive the labels of paths \(p\rightsquigarrow r\) in \(A\), then ask whether some accepting path from \(q_\alpha\) derives the start symbol. This is close in spirit to highly parallel CKY recognition: Brent and Goldschlager show that a string of length \(n\) can be parsed in \(\mathcal{O}(\log n)\) time on a unit-cost SIMDAG, or \(\mathcal{O}(\log^2 n)\) time on a log-cost SIMDAG, using \(\mathcal{O}(n^6)\) processors~\cite{brent1984parallel}. Our setting is different: the right-hand input is not one string but a finite automaton, and the construction below is meant to produce either a Boolean decision or, in a second pass, a compact witness object.
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
-  For any CFG, $G = \langle V, \Sigma, P, S\rangle$, and acyclic NFA (ANFA), $A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle$, there exists a decision procedure $\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}$ such that $\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]$ requiring an $\mathcal{O}(\log^2|Q|)$ topological-ordering phase followed by at most $\mathcal{O}(|Q||V|)$ parallel squaring rounds using $\mathcal{O}\big(|Q|^2|V|\big)$ parallel random access (PRAM) processors.
+  For any CFG, \(G = \langle V, \Sigma, P, S\rangle\), and acyclic NFA (ANFA), \(A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle\), there exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that \(\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]\) requiring an \(\mathcal{O}(\log^2|Q|)\) topological-ordering phase followed by at most \(\mathcal{O}(|Q||V|)\) parallel closure rounds using \(\mathcal{O}\big(|Q|^2|V|\big)\) parallel random access (PRAM) processors.
 \end{theorem}
 
 \begin{proof}[Proof]
   To prove nonemptiness, we must show there exists a path $q_\alpha \rightsquigarrow q_\omega$ in $A$ such that $q_\omega: F$ where $q_\alpha \rightsquigarrow q_\omega \vdash S$. At least one of two cases must hold for $w \in V$ to parse a given $p \rightsquigarrow r$ pair:
 
   \begin{enumerate}
-    \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or,
-    \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
+    \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or, \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
   \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$ indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Note $Q$ can be ordered topologically in $\mathcal{O}(\log^2 |Q|)$ time~\cite{dekel1981parallel} using matrix multiplication. We initialize $M$ thusly:
   \begin{align}
-    M_0[r, c, w] = \bigvee_{a\in\Sigma} \big\{a \mid (w \rightarrow a) \in P \land (q_r \overset{a}{\rightarrow} q_c)\in \delta\big\}
+    M_0[p, r, w] = \bigvee_{a\in\Sigma}\big[(p \overset{a}{\rightarrow} r)\in\delta \land (w\rightarrow a)\in P\big].
   \end{align}
+  For Boolean charts \(X,Y\), we define
+ \begin{align}
+    [X\otimes Y][p,r,w] = \bigvee_{\mathclap{q\in Q,\;x,z\in V}} \big[X[p,q,x]\land Y[q,r,z]\land (w\rightarrow xz)\in P\big].
+  \end{align}
+ then iterate the following fixedpoint until convergence:
+  \[
+    T_0=M_0,\qquad T_{j+1}=T_j \lor (T_j\otimes T_j).
+  \]
+  Here \(T_j^2\) is only shorthand for \(T_j\otimes T_j\). No associativity of \(\otimes\) is used: the algorithm never forms an unparenthesized \(M^3\), and each update corresponds to one grammar-bracketed split \(w\rightarrow xz\).
 
-  Now, our goal will be to find the least fixed point \(M = M_0 \oplus M^2\) such that $\big[M_0[r, c, w] \neq \varnothing\big] \implies \big[M[r, c, w] \neq \varnothing\big]$ under a certain near-semiring. The algebraic operations $\oplus, \otimes: E^{2|V|} \rightarrow E^{|V|}$ we will define elementwise:
-  \begin{equation}
-    [\ell \oplus r]_w  = [\ell_w \lor r_w]\hspace{0.5cm}\text{and}\hspace{0.5cm}
-    [\ell \otimes r]_w = \bigvee_{\mathclap{x, z\:\in\:V}}\big\{\ell_x \cdot r_z \mid (w \rightarrow xz) \in P\big\}.
-  \end{equation}
-  By slight abuse of notation,\footnote{Customarily, there is a $\frac{1}{k!}$ factor to modulate exploding values, but alas this domain has no multiplicative inverse.} we will redefine the matrix exponential over this domain as,
+  Let \(H_j[p,r,w]\) be the assertion that some word labeling a path \(p\rightsquigarrow r\) is derived from \(w\) by a CNF parse tree of height at most \(j\). We claim \(T_j[p,r,w]=H_j[p,r,w]\) for all \(j\). The case \(j=0\) is \(M_0\). The step follows because a height-\((j+1)\) tree is either already of height \(j\), or has root \(w\rightarrow xz\) with two height-\(\leq j\) subtrees whose yields label paths \(p\rightsquigarrow q\) and \(q\rightsquigarrow r\). This is exactly the displayed product. Since \(A\) is acyclic, every accepting path has fewer than \(|Q|\) arcs, hence every CNF parse over it has height \(<|Q|\). Thus, the recurrence reaches its least fixed point \(T_\star\) within the stated \(\mathcal{O}(|Q||V|)\) rounds, using one processor per \((p,r,w)\) entry per round. Finally,
   \begin{align}
-    \exp(M) &= \sum_{i = 0}^\infty M_0^i = \sum_{i = 0}^{\mathclap{|Q||V|}} M_0^i \text { (since $M_0$ is SUT and thus nilpotent).}
+    \Psi(G,A)= \bigvee_{\mathclap{q_\omega\in F}} T_\star[q_\alpha,q_\omega,S],
   \end{align}
-  While $|Q||V|$ is an upper-bound and $\exp(M)$ may converge sooner, incremental evaluation grows expensive even with unbounded parallelism. Instead, we will iterate a squaring recurrence:
-  \begin{align}
-    T_0 = M_0,\qquad T_{j+1}=T_j \oplus T_j^2.
-  \end{align}
-  The sequence \(T_0 \preceq T_1 \preceq \cdots\) is monotone and bounded above by the nilpotent expansion of the strictly upper-triangular matrix \(M_0\).
-  If a squaring round changes the matrix, it contributes at least one new nonempty term from the finite expansion \(\sum_{i=0}^{|Q||V|}M_0^i\); once no such term is added, the fixed point has been reached.
-  Thus the recurrence cannot require a superlinear number of squaring rounds before convergence: after at most \(\mathcal{O}(|Q||V|)\) rounds it must stabilize at some \(T_\star\).
-  Finally, we will union all the languages of every state pair deriving $S$ into a new nonterminal, $S_\cap$.
-  \begin{align}
-    S_\cap = \bigvee_{\mathclap{\:q_\omega \in F}}T_\star[q_\alpha, q_\omega, S] \text{, and } \Psi = [S_\cap \neq \varnothing].
-  \end{align}
-  Note that it is possible to check $\Psi$ before each recurrence of $T$ and escape immediately thereafter in the positive case, as soon as a final state pair deriving \(S\) has been discovered.
-  In case of nonemptiness, one may simply $\texttt{choose}(S_\cap)$ (see Eq.~\ref{eq:choose}) to decode a witness $\sigma \in \mathcal{L}(G)\cap\mathcal{L}(A)$.
-  In either case, after topological sorting, the closure phase terminates after at most \(\mathcal{O}(|Q||V|)\) squaring rounds with $\mathcal{O}(|Q|^2|V|)$ processors.
-\end{proof}\clearpage
+  which is equivalent to \(\mathcal{L}(G)\cap\mathcal{L}(A)\neq\varnothing\). The test may be performed after each round, giving positive early termination.
+\end{proof}
+
+\begin{theorem}[Witness construction]\label{thm:witness_construction}
+  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the
+  saturated chart can be refined to a finite star-free generalized regular
+  expression \(S_\cap\) such that
+
+  \[\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A).\]
+
+  Consequently, when \(\Psi(G,A)=\bs\), a word
+  \(\sigma\in\mathcal{L}(G)\cap\mathcal{L}(A)\) can be decoded by making one
+  nonempty structural choice at each union node of \(S_\cap\).
+\end{theorem}
+
+\begin{proof}
+  We keep the Boolean support \(T_\star\) fixed and attach syntax only to
+  reachable cells.  Work over expressions \(e ::= \varnothing \mid a \mid e\vee e \mid e\cdot e\),
+  where finite unions are written using \(\vee\), and the empty union denotes \(\varnothing\).  Initialize
+  \[
+    R_0[p,r,w]= \bigvee_{\mathclap{a\in\Sigma}} \{\,a \mid (p\overset{a}{\rightarrow}r)\in\delta \land (w\rightarrow a)\in P\,\}.
+  \]
+  Cells outside the support of \(T_\star\) are fixed to \(\varnothing\).  On the
+  remaining cells, we will iterate,
+  \[
+    R_{j+1}[p,r,w] = R_j[p,r,w]\vee \bigvee_{\mathclap{\substack{q\in Q,\;x,z\in V\\(w\rightarrow xz)\in P}}} R_j[p,q,x]\cdot R_j[q,r,z].
+  \]
+  the provenance semiring analogue of the Boolean recurrence defined in Thm.~\ref{thm:parallel_decision_complexity}. Here, terminal alternatives record single automaton arcs, and product alternatives record one grammar production together with one midpoint state.
+
+  The construction is most compactly represented as a DAG.  Each true chart
+  cell contributes one expression node, whose alternatives are terminal leaves
+  or concatenations of child cells.  Because \(A\) is topologically ordered,
+  every productive concatenation factors a nonempty path through a strict
+  midpoint, so these dependencies are acyclic.  Thus, no Kleene star or recursive
+  equation is required; sharing only prevents repeated subexpressions from being
+  printed multiple times.
+
+  As in the decision proof, induction on parse height gives
+  \[
+    \mathcal{L}(R_j[p,r,w]) = \{\sigma \mid p\overset{\sigma}{\rightsquigarrow}r \land w\Rightarrow^*\sigma \text{ by a tree of height }\leq j\}.
+  \]
+  Acyclicity bounds the necessary height, so the expression chart reaches a
+  fixed point \(R_\star\).  Define
+  \[
+    S_\cap= \bigvee_{\mathclap{q_\omega\in F}} R_\star[q_\alpha,q_\omega,S].
+  \]
+  The invariant immediately yields \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Finally, define a partial decoding function on nonempty expressions by
+  \[
+    \texttt{choose}(a)=a,\qquad \texttt{choose}(e_1\cdot e_2) =\texttt{choose}(e_1)\texttt{choose}(e_2),
+  \]
+  and
+  \[
+    \texttt{choose}(e_1\vee e_2)=\texttt{choose}(e_i)
+  \]
+  for any branch \(e_i\) with nonempty language.  When \(\Psi(G,A)=\bs\), the
+  expression \(S_\cap\) has at least one such branch.  Structural induction on
+  the star-free expression DAG then gives \(\texttt{choose}(S_\cap)\in\mathcal{L}(S_\cap)\), which is the desired witness.
+\end{proof}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}
