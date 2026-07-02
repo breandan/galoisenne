@@ -3,7 +3,7 @@
 
 \clearpage\section{Decoding and reranking}\label{sec:decoding_reranking}
 
-The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose contents are precisely the valid repairs within $d$ edits. What remains is a ranking problem: among the words that are valid and nearby, which should be shown first? In selecting these repairs, our primary design criteria will be (1) latency and (2) fidelity -- within a few hundred milliseconds, we should produce a set that anticipates with high probability the author's intended repair. We separate this task into a \textit{support} constraint and a \textit{scoring} model. The support constraint must not lose any member of $\ell_\cap$; the scoring model may be approximate, but must be cheap enough to query while enumerating many prefixes.
+The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)\), whose contents are precisely the valid words within $d$ edits of $\err\sigma$. What remains is a ranking problem: among the words that are valid and nearby, which should be shown first? In selecting these repairs, our primary considerations will be (1) latency and (2) fidelity -- within a few hundred milliseconds, we must produce a set that anticipates with high probability the author's intended repair. We separate this task into two subproblems: \textit{support} and \textit{ranking}. The support criterion must ensure no member of $\ell_\cap$ is lost and ranking ensures probability mass is maximized by the top-$k$ results.
 
 \subsection{Derivative-guided exact decoding}
 
@@ -13,19 +13,12 @@ $\mathcal{L}(e_\cap)=\ell_\cap$.  Brzozowski derivatives expose the legal
 continuations of a prefix without enumerating the rest of the language.  For a
 residual expression $e$, define
 \[
-  \mathsf{Next}(e)
-  = \{a\in\Sigma \mid \mathcal{L}(\partial_a e)\neq\varnothing\},
-  \qquad
-  \mathsf{Done}(e) \iff \varepsilon\in\mathcal{L}(e).
+  \mathsf{Next}(e) = \{a\in\Sigma \mid \mathcal{L}(\partial_a e)\neq\varnothing\}, \qquad \mathsf{Done}(e) \iff \varepsilon\in\mathcal{L}(e).
 \]
 A left-to-right decoder keeps a priority queue of triples
-$\langle\sigma,e,s\rangle$, where
-$e=\partial_\sigma e_\cap$ and $s$ is a running cost.  Popping a prefix and
-pushing
+$\langle\sigma,e,s\rangle$, where $e=\partial_\sigma e_\cap$ and $s$ is a running cost.  Popping a prefix and pushing
 \[
-  \big\langle \sigma a,\partial_a e,
-  s - \log P(a\mid \sigma)\big\rangle
-  \qquad(a\in\mathsf{Next}(e))
+  \big\langle \sigma a,\partial_a e, s - \log P(a\mid \sigma)\big\rangle \qquad(a\in\mathsf{Next}(e))
 \]
 performs best-first search over the prefix tree of $\ell_\cap$.  If
 $\mathsf{Done}(e)$, the current prefix is emitted as a complete repair, with an
@@ -34,20 +27,17 @@ optional end-of-string cost $-\log P(\mathtt{EOS}\mid\sigma)$.
 \begin{lemma}[Derivative decoder support]\label{lem:derivative_decoder_support}
   Assume $\ell_\cap$ is finite and the decoder never prunes a queue element.
   Then every emitted string lies in $\ell_\cap$, and every string in
-  $\ell_\cap$ is eventually emitted exactly once.
+  $\ell_\cap$ is eventually emitted.
 \end{lemma}
 
 \begin{proof}
   The invariant $e=\partial_\sigma e_\cap$ holds initially and is preserved by
-  each transition.  If the decoder emits $\sigma$, then
-  $\varepsilon\in\mathcal{L}(\partial_\sigma e_\cap)$, hence
-  $\sigma\in\mathcal{L}(e_\cap)=\ell_\cap$.  Conversely, if
-  $\tau=a_1\cdots a_n\in\ell_\cap$, then every strict prefix
-  $a_1\cdots a_i$ has nonempty residual language, so
-  $a_{i+1}\in\mathsf{Next}(\partial_{a_1\cdots a_i}e_\cap)$ until the final
-  nullable residual is reached.  The prefix tree of a finite language is
-  finite, so all of these queue elements are eventually popped.  Since the
-  state of a queue element is indexed by the emitted prefix rather than by a
+  each transition.  If the decoder emits $\sigma$, then $\varepsilon\in\mathcal{L}(\partial_\sigma e_\cap)$, hence
+  $\sigma\in\mathcal{L}(e_\cap)=\ell_\cap$.  Conversely, if $\tau=a_1\cdots a_n\in\ell_\cap$, then every strict prefix
+  $a_1\cdots a_i$ has nonempty residual language, so $a_{i+1}\in\mathsf{Next}(\partial_{a_1\cdots a_i}e_\cap)$
+  until the final nullable residual is reached. The prefix tree of a finite
+  language is finite, so all of these queue elements are eventually popped.
+  Since the state of a queue element is indexed by the emitted prefix rather than by a
   parse derivation, each word has a single path through the prefix tree.
 \end{proof}
 
@@ -60,27 +50,32 @@ visited prefix set.  The remaining design choice is therefore the scoring oracle
 $P(a\mid\sigma)$, which determines the order in which the finite support is
 explored.
 
-\subsection{Constrained LLM decoding and the beam bottleneck}
 
-A direct way to obtain high-fidelity scores is to query a conditional language
-model at every prefix.  Given the broken snippet and a residual $e$, the masked
-conditional is
+\subsection{Fast Markov retrieval}
+
+The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, let $h_c(\sigma)$ be the last $c-1$ symbols of $\sigma$, padded on the left, and let $C(h,a)$ be the count of token $a$ after history $h$ in valid programs.  For our experiments, we use the Laplace-smoothed conditional,
 \[
-  P_\theta^e(a\mid\err\sigma,\sigma)
-  =
-  \begin{cases}
+  P_c(a\mid\sigma) = \frac{C\big(h_c(\sigma),a\big)+\lambda} {\sum_{b\in\Sigma\cup\{\mathtt{BOS}, \mathtt{EOS}\}} C\big(h_c(\sigma),b\big) +\lambda(|\Sigma|+1)}.
+\]
+The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto (\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
+
+The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \quad\Longrightarrow\quad P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This identifies contexts that a repair model should keep separate: delimiter balance, indentation regime, nearby binding structure, and the side of an ambiguous syntactic pattern already selected by the prefix. Thus $n$-grams are a good latency baseline and expose a large candidate set quickly but do not, by themselves, solve ranking.
+
+\subsection{Constrained LLM decoding}
+
+% TODO: discuss the trained repair decoder
+
+A direct way to obtain high-fidelity scores is to query a conditional language model at every prefix.  Given the broken snippet and a residual $e$, the masked conditional is
+\[
+  P_\theta^e(a\mid\err\sigma,\sigma) = \begin{cases}
     \displaystyle
-    \frac{P_\theta(a\mid\err\sigma,\sigma)}
-    {\sum_{b\in\mathsf{Next}(e)} P_\theta(b\mid\err\sigma,\sigma)}
-    & a\in\mathsf{Next}(e),\\[1.0em]
+    \frac{P_\theta(a\mid\err\sigma,\sigma)} {\sum_{b\in\mathsf{Next}(e)} P_\theta(b\mid\err\sigma,\sigma)} & a\in\mathsf{Next}(e),\\[1.0em]
     0 & \text{otherwise.}
   \end{cases}
 \]
 A beam decoder of width $B$ then maintains
 \[
-  \mathcal{B}_{i+1}
-  = \operatorname{Top}_B
-  \left\{
+  \mathcal{B}_{i+1} = \operatorname{Top}_B \left\{
     \left\langle\sigma a,\partial_a e,
     s-\log P_\theta^e(a\mid\err\sigma,\sigma)\right\rangle
     \middle|
@@ -98,107 +93,78 @@ logits for many active prefixes; the grammar mask removes illegal successors
 after the forward pass, but it does not make the forward pass cheap.  The cost
 scales roughly with the explored frontier,
 \[
-  T_{\mathrm{LLM}}
-  \approx \sum_i |\mathcal{B}_i|\,T_\theta(|\err\sigma|+i),
+  T_{\mathrm{LLM}} \approx \sum_i |\mathcal{B}_i|\,T_\theta(|\err\sigma|+i),
 \]
 whereas a finite-state scorer updates in constant time per edge.
 
-Second, any fixed beam sacrifices support completeness.  Let
-$\operatorname{Pref}_i(\ell_\cap)$ be the set of length-$i$ prefixes of repairs.
-A beam search is complete for all possible scoring functions only if
+Second, any fixed beam sacrifices support completeness.  Let $\operatorname{Pref}_i(\ell_\cap)$ be the set of length-$i$ prefixes of repairs. A beam search is complete for all possible scoring functions only if
 \[
   B \geq \max_i |\operatorname{Pref}_i(\ell_\cap)|,
 \]
-which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can
-be pruned before its probability is disambiguated by later tokens; every repair
-below that prefix then becomes unreachable. We call this the
-\textit{decoder--retriever gap}: a high-fidelity model can still recover less
-mass from $\ell_\cap$ than a weaker model that can afford to enumerate much
-more of the support. We therefore reserve neural models for reranking, where
-only a few hundred complete candidates must be scored.
+which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can be pruned before its probability is disambiguated by later tokens; every repair below that prefix then becomes unreachable. We call this the \textit{decoder--retriever gap}: a high-fidelity model can still recover less mass from $\ell_\cap$ than a weaker model that can afford to enumerate much more of the support.
 
-\subsection{Fast Markov retrieval}
+This bottleneck, as we will show, is problematic: under realtime constraints, beam search over the constrained langauge yields in highly suboptimal top-$k$ results. Instead, we will try to recover some of the throughput properties of the Markov model, with higher-fidelity state tracking.
 
-The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$,
-let $h_c(\sigma)$ be the last $c-1$ symbols of $\sigma$, padded on the left, and
-let $C(h,a)$ be the count of token $a$ after history $h$ in valid programs.  A
-Laplace-smoothed conditional is
-\[
-  P_c(a\mid\sigma)
-  =
-  \frac{C(h_c(\sigma),a)+\lambda}
-  {\sum_{b\in\Sigma\cup\{\mathtt{EOS}\}} C(h_c(\sigma),b)
-    +\lambda(|\Sigma|+1)}.
-\]
-The derivative decoder can query this table with no neural inference and no
-parser call.  Its state update is only
-\[
-  (\sigma,e,s)
-  \longmapsto
-  (\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)),
-\]
-so it can often saturate small intersections and sample large intersections
-without replacement under an interactive latency budget.
+\subsection{Weighted Nederhof retrieval}
 
-The weakness is fidelity.  The Markov state is the explicit suffix
-$h_c(\sigma)$, so
-\[
-  h_c(\sigma)=h_c(\tau)
-  \quad\Longrightarrow\quad
-  P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau).
-\]
-This identifies contexts that a repair model should keep separate: delimiter
-balance, indentation regime, nearby binding structure, and the side of an
-ambiguous syntactic pattern already selected by the prefix.  Thus $n$-grams are
-a good latency baseline and a poor final model.  They are useful precisely
-because they expose a large candidate set quickly; they do not, by themselves,
-solve ranking.
-
-\subsection{Weighted regular retrieval via Nederhof overapproximation}
-
-A better finite-state scorer replaces the explicit suffix state with a learned
-weighted deterministic finite automaton (WDFA).  We obtain its support from
-Nederhof's regular approximation of the grammar~\cite{nederhof2000practical};
-we write the unfolding depth as $h$ to avoid confusion with the Levenshtein
-radius $d$.
+A better finite-state scorer replaces the explicit suffix state with a learned weighted deterministic finite automaton (WDFA).  We obtain its support from Nederhof's regular approximation of the grammar~\cite{nederhof2000practical}; we write the unfolding depth as $h$.
 
 Let
 \[
-  \mathcal{R}
-  = \{R_A=(Q_A,\delta_A,\iota_A,F_A) \mid A\in V\},
-  \qquad
-  \delta_A\subseteq Q_A\times(\Sigma\cup V\cup\{\varepsilon\})\times Q_A,
+  \mathcal{R} = \{R_A=(Q_A,\delta_A,\iota_A,F_A) \mid A\in V\}, \qquad \delta_A\subseteq Q_A\times(\Sigma\cup V\cup\{\varepsilon\})\times Q_A,
 \]
 be the recursive transition network (RTN) for the CFG
-$G=\langle V,\Sigma,P,S\rangle$.  An arc
-$p\overset{B}{\longrightarrow}q$ is a call to $R_B$.  Nederhof's $h$-RTN
-approximation constructs a finite automaton $\alpha_h$ as follows.  For the
-first $h$ call levels, replace each call edge by a fresh copy of the callee:
+$G=\langle V,\Sigma,P,S\rangle$.  An arc $p\overset{B}{\longrightarrow}q$ is a call to $R_B$.  Nederhof's $h$-RTN approximation constructs a finite automaton $\alpha_h$ as follows. For the first $h$ call levels, replace each call edge by a fresh copy of the callee:
 \[
-  p\overset{B}{\longrightarrow}q
-  \quad\leadsto\quad
-  p\overset{\varepsilon}{\longrightarrow}\iota_B'
-  \quad\text{and}\quad
-  f_B'\overset{\varepsilon}{\longrightarrow}q
-  \quad(f_B'\in F_B').
+  p\overset{B}{\longrightarrow}q \quad\leadsto\quad p\overset{\varepsilon}{\longrightarrow}\iota_B' \quad\text{and}\quad f_B'\overset{\varepsilon}{\longrightarrow}q \quad(f_B'\in F_B').
 \]
 At depth $h$, remaining call edges are connected to shared copies of the
 corresponding nonterminal automata rather than unfolded again.  After
 $\varepsilon$-removal, determinization, and minimization, the result is a DFA
 whose language overapproximates the CFG\@.
 
+For example, let us consider the grammar \(S \rightarrow \texttt{x} \mid S\,S \mid \texttt{\{}\,S\,\texttt{\}}\), which has the following RTN:
+
+\begin{center}
+  \resizebox{0.65\linewidth}{!}{\input{figures/fig0}}
+\end{center}
+
+Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and recurse up to depth h. On this grammar, the effect of the depth-bounded unfolding can be visualized by the $\varepsilon$-removed, determinized, and minimized DFAs for $1\leq h\leq4$:
+
+\begin{center}
+  \setlength{\tabcolsep}{0.15cm}
+  \renewcommand{\arraystretch}{1.15}
+
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{@{}ccccccc@{}}
+    \begin{minipage}{0.09\linewidth}
+      \centering
+      \includegraphics[width=0.85\linewidth]{figures/d1.png}
+    \end{minipage}
+    &&
+    \begin{minipage}{0.20\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/d2.png}
+    \end{minipage}
+    &&
+    \begin{minipage}{0.26\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/d3.png}
+    \end{minipage}
+    &&
+    \begin{minipage}{0.32\linewidth}
+      \centering
+      \includegraphics[width=\linewidth]{figures/d4.png}
+    \end{minipage}\\
+    \textbf{$h=1$} && \textbf{$h=2$} && \textbf{$h=3$} && \textbf{$h=4$}
+  \end{tabular}}
+  \vspace{0.1em}
+\end{center}
+
 \begin{lemma}[Nederhof support cover]\label{lem:nederhof_support_cover}
-  For every unfolding depth $h\geq0$,
+  For every unfolding depth $h\geq0$, \( \mathcal{L}(G) \subseteq \mathcal{L}(\alpha_h)\). Consequently, for every broken string $\err\sigma$ and edit radius $d$,
   \[
-    \mathcal{L}(G) \subseteq \mathcal{L}(\alpha_h).
-  \]
-  Consequently, for every broken string $\err\sigma$ and edit radius $d$,
-  \[
-    \ell_\cap
-    =\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big)
-    \subseteq
-    \widehat\ell_{h,\cap}
-    =\mathcal{L}(\alpha_h)\cap\mathcal{L}\big(L(\err\sigma,d)\big).
+    \ell_\cap =\mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma,d)\big) \subseteq \widehat\ell_{h,\cap} =\mathcal{L}(\alpha_h)\cap\mathcal{L}\big(L(\err\sigma,d)\big).
   \]
 \end{lemma}
 
@@ -223,60 +189,24 @@ transition function $\delta$, initial state $q_0$, transition probabilities
 $w(q,a)>0$ on all retained arcs, and final probabilities $w_F(q)>0$ at accepting
 states.  With proper normalization, it defines
 \[
-  P_{\hat\theta}(a_1\cdots a_n)
-  = \left(\prod_{i=1}^n w(q_{i-1},a_i)\right) w_F(q_n),
-  \qquad
-  q_i=\delta(q_{i-1},a_i).
+  P_{\hat\theta}(a_1\cdots a_n) = \left(\prod_{i=1}^n w(q_{i-1},a_i)\right) w_F(q_n), \qquad q_i=\delta(q_{i-1},a_i).
 \]
 The positive-weight condition gives the weighted support cover
 \[
-  \ell_\cap
-  \subseteq \widehat\ell_{h,\cap}
-  \subseteq \operatorname{supp}(P_{\hat\theta}).
+  \ell_\cap \subseteq \widehat\ell_{h,\cap} \subseteq \operatorname{supp}(P_{\hat\theta}).
 \]
 Hence every true repair receives nonzero probability under the WDFA proposal.
 Conditioning on the finite repair overapproximation yields
 \[
-  P_{\hat\theta}^{h,\cap}(\sigma)
-  =
-  \frac{P_{\hat\theta}(\sigma)}
-  {\sum_{\tau\in\widehat\ell_{h,\cap}}P_{\hat\theta}(\tau)}
-  \qquad(\sigma\in\widehat\ell_{h,\cap}),
+  P_{\hat\theta}^{h,\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\widehat\ell_{h,\cap}}P_{\hat\theta}(\tau)} \qquad(\sigma\in\widehat\ell_{h,\cap}),
 \]
 and, when an exact grammar filter is applied before presentation, the same
 weights rank the exact set by
 \[
-  P_{\hat\theta}^{\cap}(\sigma)
-  =
-  \frac{P_{\hat\theta}(\sigma)}
-  {\sum_{\tau\in\ell_\cap}P_{\hat\theta}(\tau)}
-  \qquad(\sigma\in\ell_\cap).
+  P_{\hat\theta}^{\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\ell_\cap}P_{\hat\theta}(\tau)} \qquad(\sigma\in\ell_\cap).
 \]
 
-This WDFA has the desired first-stage tradeoff.  It is much cheaper than an LLM
-because scoring an extension updates one automaton state and one scalar.  It is
-usually more faithful than an $n$-gram because the learned state can summarize a
-regular abstraction of the whole prefix rather than a fixed suffix.  It also
-has a formal coverage guarantee: the $h$-RTN language is a support cover for
-all valid repairs in the Levenshtein ball.  The costs are also clear.  The
-support is only an overapproximation, so
-$\widehat\ell_{h,\cap}\setminus\ell_\cap$ may consume retrieval budget unless we
-filter with the exact grammar.  Increasing $h$ usually tightens the language but
-increases the automaton.  Finally, the WDFA is a language prior
-$P_{\hat\theta}(\sigma)$, not a conditional repair model
-$P(\sigma\mid\err\sigma)$; broken-string-specific preferences are left to the
-reranker.
-
-A useful finite-prefix tightness diagnostic is
-\[
-  \rho(\alpha_h,G,m)
-  =
-  \frac{\sum_{n=1}^m |\mathcal{L}(G)\cap\Sigma^n|}
-  {\sum_{n=1}^m |\mathcal{L}(\alpha_h)\cap\Sigma^n|}.
-\]
-Higher $\rho$ means less spurious regular volume below length $m$.  For repair,
-this metric matters only insofar as it predicts wasted top-$K$ mass: soundness
-comes from inclusion, while ranking quality comes from the learned weights.
+This WDFA has the desired first-stage tradeoff. Scoring an extension is much cheaper than an LLM, comparable in latency to Markov model and is usually more faithful because the learned state can summarize a regular abstraction of the whole prefix rather than a fixed suffix. It also has a formal coverage guarantee: the $h$-RTN language is a support cover for all valid repairs in the Levenshtein ball. Increasing $h$ usually tightens the overapproximation but increases the automaton size, so we choose $h=3$. Finally, the WDFA is a language prior $P_{\hat\theta}(\sigma)$, not a conditional repair model $P(\sigma\mid\err\sigma)$; so we will need a conditional reranker to resolve.
 
 \subsection{WDFA retrieval with LaTeR reranking}
 
@@ -284,49 +214,29 @@ The final stage restores the conditional information deliberately omitted from
 the finite-state retriever.  For each repair instance, the WDFA decoder produces
 a fixed candidate set
 \[
-  C_K(\err\sigma)
-  = \operatorname{Top}_K^{P_{\hat\theta}}(\ell_\cap),
-  \qquad K=512,
+  C_K(\err\sigma) = \operatorname{Top}_K^{P_{\hat\theta}}(\ell_\cap), \qquad K=512,
 \]
-or equivalently the top-$K$ candidates from $\widehat\ell_{h,\cap}$ after exact
-validity filtering.  The Levenshtein-Aligned Transformer Reranker (LaTeR) then
+or equivalently the top-$K$ candidates from $\widehat\ell_{h,\cap}$.  The Levenshtein-aligned Transformer Reranker (LaTeR) then
 scores only this small list.
 
-Let $\mathrm{LA}(\err\sigma,\sigma)$ be a Levenshtein alignment encoding whether
-each candidate token is matched, inserted, deleted, or substituted relative to
-the broken input.  LaTeR uses one encoder for the query and one alignment-aware
+Let $\mathrm{LA}(\err\sigma,\sigma)$ be a Levenshtein alignment encoding whether each candidate token is matched, inserted, deleted, or substituted relative to the broken input.  LaTeR uses one encoder for the query and one alignment-aware
 encoder for the candidate,
 \[
-  E_\phi(\err\sigma)\in\mathbb{R}^p,
-  \qquad
-  E_\phi'(\sigma,\mathrm{LA}(\err\sigma,\sigma))\in\mathbb{R}^p,
+  E_\phi(\err\sigma)\in\mathbb{R}^p, \qquad E_\phi'\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big)\in\mathbb{R}^p,
 \]
-and assigns relevance
+and assigns a scalar relevance score to each candidate $\sigma$,
 \[
-  r_\phi(\err\sigma,\sigma)
-  = \mathrm{MLP}_\phi\!\big(
-  E_\phi(\err\sigma),
-  E_\phi'(\sigma,\mathrm{LA}(\err\sigma,\sigma))
-  \big).
+  r_\phi(\err\sigma,\sigma) = \mathrm{MLP}_\phi\Big( E_\phi(\err\sigma), E_\phi'\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big) \Big).
 \]
 For a training pair $\langle\err\sigma,\sigma^\star\rangle$ and retrieved list
 $C_K(\err\sigma)$, the listwise objective is
 \[
-  \mathcal{L}_{\mathrm{LaTeR}}(\phi)
-  = -\sum_{\langle\err\sigma,\sigma^\star\rangle}
-  \log
-  \frac{\exp(r_\phi(\err\sigma,\sigma^\star)/\tau)}
-  {\sum_{\sigma\in C_K(\err\sigma)\cup\{\sigma^\star\}}
-    \exp(r_\phi(\err\sigma,\sigma)/\tau)}.
+  \mathcal{L}_{\mathrm{LaTeR}}(\phi) = -\sum_{\langle\err\sigma,\sigma^\star\rangle} \log \frac{\exp\big(r_\phi(\err\sigma,\sigma^\star)/\tau\big)} {\sum_{\sigma\in C_K(\err\sigma)\cup\{\sigma^\star\}} \exp\big(r_\phi(\err\sigma,\sigma)/\tau\big)}.
 \]
 At inference time, LaTeR reorders $C_{512}$ and returns the first few repairs to
 the user:
 \[
-  \ell_\cap
-  \xrightarrow{\text{WDFA retrieval}}
-  C_{512}(\err\sigma)
-  \xrightarrow{\text{LaTeR}}
-  \operatorname{Top}_k C_{512}(\err\sigma).
+  \ell_\cap \xrightarrow{\text{WDFA retrieval}} C_{512}(\err\sigma) \xrightarrow{\text{LaTeR}} \operatorname{Top}_k C_{512}(\err\sigma).
 \]
 The separation is important.  The derivative/CFL machinery and the Nederhof
 support cover determine which repairs can be retrieved; the WDFA determines how
@@ -334,6 +244,8 @@ quickly promising repairs enter the top-$512$; LaTeR only reorders the retrieved
 list.  Thus reranking improves fidelity without weakening the validity or edit
 locality guarantees, but it cannot recover a true repair that the retriever did
 not place in $C_{512}$.
+
+Further details on the LaTeR architecture and training procedure may be found in Appendix~\ref{sec:training}.
 
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

@@ -135,7 +135,7 @@ Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculat
 
 In total, the GPU should have at least 4 GBs of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V| \lesssim 10^6\times10^3\times 32 \text{ bits} \approx \text{4 GBs}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
 
-\clearpage\subsection{Training the reranker}
+\clearpage\subsection{Training the reranker}\label{sec:training}
 
 After decoding, we have a list of repair candidates that are all valid, nearby and at least somewhat plausible, however it is possible this list may be quite long. No reasonable user would be expected to skim through more than a few dozen candidates to select their intended repair, especially since they could have presumably written it themselves in a few seconds. So, we will proceed to rerank the list. If we can guarantee the candidate repairs are sufficiently exhaustive, they should include with high probability the true repair, which then need only be surfaced into the user's field of view.
 

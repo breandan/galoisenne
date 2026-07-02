@@ -40,8 +40,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
   Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the
   saturated chart can be lifted to a finite star-free regular expression
-  \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\).
-  Thus \(\Psi(G,A)=\bs\) implies a concrete repair witness exists.
+  \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Thus, \(\Psi(G,A)\) implies a concrete repair witness exists.
 \end{theorem}
 
 \begin{proof}
@@ -106,14 +105,14 @@ The key observation is that finite CFL--regular intersection can be treated as C
   identities for \(\varepsilon\) and \(\varnothing\), define
   \[
     \begin{aligned}
-      \texttt{follow}(e)&=\begin{cases}
+      \texttt{next}(e)&=\begin{cases}
         \{a\} & e=a\in\Sigma,\\
-        \texttt{follow}(x) & e=x\cdot z,\\
-        \texttt{follow}(x)\cup\texttt{follow}(z) & e=x\vee z,
+        \texttt{next}(x) & e=x\cdot z,\\
+        \texttt{next}(x)\cup\texttt{next}(z) & e=x\vee z,
       \end{cases}\\[-.25ex]
       \texttt{choose}(e)&=\begin{cases}
         a & e=a\in\Sigma,\\
-        \big(s\leftsquigarrow\texttt{follow}(e)\big)\cdot\texttt{choose}(\partial_s e)
+        \big(s\leftsquigarrow\texttt{next}(e)\big)\cdot\texttt{choose}(\partial_s e)
         & e=x\cdot z,\\
         \texttt{choose}\big(e'\leftsquigarrow\{x,z\}\big) & e=x\vee z .
       \end{cases}
@@ -123,13 +122,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
 \end{lemma}
 
 \begin{proof}
-  Structurally,
-  \(\texttt{follow}(e)=\{a\mid\exists\tau.\;a\tau\in\mathcal{L}(e)\}\), so every
-  selected branch or derivative residual is nonempty.  A concatenation step emits
-  one symbol and recurses on a residual with shorter words; a union step descends
-  to a strict subexpression.  Finiteness rules out infinite descent.  If the emitted word is \(\sigma\), then
-  \(\varepsilon\in\mathcal{L}(\partial_\sigma e)\), hence
-  \(\sigma\in\mathcal{L}(e)\).
+  Structurally, \(\texttt{next}(e)=\{a\mid\exists\tau.\;a\tau\in\mathcal{L}(e)\}\), so every selected branch or derivative residual is nonempty.  A concatenation step emits one symbol and recurses on a residual with shorter words; a union step descends to a strict subexpression. Finiteness rules out infinite descent. If the emitted word is \(\sigma\), then \(\varepsilon\in\mathcal{L}(\partial_\sigma e)\), hence \(\sigma\in\mathcal{L}(e)\).
 \end{proof}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

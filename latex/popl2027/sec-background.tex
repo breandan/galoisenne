@@ -75,7 +75,7 @@ As the intersection language, $\ell_\cap$, typically contains a large number of 
 \begin{definition}[Ranked repair]\label{def:ranked-repair}
 Given a finite language $\ell_\cap = \mathcal{L}\big(L(\err\sigma, d)\big) \cap \ell$ and a probabilistic language model $\text{P}_\theta: \Sigma^* \rightarrow [0, 1] \subset \mathbb{R}$, find the top-$k$ maximum probability repairs. That is,
 \begin{equation}
-R(\ell_\cap, P_\theta): 2^{\Sigma^*} \times (\Sigma^* \rightarrow \mathbb{R}) \rightarrow (\Sigma^*)^{\leq k} = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma)
+R(\ell_\cap, P_\theta): 2^{\Sigma^*} \times (\Sigma^* \rightarrow \mathbb{R}) \rightarrow (\Sigma^*)^{\leq k} = \argmax_{\bm{\sigma} \subseteq \ell_\cap, |\bm{\sigma}| \leq k} \sum_{\sigma \in \bm{\sigma}}\text{P}_\theta(\sigma \mid \err\sigma)
 \end{equation}
 \end{definition}
 
