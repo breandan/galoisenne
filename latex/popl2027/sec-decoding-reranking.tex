@@ -50,7 +50,6 @@ visited prefix set.  The remaining design choice is therefore the scoring oracle
 $P(a\mid\sigma)$, which determines the order in which the finite support is
 explored.
 
-
 \subsection{Fast Markov retrieval}
 
 The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, let $h_c(\sigma)$ be the last $c-1$ symbols of $\sigma$, padded on the left, and let $C(h,a)$ be the count of token $a$ after history $h$ in valid programs.  For our experiments, we use the Laplace-smoothed conditional,
@@ -63,58 +62,116 @@ The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$
 
 \subsection{Constrained LLM decoding}
 
-% TODO: discuss the trained repair decoder
-
-A direct way to obtain high-fidelity scores is to query a conditional language model at every prefix.  Given the broken snippet and a residual $e$, the masked conditional is
+A natural high-fidelity baseline is to keep the exact admissibility layer and replace the Markov table with a conditional causal model.  We train a small GPT-2-style completer on concatenated broken and repaired snippets.  For a training pair $\langle\err\sigma,\sigma^\star\rangle$, write $\underline{\sigma}$ for the serialized broken snippet, used only as context,
+and form the concatenated sequence
 \[
-  P_\theta^e(a\mid\err\sigma,\sigma) = \begin{cases}
+  x = \underline{\sigma}\,\sigma',
+  \qquad
+  \sigma'=(\sigma^\star_1,\ldots,\sigma^\star_m,\mathtt{EOS}).
+\]
+The model is trained left-to-right, but only the repair suffix $\sigma'$ contributes to the loss:
+\[
+  \mathcal{L}_{\mathrm{GPT}}(\theta)
+  =
+  -\sum_{\langle\err\sigma,\sigma^\star\rangle}
+  \sum_{t=1}^{|x|-1}
+  \mathbf{1}\{t+1>|\underline{\sigma}|\}
+  \log P_\theta(x_{t+1}\mid x_{\leq t}).
+\]
+Thus the broken snippet is fully visible, but the model is optimized as a conditional repair model,
+\[
+  P_\theta(\sigma\mid\err\sigma)
+  =
+  \prod_{i=1}^{|\sigma|+1}
+  P_\theta(\sigma_i\mid \underline{\sigma},\sigma_{<i}),
+\]
+where the final symbol is $\mathtt{EOS}$.
+
+At decoding time, the same model is queried inside the derivative-guided
+decoder.  Suppose the current candidate prefix is $\sigma$ and the residual is
+$e=\partial_\sigma e_\cap$.  The completer receives the context
+$\underline{\sigma}_{\mathrm{err}}\,\sigma$ and returns next-token logits.  We
+then mask and renormalize these logits over the admissible continuations of the
+residual, with $\mathtt{EOS}$ allowed only when $\mathsf{Done}(e)$:
+\[
+  P_\theta^e(a\mid\err\sigma,\sigma) =
+  \begin{cases}
     \displaystyle
-    \frac{P_\theta(a\mid\err\sigma,\sigma)} {\sum_{b\in\mathsf{Next}(e)} P_\theta(b\mid\err\sigma,\sigma)} & a\in\mathsf{Next}(e),\\[1.0em]
+    \frac{P_\theta(a\mid\err\sigma,\sigma)}
+    {\sum_{b\in\mathsf{Adm}(e)}P_\theta(b\mid\err\sigma,\sigma)}
+    & a\in\mathsf{Adm}(e),\\[1.0em]
     0 & \text{otherwise.}
   \end{cases}
 \]
-A beam decoder of width $B$ then maintains
+For ordinary grammar tokens,
+$\mathsf{Adm}(e)=\mathsf{Next}(e)$; if $e$ is nullable, it also contains
+$\mathtt{EOS}$.  Expanding a nonterminal token $a\in\mathsf{Next}(e)$ pushes
 \[
-  \mathcal{B}_{i+1} = \operatorname{Top}_B \left\{
-    \left\langle\sigma a,\partial_a e,
-    s-\log P_\theta^e(a\mid\err\sigma,\sigma)\right\rangle
-    \middle|
-    \langle\sigma,e,s\rangle\in\mathcal{B}_i,
-  a\in\mathsf{Next}(e)
-  \right\}.
+  \big\langle
+  \sigma a,\partial_a e,
+  s-\log P_\theta^e(a\mid\err\sigma,\sigma)
+  \big\rangle
 \]
-This has the right conditional information: the score may depend on the broken
-program, the candidate prefix, and long-range semantic cues.  It has two
-problems as a first-stage retriever.
+onto the priority queue, while choosing $\mathtt{EOS}$ emits the current prefix
+as a complete repair.
 
-First, constrained LLM decoding is expensive in exactly the loop where we
-need high throughput.  Even with batching, each beam step requires transformer
-logits for many active prefixes; the grammar mask removes illegal successors
-after the forward pass, but it does not make the forward pass cheap.  The cost
-scales roughly with the explored frontier,
-\[
-  T_{\mathrm{LLM}} \approx \sum_i |\mathcal{B}_i|\,T_\theta(|\err\sigma|+i),
-\]
-whereas a finite-state scorer updates in constant time per edge.
+This decoder has the conditional information missing from the $n$-gram model:
+its score can depend jointly on the broken snippet, the entire candidate prefix,
+and long-range syntactic cues that are not visible in a fixed suffix.  At the
+same time, the grammar constraint ensures that the model only orders repairs in
+$\ell_\cap$; it does not enlarge the candidate language, and when decoding runs
+to saturation the same exact repair set remains available.
 
-Second, any fixed beam sacrifices support completeness.  Let $\operatorname{Pref}_i(\ell_\cap)$ be the set of length-$i$ prefixes of repairs. A beam search is complete for all possible scoring functions only if
-\[
-  B \geq \max_i |\operatorname{Pref}_i(\ell_\cap)|,
-\]
-which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can be pruned before its probability is disambiguated by later tokens; every repair below that prefix then becomes unreachable. We call this the \textit{decoder--retriever gap}: a high-fidelity but slow decoder will recover less mass from $\ell_\cap$ than a much weaker model that can afford to exhaustively search the support.
-
-This bottleneck, as we will show, is problematic: under realtime constraints, beam search over the constrained langauge yields in highly suboptimal top-$k$ results. Instead, we will try to recover some of the throughput properties of the Markov model, with higher-fidelity state tracking.
-
-\subsection{Weighted Nederhof retrieval}\label{sec:wdfa_retrival}
+The limitation is throughput.  Each expansion requires transformer scores for the active prefix and its admissible continuations, and the grammar mask is applied only after the neural forward pass.  Batching candidate tokens helps, but the constrained GPT scorer is still expensive in the tight inner loop where a Markov table or finite-state model performs a constant-time update.  We therefore use constrained LLM decoding as the high-fidelity GPT baseline: it is the most direct conditional scorer for $P(\sigma\mid\err\sigma)$ over $\ell_\cap$, but its latency overhead makes it a poor first-stage retriever under realtime latency constraints.
+%\subsection{Constrained LLM decoding}
+%
+%% TODO: discuss the trained repair decoder
+%
+%A direct way to obtain high-fidelity scores is to query a conditional language model at every prefix.  Given the broken snippet and a residual $e$, the masked conditional is
+%\[
+%  P_\theta^e(a\mid\err\sigma,\sigma) = \begin{cases}
+%    \displaystyle
+%    \frac{P_\theta(a\mid\err\sigma,\sigma)} {\sum_{b\in\mathsf{Next}(e)} P_\theta(b\mid\err\sigma,\sigma)} & a\in\mathsf{Next}(e),\\[1.0em]
+%    0 & \text{otherwise.}
+%  \end{cases}
+%\]
+%A beam decoder of width $B$ then maintains
+%\[
+%  \mathcal{B}_{i+1} = \operatorname{Top}_B \left\{
+%    \left\langle\sigma a,\partial_a e,
+%    s-\log P_\theta^e(a\mid\err\sigma,\sigma)\right\rangle
+%    \middle|
+%    \langle\sigma,e,s\rangle\in\mathcal{B}_i,
+%  a\in\mathsf{Next}(e)
+%  \right\}.
+%\]
+%This has the right conditional information: the score may depend on the broken
+%program, the candidate prefix, and long-range semantic cues.  It has two
+%problems as a first-stage retriever.
+%
+%First, constrained LLM decoding is expensive in exactly the loop where we
+%need high throughput.  Even with batching, each beam step requires transformer
+%logits for many active prefixes; the grammar mask removes illegal successors
+%after the forward pass, but it does not make the forward pass cheap.  The cost
+%scales roughly with the explored frontier,
+%\[
+%  T_{\mathrm{LLM}} \approx \sum_i |\mathcal{B}_i|\,T_\theta(|\err\sigma|+i),
+%\]
+%whereas a finite-state scorer updates in constant time per edge.
+%
+%Second, any fixed beam sacrifices support completeness.  Let $\operatorname{Pref}_i(\ell_\cap)$ be the set of length-$i$ prefixes of repairs. A beam search is complete for all possible scoring functions only if
+%\[
+%  B \geq \max_i |\operatorname{Pref}_i(\ell_\cap)|,
+%\]
+%which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can be pruned before its probability is disambiguated by later tokens; every repair below that prefix then becomes unreachable. We call this the \textit{decoder--retriever gap}: a high-fidelity but slow decoder will recover less mass from $\ell_\cap$ than a much weaker model that can afford to exhaustively search the support.
+%
+%This bottleneck, as we will show, is problematic: under realtime constraints, beam search over the constrained langauge yields in highly suboptimal top-$k$ results. Instead, we will try to recover some of the throughput properties of the Markov model, with higher-fidelity state tracking.
+%
+\clearpage\subsection{Weighted Nederhof retrieval}\label{sec:wdfa_retrival}
 
 A better finite-state scorer replaces the explicit suffix state with a learned weighted deterministic finite automaton (WDFA).  We obtain its support from Nederhof's regular approximation of the grammar~\cite{nederhof2000practical}; we write the unfolding depth as $h$.
 
-Let
-\[
-  \mathcal{R} = \{R_A=(Q_A,\delta_A,\iota_A,F_A) \mid A\in V\}, \qquad \delta_A\subseteq Q_A\times(\Sigma\cup V\cup\{\varepsilon\})\times Q_A,
-\]
-be the recursive transition network (RTN) for the CFG
-$G=\langle V,\Sigma,P,S\rangle$.  An arc $p\overset{B}{\longrightarrow}q$ is a call to $R_B$.  Nederhof's $h$-RTN approximation constructs a finite automaton $\alpha_h$ as follows. For the first $h$ call levels, replace each call edge by a fresh copy of the callee:
+Let \( \mathcal{R} = \{R_A=(Q_A,\delta_A,\iota_A,F_A) \mid A\in V\}, \qquad \delta_A\subseteq Q_A\times(\Sigma\cup V\cup\{\varepsilon\})\times Q_A, \) be the recursive transition network (RTN) for the CFG $G=\langle V,\Sigma,P,S\rangle$.  An arc $p\overset{B}{\longrightarrow}q$ is a call to $R_B$.  Nederhof's $h$-RTN approximation constructs a finite automaton $\alpha_h$ as follows. For the first $h$ call levels, replace each call edge by a fresh copy of the callee:
 \[
   p\overset{B}{\longrightarrow}q \quad\leadsto\quad p\overset{\varepsilon}{\longrightarrow}\iota_B' \quad\text{and}\quad f_B'\overset{\varepsilon}{\longrightarrow}q \quad(f_B'\in F_B').
 \]
@@ -129,7 +186,7 @@ For example, let us consider the grammar \(S \rightarrow \texttt{x} \mid S\,S \m
   \resizebox{0.65\linewidth}{!}{\input{figures/fig0}}
 \end{center}
 
-Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and recurse up to depth h. On this grammar, the effect of the depth-bounded unfolding can be visualized by the $\varepsilon$-removed, determinized, and minimized DFAs for $1\leq h\leq4$:
+Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and recurse up to depth h. On this grammar, the effect of the depth-bounded unfolding can be visualized by the $\varepsilon$-removed, determinized, and minimized DFAs for $1\leq h\leq4$:\vspace{-0.3cm}
 
 \begin{center}
   \setlength{\tabcolsep}{0.15cm}
@@ -158,7 +215,7 @@ Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and
     \end{minipage}\\
     \textbf{$h=1$} && \textbf{$h=2$} && \textbf{$h=3$} && \textbf{$h=4$}
   \end{tabular}}
-  \vspace{0.1em}
+  \vspace{-0.3cm}
 \end{center}
 
 \begin{lemma}[Nederhof support cover]\label{lem:nederhof_support_cover}
@@ -196,15 +253,15 @@ The positive-weight condition gives the weighted support cover
   \ell_\cap \subseteq \widehat\ell_{h,\cap} \subseteq \operatorname{supp}(P_{\hat\theta}).
 \]
 Hence every true repair receives nonzero probability under the WDFA proposal.
-Conditioning on the finite repair overapproximation yields
-\[
-  P_{\hat\theta}^{h,\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\widehat\ell_{h,\cap}}P_{\hat\theta}(\tau)} \qquad(\sigma\in\widehat\ell_{h,\cap}),
-\]
-and, when an exact grammar filter is applied before presentation, the same
-weights rank the exact set by
-\[
-  P_{\hat\theta}^{\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\ell_\cap}P_{\hat\theta}(\tau)} \qquad(\sigma\in\ell_\cap).
-\]
+%Conditioning on the finite repair overapproximation yields
+%\[
+%  P_{\hat\theta}^{h,\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\widehat\ell_{h,\cap}}P_{\hat\theta}(\tau)} \qquad(\sigma\in\widehat\ell_{h,\cap}),
+%\]
+%and, when an exact grammar filter is applied before presentation, the same
+%weights rank the exact set by
+%\[
+%  P_{\hat\theta}^{\cap}(\sigma) = \frac{P_{\hat\theta}(\sigma)} {\sum_{\tau\in\ell_\cap}P_{\hat\theta}(\tau)} \qquad(\sigma\in\ell_\cap).
+%\]
 
 This WDFA has the desired first-stage tradeoff. Scoring an extension is much cheaper than an LLM, comparable in latency to Markov model and is usually more faithful because the learned state can summarize a regular abstraction of the whole prefix rather than a fixed suffix. It also has a formal coverage guarantee: the $h$-RTN language is a support cover for all valid repairs in the Levenshtein ball. Increasing $h$ usually tightens the overapproximation but increases the automaton size, so we choose $h=3$. Finally, the WDFA is a language prior $P_{\hat\theta}(\sigma)$, not a conditional repair model $P(\sigma\mid\err\sigma)$; so we will need a conditional reranker to resolve.
 
