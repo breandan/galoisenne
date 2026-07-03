@@ -101,11 +101,11 @@ Second, any fixed beam sacrifices support completeness.  Let $\operatorname{Pref
 \[
   B \geq \max_i |\operatorname{Pref}_i(\ell_\cap)|,
 \]
-which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can be pruned before its probability is disambiguated by later tokens; every repair below that prefix then becomes unreachable. We call this the \textit{decoder--retriever gap}: a high-fidelity model can still recover less mass from $\ell_\cap$ than a weaker model that can afford to enumerate much more of the support.
+which is exhaustive enumeration in disguise.  When $B$ is smaller, a prefix can be pruned before its probability is disambiguated by later tokens; every repair below that prefix then becomes unreachable. We call this the \textit{decoder--retriever gap}: a high-fidelity but slow decoder will recover less mass from $\ell_\cap$ than a much weaker model that can afford to exhaustively search the support.
 
 This bottleneck, as we will show, is problematic: under realtime constraints, beam search over the constrained langauge yields in highly suboptimal top-$k$ results. Instead, we will try to recover some of the throughput properties of the Markov model, with higher-fidelity state tracking.
 
-\subsection{Weighted Nederhof retrieval}
+\subsection{Weighted Nederhof retrieval}\label{sec:wdfa_retrival}
 
 A better finite-state scorer replaces the explicit suffix state with a learned weighted deterministic finite automaton (WDFA).  We obtain its support from Nederhof's regular approximation of the grammar~\cite{nederhof2000practical}; we write the unfolding depth as $h$.
 

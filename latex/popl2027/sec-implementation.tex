@@ -8,8 +8,8 @@ The implementation essentially consists of four stages, each dependent on its pr
 \begin{enumerate}
   \item $\texttt{lev\_build}: \Sigma^n \times \mathbb{N} \rightarrow \text{NFA}$ -- constructs a Levenshtein NFA from the broken string.
   \item $\texttt{cfl\_fixpt}: \text{NFA} \times \text{CFG} \rightarrow \mathbb{B}^{|Q|\times |Q| \times |V|}$ -- computes the matrix exponential.
-  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{GRE}$ -- constructs the regular expression for $G_\cap$.
-  \item $\texttt{reg\_dcode}: \text{GRE} \times \mathbb{N}^{|\Sigma|^{c\approx 4}} \hspace{-0.05cm}\times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10^4}$ -- returns a short list of high-probability repairs.
+  \item $\texttt{reg\_build}: \mathbb{B}^{|Q|\times |Q| \times |V|} \times \text{CFG} \rightarrow \text{RE}$ -- constructs the regular expression for $G_\cap$.
+  \item $\texttt{reg\_dcode}: \text{RE} \times \text{WDFA} \times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10^4}$ -- returns a short list of high-probability repairs.
 \end{enumerate}
 
 \noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
@@ -73,7 +73,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \Require Same as \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}), $M_{\mathbb{B}}[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$, and $M_{\mathbb{B}} = M_{\mathbb{B}} + M_{\mathbb{B}}^2$.
   \Procedure{\texttt{reg\_build}$\big(M_{\mathbb{B}}: \mathbb{B}^{|Q|\times |Q| \times |V|}, \langle \Sigma, V, P, S\rangle: \text{CFG}, \langle Q, \Sigma, \delta, q_\alpha, F\rangle: \text{NFA}\big)$}{}
   \State $P: \mathbb{B}^{|Q|\times |Q|} \gets \big[\bs \textbf{ if } \exists q: Q, v, v': V \mid M_{\mathbb{B}}[p, q, v] \land M_{\mathbb{B}}[q, r, v'] \textbf{ else } \ws\big]_{p,\,r\,:\,Q}$
-  \State $M: \text{GRE}^{|Q|\times |Q| \times |V|} \gets \big[\{s: \Sigma \mid M[q, q', v] \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land (v\rightarrow s) \in P \land {\color{orange}\varphi(}s{\color{orange})}\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
+  \State $M: \text{RE}^{|Q|\times |Q| \times |V|} \gets \big[\{s: \Sigma \mid M[q, q', v] \land (q \overset{{\color{orange}\varphi}}{\rightarrow} q') \in \delta \land (v\rightarrow s) \in P \land {\color{orange}\varphi(}s{\color{orange})}\}\big]_{q,\,q'\,:\, Q,\,v\,:\,V}$
   \For{$i \textbf{ in } \big[0, \lceil\log_2(|Q||V|)\rceil\big]$}
   \State $M' \gets M$
   \For{$\langle p, r, w \rangle \textbf{ in } Q^2\times V$}
@@ -88,28 +88,27 @@ The implementation essentially consists of four stages, each dependent on its pr
 \end{algorithmic}
 \end{algorithm}
 
-Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. Various strategies are possible here, and we opt for the simplest one. We use two priority queues to store partial and total trajectories, which are ranked by probability as estimated by a pretrained $c$-gram count tensor, $C$. Partial trajectories are greedily extended until termination, after which the trajectory it is diverted to the total queue, and the top-$k$ total trajectories are returned.
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. We use two priority queues to store partial and total trajectories, which are ranked by the WDFA language prior $\alpha_{\hat\theta}$ from \S~\ref{sec:wdfa_retrival}. During the beam search, each partial trajectory carries the current residual expression and WDFA state. A one-token extension by $a$ advances the WDFA to $\delta(q,a)$ and adds $\ln w(q,a)$ to the running score; when a trajectory terminates, we add the final weight $\ln w_F(q)$ before placing it on the total queue and the top-$k$ total trajectories are returned.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
   \label{alg:reg_dcode}
   \begin{algorithmic}[1]
-  \Require We expect the shortest word to exceed the Markov order in length, $c < |\sigma|, \forall\sigma: \mathcal{L}(e)$.
-  \Procedure{\texttt{reg\_dcode}$\big(e: \text{GRE}, C: \mathbb{N}^{|\Sigma|^{c\approx 4}}, k: \mathbb{N}\big)$}{}
-    \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon^{c-1}, e\cdot \varepsilon^{c-1}, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}\vspace{0.5cm}
-    \State \vspace{-0.55cm}\[\hspace{-4.58cm}\textbf{let } P(s: \Sigma \mid \sigma: \Sigma^{\geq c-1}) = \frac{C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s]+ 1}{\sum_{s' \in \Sigma} C[\sigma_{|\sigma| - c + 1, |\sigma|}\cdot s']}\vspace{-0.7cm}\]\Comment{Define Markov transition probability.}\vspace{0.3cm}
+  \Require $\alpha_{\hat\theta}=\langle Q_\alpha,\Sigma,\delta,q_0,F_\alpha,w,w_F\rangle$, a positive-weight WDFA (\S~\ref{sec:wdfa_retrival}), and $\ell_\cap=\mathcal{L}(e)\subseteq\mathcal{L}(\alpha_h)$.
+  \Procedure{\texttt{reg\_dcode}$\big(e: \text{RE}, \alpha_{\hat\theta}: \text{WDFA}, k: \mathbb{N}\big)$}{}
+    \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon, e, q_0, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}
     \Repeat
-        \State $\langle\sigma, e, p\rangle \gets \textbf{pop } \mathcal{E}_0 \textbf{ off }\mathcal{E}$
-        \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, p + \ln P(a\mid \sigma) \rangle \mid a \in \texttt{follow}(e)\big]$
-        \State $\mathcal{T}\hspace{0.05cm} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p \rangle \mid \langle \sigma, e, p\rangle \in \mathcal{E}' \land \varepsilon \in \mathcal{L}(e)\big]$
-        \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by } p\big]$
+        \State $\langle\sigma, e, q, p\rangle \gets \textbf{pop } \mathcal{E}_0 \textbf{ off }\mathcal{E}$ \Comment{Prefix, residual, current state, partial probability.}
+        \State $\textbf{if } \varepsilon \in \mathcal{L}(e) \land q \in F_\alpha \textbf{ then } \mathcal{T} \gets \mathcal{T} \texttt{++} \big[\langle \sigma, p + \ln w_F(q) \rangle\big]$
+        \State $\mathcal{E}' \gets \big[\langle\sigma\cdot a, \partial_a e, \delta(q,a), p + \ln w(q,a) \rangle \mid a \in \texttt{next}(e)\big]$
+        \State $\mathcal{E}\phantom{'} \gets \big[\langle\sigma, e, q, p\rangle \in (\mathcal{E} \texttt{++} \mathcal{E}')\textbf{ sorted by decreasing } p\big]$
     \Until{interrupted or $\mathcal{E}$ is empty.}
-    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in \mathcal{T}_{0..k}\textbf{ sorted by } p]$ \Comment{Skim off top-$k$ repairs by $c$-gram probability.}
+    \State \Return $[\sigma \mid \langle\sigma, p\rangle \in (\mathcal{T}\textbf{ sorted by decreasing } p)_{0..k}]$ \Comment{Skim off top-$k$ repairs by $P_{\hat\theta}(\sigma)$.}
 \EndProcedure
   \end{algorithmic}
 \end{algorithm}
 
-\noindent With this approach, we can quickly generate a representative subset of $\ell_\cap$ within a fixed latency budget, e.g., 100ms, or else terminate early should we succeed in exhaustively generating it. After reranking, truncation, and cosmetic postprocessing, the resulting repairs can then be displayed.
+\noindent As shown in Alg.~\ref{alg:reg_dcode}, we decode the regular expression $e$, representing exactly $\ell_\theta$, over which the WDFA $\alpha_{\hat\theta}$ soundly overapproximates and orders exploration. This enables us to quickly generate a representative subset of $\ell_\cap$ under the finite-state prior $P_{\hat\theta}$ within a fixed latency budget or else terminate early should we succeed in exhaustively generating it. After reranking, truncation, and cosmetic postprocessing, the resulting repairs may then be displayed to the user.
 
 \clearpage\subsection{GPU translation}\label{sec:gpu_translation}
 
@@ -125,7 +124,7 @@ The parse chart $M$ can be represented as a bit-packed integer matrix $\texttt{u
 \big[\overset{\overset{\scriptstyle{\color{orange}=/\neq}}{\Updownarrow}}{\bs}, \overbrace{\ws, \ws, \ldots, \bs, \ws, \bs}^{s\,:\,2^\Sigma \,\leftharpoonrightarrow\,\mathbb{B}^{25}}, \overbrace{\ws, \ws, \ws, \ws, \bs}^{i_{\min}\,:\,\mathbb{N}_{\leq 32}\,\leftrightarrow\,\mathbb{B}^{5}}, \overset{\overset{\scriptstyle\exists\,v\mathrlap{\,:\,V.\,q\,\rightsquigarrow\,q'\,\vdash\,v}}{\Updownarrow}}{\bs}\big]: \texttt{uint32}
 \]
 
-Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the GRE can be flattened according to a variety of allocation models. We will use the following memory layout,\vspace{-0.1cm}
+Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculate the total amount of memory needed to allocate $G_\cap$ by counting constituents in the parse chart. Being an algebraic datatype, the RE can be flattened according to a variety of allocation models. We will use the following memory layout,\vspace{-0.1cm}
 
 \[
 \big[\overbrace{\underset{\texttt{bp}_0}{2}, \underset{\texttt{bp}_1}{7}, \ldots, \underset{\texttt{bp}_{c-2}}{1}, \underset{\texttt{bp}_{c-1}}{3}}^{\texttt{bp\_counts}}, \overbrace{0, 4, \ldots, \underset{\texttt{bp}_{c-2}}{n-8}, \underset{\texttt{bp}_{c-1}}{n-6}}^{\texttt{bp\_offsets}}, \overbrace{\underbrace{\underline{59,83}, \underline{64, 152}}_{\texttt{bp}_0}, \ldots, \underbrace{\underline{34, 83}}_{\texttt{bp}_{c-2}}, \underbrace{\underline{22,74},  \underline{74, 90}, \underline{16, 66}}_{\texttt{bp}_{c-1}}}^{\texttt{bp\_storage}}\big]:  \texttt{uint32}^n

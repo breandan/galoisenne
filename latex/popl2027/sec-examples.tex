@@ -97,7 +97,7 @@ Here, the FSA takes a similar shape but can have multiple arcs between adjacent 
 
 %$\{\text{xor}, \land, \top\}$ is a functionally complete set is equivalent to $\mathbb{Z}_2$ $\top := 1, \land := \times, \text{xor} := +$. We can define $=$ as $(a = b) \Leftrightarrow (a \text{ xor } b) \text{ xor } \top \Leftrightarrow (a + b) + \top$.
 
-To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to the GRE domain. We first define $X \otimes Z = [X_2 \cdot Z_1, \varnothing, \varnothing, X_1 \cdot Z_0]$ and $X \oplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $E_{0, 2}, E_{1, 3}$:\vspace{-8pt}
+To witness $\sigma' \in A(\sigma)$, we can translate the matrix exponential to the provenance semiring. We first define $X \otimes Z = [X_2 \cdot Z_1, \varnothing, \varnothing, X_1 \cdot Z_0]$ and $X \oplus Z = [X_i \lor Z_i]_{i \in [0, |V|)}$, mirroring $\oplus, \otimes$ from the powerset domain. Since the unit nonterminals $O, N$ can only occur on the superdiagonal, they may be safely ignored by $\otimes$. To solve for $M_\infty$, we proceed by first computing $E_{0, 2}, E_{1, 3}$:\vspace{-8pt}
 
 \begin{small}
 \begin{align*}
@@ -169,7 +169,7 @@ To avoid creating a parallel bundle of arcs for each insertion and substitution 
   \UnaryInfC{$(q_{i-d-1, j-d} \overset{{\color{orange}[=\sigma_i]}}{\rightarrow} q_{i,j}) \in \delta$}
 \end{prooftree}
 
-Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_{\max}$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual GRE axioms (Theorem~\ref{thm:witness_construction}).
+Using a symbolic predicate in the construction of the NFA avoids the unnecessary creation of $2(|\Sigma| - 1)\cdot|\sigma|\cdot d_{\max}$ arcs and reduces the representation size of the resulting automaton, but does not affect the underlying semantics. Since negation is only permitted over terminals and never propagates further, complementation can be stricken from the usual RE axioms (Theorem~\ref{thm:witness_construction}).
 
 \begin{wrapfigure}{r}{0.40\textwidth}
 \resizebox{0.4\textwidth}{!}{%
