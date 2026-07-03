@@ -20,7 +20,5 @@ This representation turns repair into a constrained decoding problem, allowing a
 \end{figure}
 
 This paper makes three contributions. First, it formulates bounded syntax repair as exact language intersection and gives a practical construction for arbitrary context-free grammars. Second, it gives a parallel matrix-closure procedure for intersection nonemptiness of a CFG and an acyclic NFA, proves that the closure phase cannot require more than a linear number of squaring rounds, and develops derivative-based decoding algorithms. Third, it implements these ideas in Tidyparse on multicore CPUs and GPUs. On naturally occurring Python errors of up to three lexical edits and eighty tokens, Tidyparse operates within subsecond latency and achieves up to a fivefold improvement in top-1 repair precision over prior systems under comparable resource limits.
-
-The next section reviews the formal ingredients behind this construction: context-free grammars, regular expressions, Brzozowski derivatives, and the Bar--Hillel intersection.
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}
