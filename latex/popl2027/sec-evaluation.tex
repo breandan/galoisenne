@@ -98,7 +98,7 @@ The primary question of interest here is not whether reranking changes the candi
 \begin{wrapfigure}{r}{0.50\textwidth}
 \vspace{-0.35cm}
 \input{experiments/rank_cdf}
-\vspace{-0.55cm}
+\vspace{-0.3cm}
 \caption{Cumulative rank of the ground-truth repair under different scoring models.}
 \label{fig:rank_cdf}
 \vspace{-0.2cm}
@@ -108,16 +108,20 @@ We compare LATeR to three scoring models. The \textbf{GPT} model is a left-to-ri
 
 Fig.~\ref{fig:rank_cdf} plots the cumulative distribution of the ground-truth repair's rank. Higher curves indicate that the true repair is surfaced earlier after scoring, not that a different repair language was searched. The shuffle curve is a sanity check for random ordering, while the timeout marker shows the fraction of instances recovered before the decoder stops. The gap between 4-gram and PDFA scoring illustrates the benefit of replacing a local Markov approximation with a learned regular scorer; the additional gap from PDFA to LATeR isolates the effect of conditional reranking. In all cases, validity remains enforced by the grammar intersection, so ranking errors only affect presentation order.
 
-\noindent\begin{minipage}[t]{0.34\textwidth}
-\vspace{0pt}
+\begin{wrapfigure}{l}{0.35\textwidth}
+\vspace{-0.3cm}
+\centering
 \resizebox{\linewidth}{!}{\input{experiments/timings}}
-\vspace{-0.75cm}
-\captionof{figure}{End-to-end repair timings.}
+\vspace{-0.65cm}
+\caption{End-to-end repair timings.}
 \label{fig:timings}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.62\textwidth}
-\vspace{0pt}
-Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rank the entire intersection language $(\ell_\cap)$. Then, we swap in our GPU implementation of the algorithm described in \S~\ref{sec:implementation} as a replacement for the CPU version and compare the individual repair timings across the same test set. As shown in Fig.~\ref{fig:timings}, GPU execution has lower variance and gives a 2-3x speedup across common repairs, while the observed end-to-end latency reflects the combined cost of automaton construction, matrix closure, exhaustive decoding, and ranking. The GPU implementation exhaustively decodes almost all intersections before the 10s timeout; the CPU version may miss that target on longer or multi-edit repairs. We therefore use 10s as a practical upper bound for interactive repair latency.
-\end{minipage}\vspace{0.05cm}
+\end{wrapfigure}
+\noindent\leavevmode\par\vspace{-\baselineskip}
+\begingroup
+\hangindent=\dimexpr0.35\textwidth+\columnsep\relax
+\hangafter=-10
+\noindent Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rank the entire intersection language $(\ell_\cap)$. Then, we swap in our GPU implementation of the algorithm described in \S~\ref{sec:implementation} as a replacement for the CPU version and compare the individual repair timings across the same test set. As shown in Fig.~\ref{fig:timings}, GPU execution has lower variance and gives a 2-3x speedup across common repairs, while the observed end-to-end latency reflects the combined cost of automaton construction, matrix closure, exhaustive decoding, and ranking. The GPU implementation exhaustively decodes almost all intersections before the 10s timeout; the CPU version may miss that target on longer or multi-edit repairs. We therefore use 10s as a practical upper bound for interactive repair latency.
+\par\endgroup
+\vspace{0.05cm}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

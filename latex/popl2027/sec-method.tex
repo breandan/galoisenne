@@ -108,11 +108,11 @@ The key observation is that finite CFL--regular intersection can be treated as C
         a & e=a\in\Sigma,\\
         \big(s\leftsquigarrow\texttt{next}(e)\big)\cdot\texttt{choose}(\partial_s e)
         & e=x\cdot z,\\
-        \texttt{choose}\big(e'\leftsquigarrow\{x,z\}\big) & e=x\vee z .
+        \texttt{choose}\big(e'\leftsquigarrow\{x,z\}\big) & e=x\vee z,
       \end{cases}
     \end{aligned}
   \]
-  Then \(\texttt{choose}(e)\) terminates and returns some \(\sigma\in\mathcal{L}(e)\).
+  where $\leftsquigarrow$ denotes random choice from a set. Then \(\texttt{choose}(e)\) terminates and returns some \(\sigma\in\mathcal{L}(e)\).
 \end{lemma}
 
 \begin{proof}

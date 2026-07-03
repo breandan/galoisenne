@@ -1,6 +1,7 @@
 \begin{tikzpicture}
   \begin{axis}[
     width=\linewidth,
+    title={\footnotesize\textbf{Cumulative rank over test set}},
     height=0.66\linewidth,
     xmode=log,
     log basis x=10,
@@ -10,7 +11,7 @@
     ymin=0, ymax=0.75,
     ytick={0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8},
     xlabel={Rank of true repair},
-    ylabel={Cumulative probability},
+    ylabel={$P\big(\text{Rank}(\sigma^\star) < x\big)$},
     tick label style={font=\scriptsize},
     label style={font=\scriptsize},
     legend style={
@@ -2048,7 +2049,7 @@
     };
     \addlegendentry{PDFA}
 
-    \addplot+[purple, only marks, mark=*, mark size=1.7pt, line width=0.8pt] coordinates { (10000,0.54279279) };
+    \addplot+[purple, only marks, mark=*, mark size=1.3pt, line width=0.8pt] coordinates { (10000,0.54279279) };
     \addlegendentry{Timeout}
 
     \addplot+[orange, dashed, dash pattern=on 4pt off 4pt, line width=0.9pt, mark=none] coordinates { (512,0) (512,1) };
