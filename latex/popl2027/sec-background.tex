@@ -23,7 +23,7 @@ The context-free languages have the useful property of being closed under inters
 Salomaa~\cite{salomaa1973formal} gives an explicit, but inefficient construction for the intersection grammar.
 
 \begin{definition}[Salomaa, 1973]
-  Assume $G$ is in CNF. For every nonterminal $w$ and state pair $p,r : Q$, there will a synthetic nonterminal $pwr$ in $V_\cap$. Now, for every production $(w \rightarrow xz) \in P'$ and state triple $p,q,r:Q$, add $pwr\rightarrow (pxq)(qzr)$ to $P_\cap$; for every production $(w \rightarrow a$ and transition $q\overset{a}{\rightarrow}r$, add $qwr\rightarrow a$ to $P_\cap$. Lastly, for every final state $q_\omega$, add $S_\cap \rightarrow q_\alpha S q_\omega$ to $P_\cap$.
+  Assume $G$ is in CNF. For every nonterminal $w \in V$ and state pair $p,r : Q$, there will a synthetic nonterminal $pwr$ in $V_\cap$. Now, for every production $(w \rightarrow xz) \in P'$ and state triple $p,q,r:Q$, add $pwr\rightarrow (pxq)(qzr)$ to $P_\cap$; for every production $(w \rightarrow a) \in P'$ and transition $q\overset{a}{\rightarrow}r$, add $qwr\rightarrow a$ to $P_\cap$. Lastly, for every final state $q_\omega$, add $S_\cap \rightarrow q_\alpha S q_\omega$ to $P_\cap$.
 \end{definition}
 
 \noindent Most synthetic productions in $P_\cap$ will be non-generating or unreachable, requiring subsequent normalization to restore CNF. This method will construct a synthetic production for state pairs that are not even connected by any path, which is clearly excessive. In \S~\ref{sec:method}, we will present a far more efficient construction for the special case when the intersection is finite. But first, let us return to the broader question of syntax repair.

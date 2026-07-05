@@ -58,68 +58,42 @@ The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, le
 \]
 The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto (\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
 
-The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \quad\Longrightarrow\quad P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This identifies contexts that a repair model should keep separate: delimiter balance, indentation regime, nearby binding structure, and the side of an ambiguous syntactic pattern already selected by the prefix. Thus $n$-grams are a good latency baseline and expose a large candidate set quickly but do not, by themselves, solve ranking.
+The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \quad\Longrightarrow\quad P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This identifies contexts that a repair model should keep separate: delimiter balance, indentation regime, nearby binding structure, and the side of an ambiguous syntactic pattern already selected by the prefix. Thus $n$-grams are a good latency baseline and expose a large candidate set quickly but do not, by themselves, model the conditional probability $P(\sigma \mid \err\sigma)$.
 
 \subsection{Constrained LLM decoding}
 
-A natural high-fidelity baseline is to keep the exact admissibility layer and replace the Markov table with a conditional causal model.  We train a small GPT-2-style completer on concatenated broken and repaired snippets.  For a training pair $\langle\err\sigma,\sigma^\star\rangle$, write $\underline{\sigma}$ for the serialized broken snippet, used only as context,
-and form the concatenated sequence
+A natural high-fidelity baseline is to keep the exact admissibility layer and replace the Markov table with a conditional causal model.  We train a small GPT-2-style completer on concatenated pairwise broken and repaired snippets.  For a training pair $\langle\err\sigma,\sigma^\star\rangle$, write $\err\sigma$ for the serialized broken snippet, used only as context, and form the concatenated sequence
 \[
-  x = \underline{\sigma}\,\sigma',
-  \qquad
-  \sigma'=(\sigma^\star_1,\ldots,\sigma^\star_m,\mathtt{EOS}).
+  x = \langle\err{\sigma}||\sigma^\star\rangle,
+  \qquad \langle\err\sigma|=(\mathtt{BOS},\err\sigma_1,\ldots,\err\sigma_m,\mathtt{MOS}), \qquad
+  |\sigma^\star\rangle=(\sigma^\star_1,\ldots,\sigma^\star_m,\mathtt{EOS}).
 \]
 The model is trained left-to-right, but only the repair suffix $\sigma'$ contributes to the loss:
 \[
-  \mathcal{L}_{\mathrm{GPT}}(\theta)
-  =
-  -\sum_{\langle\err\sigma,\sigma^\star\rangle}
-  \sum_{t=1}^{|x|-1}
-  \mathbf{1}\{t+1>|\underline{\sigma}|\}
+  \mathcal{L}_{\mathrm{GPT}}(\theta) = -\sum_{\langle\err\sigma,\sigma^\star\rangle} \sum_{t=1}^{|x|-1}
+  \mathds{1}\big[t+1>|\err{\sigma}|\big]
   \log P_\theta(x_{t+1}\mid x_{\leq t}).
 \]
 Thus the broken snippet is fully visible, but the model is optimized as a conditional repair model,
 \[
-  P_\theta(\sigma\mid\err\sigma)
-  =
-  \prod_{i=1}^{|\sigma|+1}
-  P_\theta(\sigma_i\mid \underline{\sigma},\sigma_{<i}),
+  P_\theta(\sigma\mid\err\sigma) = \prod_{i=1}^{|\sigma|+1} P_\theta(\sigma_i\mid \err{\sigma},\sigma_{<i}),
 \]
 where the final symbol is $\mathtt{EOS}$.
 
-At decoding time, the same model is queried inside the derivative-guided
-decoder.  Suppose the current candidate prefix is $\sigma$ and the residual is
-$e=\partial_\sigma e_\cap$.  The completer receives the context
-$\underline{\sigma}_{\mathrm{err}}\,\sigma$ and returns next-token logits.  We
-then mask and renormalize these logits over the admissible continuations of the
-residual, with $\mathtt{EOS}$ allowed only when $\mathsf{Done}(e)$:
+At decoding time, the same model is queried inside the derivative-guided decoder.  Suppose the current candidate prefix is $\sigma$ and the residual is $e=\partial_\sigma e_\cap$.  The completer receives the context $\err\sigma$ and returns next-token logits.  We then mask and renormalize these logits over the admissible continuations of the residual:
 \[
   P_\theta^e(a\mid\err\sigma,\sigma) =
   \begin{cases}
     \displaystyle
     \frac{P_\theta(a\mid\err\sigma,\sigma)}
-    {\sum_{b\in\mathsf{Adm}(e)}P_\theta(b\mid\err\sigma,\sigma)}
-    & a\in\mathsf{Adm}(e),\\[1.0em]
+    {\sum_{b\in\mathsf{Next}(e)}P_\theta(b\mid\err\sigma,\sigma)}
+    & a\in\mathsf{Next}(e),\\[1.0em]
     0 & \text{otherwise.}
   \end{cases}
 \]
-For ordinary grammar tokens,
-$\mathsf{Adm}(e)=\mathsf{Next}(e)$; if $e$ is nullable, it also contains
-$\mathtt{EOS}$.  Expanding a nonterminal token $a\in\mathsf{Next}(e)$ pushes
-\[
-  \big\langle
-  \sigma a,\partial_a e,
-  s-\log P_\theta^e(a\mid\err\sigma,\sigma)
-  \big\rangle
-\]
-onto the priority queue, while choosing $\mathtt{EOS}$ emits the current prefix
-as a complete repair.
+Expanding an ordinary terminal $a\in\mathsf{Next}(e)$ pushes \( \big\langle \sigma a,\partial_a e, s-\log P_\theta^e(a\mid\err\sigma,\sigma) \big\rangle \) onto the priority queue, while choosing $\mathtt{EOS}$ emits the current prefix as a complete repair.
 
-This decoder has the conditional information missing from the $n$-gram model:
-its score can depend jointly on the broken snippet, the entire candidate prefix,
-and long-range syntactic cues that are not visible in a fixed suffix.  At the
-same time, the grammar constraint ensures that the model only orders repairs in
-$\ell_\cap$; it does not enlarge the candidate language, and when decoding runs
+This decoder has the conditional information missing from the $n$-gram model: its score can depend jointly on the broken snippet, the entire candidate prefix, and long-range syntactic cues that are not visible in a fixed suffix.  At the same time, the grammar constraint ensures that the model only orders repairs in $\ell_\cap$; it does not enlarge the candidate language, and when decoding runs
 to saturation the same exact repair set remains available.
 
 The limitation is throughput.  Each expansion requires transformer scores for the active prefix and its admissible continuations, and the grammar mask is applied only after the neural forward pass.  Batching candidate tokens helps, but the constrained GPT scorer is still expensive in the tight inner loop where a Markov table or finite-state model performs a constant-time update.  We therefore use constrained LLM decoding as the high-fidelity GPT baseline: it is the most direct conditional scorer for $P(\sigma\mid\err\sigma)$ over $\ell_\cap$, but its latency overhead makes it a poor first-stage retriever under realtime latency constraints.
