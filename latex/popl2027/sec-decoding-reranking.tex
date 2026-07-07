@@ -62,13 +62,13 @@ The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$
 
 \subsection{Constrained LLM decoding}
 
-A natural high-fidelity baseline is to keep the exact admissibility layer and replace the Markov table with a conditional causal model.  We train a small GPT-2-style completer on concatenated pairwise broken and repaired snippets.  For a training pair $\langle\err\sigma,\sigma^\star\rangle$, write $\err\sigma$ for the serialized broken snippet, used only as context, and form the concatenated sequence
+A natural high-fidelity baseline is to keep the exact admissibility layer and replace the Markov table with a conditional repair model.  We train a small GPT-2-style completer on concatenated pairwise broken and repaired snippets. For a training pair $\langle\err\sigma,\sigma^\star\rangle$, we will write $\err\sigma$ for the broken snippet and $\sigma^\star$ for the ground-truth repair, then form the concatenated sequence
 \[
   x = \langle\err{\sigma}||\sigma^\star\rangle,
   \qquad \langle\err\sigma|=(\mathtt{BOS},\err\sigma_1,\ldots,\err\sigma_m,\mathtt{MOS}), \qquad
   |\sigma^\star\rangle=(\sigma^\star_1,\ldots,\sigma^\star_m,\mathtt{EOS}).
 \]
-The model is trained left-to-right, but only the repair suffix $\sigma'$ contributes to the loss:
+The model is trained left-to-right, but only the repair suffix $\sigma^\star$ contributes to the loss:
 \[
   \mathcal{L}_{\mathrm{GPT}}(\theta) = -\sum_{\langle\err\sigma,\sigma^\star\rangle} \sum_{t=1}^{|x|-1}
   \mathds{1}\big[t+1>|\err{\sigma}|\big]
@@ -80,7 +80,7 @@ Thus the broken snippet is fully visible, but the model is optimized as a condit
 \]
 where the final symbol is $\mathtt{EOS}$.
 
-At decoding time, the same model is queried inside the derivative-guided decoder.  Suppose the current candidate prefix is $\sigma$ and the residual is $e=\partial_\sigma e_\cap$.  The completer receives the context $\err\sigma$ and returns next-token logits.  We then mask and renormalize these logits over the admissible continuations of the residual:
+At decoding time, the same model is queried inside the derivative-guided decoder. Suppose the current candidate prefix is $\sigma$ and the residual is $e=\partial_\sigma e_\cap$. The completer receives the context $\err\sigma$ and returns next-token logits.  We then mask and renormalize these logits over the admissible continuations of the residual:
 \[
   P_\theta^e(a\mid\err\sigma,\sigma) =
   \begin{cases}
@@ -140,7 +140,7 @@ The limitation is throughput.  Each expansion requires transformer scores for th
 %
 %This bottleneck, as we will show, is problematic: under realtime constraints, beam search over the constrained langauge yields in highly suboptimal top-$k$ results. Instead, we will try to recover some of the throughput properties of the Markov model, with higher-fidelity state tracking.
 %
-\clearpage\subsection{Weighted Nederhof retrieval}\label{sec:wdfa_retrival}
+\clearpage\subsection{Weighted Nederhof overapproximation}\label{sec:wdfa_retrival}
 
 A better finite-state scorer replaces the explicit suffix state with a learned weighted deterministic finite automaton (WDFA).  We obtain its support from Nederhof's regular approximation of the grammar~\cite{nederhof2000practical}; we write the unfolding depth as $h$.
 

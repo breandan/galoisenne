@@ -3,10 +3,19 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-The key observation is that finite CFL--regular intersection can be treated as CFL reachability over an acyclic automaton. Given a CFG \(G\) and an acyclic NFA \(A\), we compute which nonterminals derive the labels of paths \(p\rightsquigarrow r\) in \(A\), then ask whether some accepting path from \(q_\alpha\) derives the start symbol. This is close in spirit to highly parallel CKY recognition: Brent and Goldschlager show that a string of length \(n\) can be parsed in \(\mathcal{O}(\log n)\) time on a unit-cost SIMDAG, or \(\mathcal{O}(\log^2 n)\) time on a log-cost SIMDAG, using \(\mathcal{O}(n^6)\) processors~\cite{brent1984parallel}. Our setting is different: the right-hand input is not one string but a finite automaton, and the construction below is meant to produce either a Boolean decision or, in a second pass, a compact witness object.
+The key observation is that finite CFL--regular intersection can be treated as CFL reachability over an acyclic NFA. Brent and Goldschlager's parallel parser treats a length-\(n\) string as a triangular chart; here the input is instead the Levenshtein ANFA \(A=L(\err\sigma,d_{\max})\), whose states are ordered by the edit lattice. For arbitrary ANFAs, the same chart requires a topological-ordering phase, computable in \(\mathcal O(\log^2|Q|)\) PRAM time by the method of Dekel et al.~\cite{dekel1981parallel}.
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
-  For any CFG, \(G = \langle V, \Sigma, P, S\rangle\), and acyclic NFA (ANFA), \(A = \langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q\rangle\), there exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that \(\Psi(G, A) \models [\mathcal{L}(G)\cap\mathcal{L}(A) \neq \varnothing]\) requiring an \(\mathcal{O}(\log^2|Q|)\) topological-ordering phase followed by at most \(\mathcal{O}(|Q||V|)\) parallel closure rounds using \(\mathcal{O}\big(|Q|^2|V|\big)\) parallel random access (PRAM) processors.
+  Let \(G=\langle V,\Sigma,P,S\rangle\) be a CFG in CNF, let \(\err\sigma\in\Sigma^n\), and let \(A=L(\err\sigma,d_{\max}) =\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be the \(\varepsilon\)-free acyclic Levenshtein automaton. There is a decision procedure \(\Psi\) such that
+  \[
+    \Psi(G,A)=\top
+    \quad\Longleftrightarrow\quad
+    \mathcal L(G)\cap\mathcal L(A)\neq\varnothing .
+  \]
+  Its chart closure stabilizes after at most \(n+d_{\max}\) parallel
+  squaring rounds over \(\mathcal O(|Q|^2|V|)\) chart entries; since
+  \(|Q|=\mathcal O\big((n+1)(d_{\max}+1)\big)\), this is linear in
+  \(|\err\sigma|\) for fixed \(d_{\max}\).
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -16,25 +25,30 @@ The key observation is that finite CFL--regular intersection can be treated as C
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or, \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-  \noindent This decomposition immediately suggests a dynamic programming solution. Let M be a matrix of type $E^{|Q|\times|Q|\times|V|}$ indexed by $Q$. Since we assumed $\delta$ is acyclic, there exists a topological sort of $\delta$ imposing a total order on $Q$ such that $M$ is strictly upper triangular (SUT). Note $Q$ can be ordered topologically in $\mathcal{O}(\log^2 |Q|)$ time~\cite{dekel1981parallel} using matrix multiplication. We initialize $M$ thusly:
-  \begin{align}
-    M_0[p, r, w] = \bigvee_{a\in\Sigma}\big[(p \overset{a}{\rightarrow} r)\in\delta \land (w\rightarrow a)\in P\big].
-  \end{align}
-  For Boolean charts \(X,Y\), we define
-  \begin{align}
-    [X\otimes Y][p,r,w] = \bigvee_{\mathclap{q\in Q,\;x,z\in V}} \big[X[p,q,x]\land Y[q,r,z]\land (w\rightarrow xz)\in P\big].
-  \end{align}
-  then iterate the following fixedpoint until convergence:
+  \noindent Let \(\mathcal C=\mathbb B^{Q\times Q\times V}\) be Boolean charts with pointwise join \(\vee\) and bottom \(\bot\). Define the product
   \[
-    T_0=M_0,\qquad T_{j+1}=T_j \lor (T_j\otimes T_j).
+    (X\otimes Y)[p,r,w]= \bigvee_{\mathclap{q\in Q,\;x,z\in V}} X[p,q,x]\land Y[q,r,z]\land[(w\to xz)\in P]
   \]
-  Here \(T_j^2\) is only shorthand for \(T_j\otimes T_j\). No associativity of \(\otimes\) is used: the algorithm never forms an unparenthesized \(M^3\), and each update corresponds to one grammar-bracketed split \(w\rightarrow xz\).
+  and let addition be logical disjunction. We call \((\mathcal C,\vee,\otimes,\bot)\) the chart semiring.\footnote{By slight abuse of notation: customarily, semiring multiplication is associative and unital; here \(\otimes\) is merely monotone and join-distributive, so \(\exp\) denotes the exact parenthesized iteration.}
+  Initialize
+  \[
+    M[p,r,w]=
+    \bigvee_{a\in\Sigma}
+    [(p\xrightarrow{a}r)\in\delta\land(w\to a)\in P].
+  \]
+  Borrowing the exponentiation-by-squaring notation, set
+  \[
+    T_0=M,\qquad T_{j+1}=T_j\vee(T_j\otimes T_j),\qquad
+    \exp(M)=T_{n+d_{\max}}.
+  \]
 
-  Let \(H_j[p,r,w]\) be the assertion that some word labeling a path \(p\rightsquigarrow r\) is derived from \(w\) by a CNF parse tree of height at most \(j\). We claim \(T_j[p,r,w]=H_j[p,r,w]\) for all \(j\). The case \(j=0\) is \(M_0\). The step follows because a height-\((j+1)\) tree is either already of height \(j\), or has root \(w\rightarrow xz\) with two height-\(\leq j\) subtrees whose yields label paths \(p\rightsquigarrow q\) and \(q\rightsquigarrow r\). This is exactly the displayed product. Since \(A\) is acyclic, every accepting path has fewer than \(|Q|\) arcs, hence every CNF parse over it has height \(<|Q|\). Thus, the recurrence reaches its least fixed point \(T_\star\) within the stated \(\mathcal{O}(|Q||V|)\) rounds, using one processor per \((p,r,w)\) entry per round. Finally,
-  \begin{align}
-    \Psi(G,A)= \bigvee_{\mathclap{q_\omega\in F}} T_\star[q_\alpha,q_\omega,S],
-  \end{align}
-  which is equivalent to \(\mathcal{L}(G)\cap\mathcal{L}(A)\neq\varnothing\). The test may be performed after each round, giving positive early termination.
+  Let \(H_j[p,r,w]\) assert that some word labeling a path \(p\rightsquigarrow r\) is derived from \(w\) by a CNF parse tree of height at most \(j\), with terminal productions at height \(0\). We prove \(T_j[p,r,w]\Leftrightarrow H_j[p,r,w]\) by induction on \(j\). The base case is exactly \(M\). For the step, a height-\((j+1)\) parse is either already of height at most \(j\), or has root \(w\to xz\) and a split state \(q\) whose two subpaths have height-\(\le j\) parses from \(x\) and \(z\); this is precisely \(T_j\vee(T_j\otimes T_j)\), and the converse reads the same argument bottom-up.
+
+  Every Levenshtein transition strictly increases the lattice rank \(i+j\). Since \(0\le i\le n\) and \(0\le j\le d_{\max}\), every path in \(A\) has at most \(n+d_{\max}\) arcs. Thus no productive CNF parse over a path label can require height exceeding \(n+d_{\max}\), so \(T_{n+d_{\max}}\) is the least fixed point. Finally,
+  \[
+    \Psi(G,A)=\bigvee_{q_\omega\in F}\exp(M)[q_\alpha,q_\omega,S],
+  \]
+  which is true exactly when some accepting path label lies in \(\mathcal L(G)\), equivalently when \(\mathcal L(G)\cap\mathcal L(A)\neq\varnothing\). The test may be checked after each round, giving positive early termination.
 \end{proof}
 
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
@@ -57,7 +71,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
     \land w\Rightarrow_{\le j}\sigma\}. \tag{*}
   \]
   Similar to Thm.~\ref{thm:parallel_decision_complexity}:
-  terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\) and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded closure reaches \(R_\star\).  Taking \(S_\cap=\bigvee_{q_\omega\in F}R_\star[q_\alpha,q_\omega,S]\), (*) gives the claimed language equality. Since products use strict subpaths in topological order, the shared representation is an acyclic RE DAG. If nonempty, pruning \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
+  terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\) and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded closure reaches \(R_\infty\). Taking \(S_\cap=\bigvee_{q_\omega\in F}R_\infty[q_\alpha,q_\omega,S]\) (*), gives the claimed language equality. Since products use strict subpaths in topological order, the shared representation is an acyclic RE DAG. If nonempty, pruning \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
 \end{proof}
 
 \begin{definition}[Brzozowski derivative]\label{def:brzozowski_derivative}
@@ -82,15 +96,12 @@ The key observation is that finite CFL--regular intersection can be treated as C
       \delta(&\hspace{-0.35cm} x\land z    \hspace{-0.35cm}&) = \delta(x) \land \delta(z)
     \end{eqnarray*}
   \end{multicols}
-  Extend to strings by \(\partial_\varepsilon e=e\) and
-  \(\partial_{a\sigma}e=\partial_\sigma(\partial_a e)\); then
-  \(\mathcal{L}(\partial_\sigma e)=\sigma^{-1}\mathcal{L}(e)\).
+  \noindent Extend to strings by \(\partial_\varepsilon e=e\) and \(\partial_{a\sigma}e=\partial_\sigma(\partial_a e)\); then \(\mathcal{L}(\partial_\sigma e)=\{\tau\mid\sigma\tau\in \mathcal{L}(e)\}\).
 \end{definition}
 
 \begin{lemma}[Generation from $E_+$]\label{lem:generation}
   Let \(E_+ \ni e ::= \Sigma \mid e\cdot e\mid e\vee e\) be productive, i.e., every
-  subexpression has nonempty language.  With derivatives simplified by the
-  identities for \(\varepsilon\) and \(\varnothing\), define
+  subexpression has nonempty language.  With derivatives simplified by the identities for \(\varepsilon\) and \(\varnothing\), define
   \[
     \begin{aligned}
       \texttt{next}(e)&=\begin{cases}
@@ -110,7 +121,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
 \end{lemma}
 
 \begin{proof}
-  Structurally, \(\texttt{next}(e)=\{a\mid\exists\tau.\;a\tau\in\mathcal{L}(e)\}\), so every selected branch or derivative residual is nonempty.  A concatenation step emits one symbol and recurses on a residual with shorter words; a union step descends to a strict subexpression. Finiteness rules out infinite descent. If the emitted word is \(\sigma\), then \(\varepsilon\in\mathcal{L}(\partial_\sigma e)\), hence \(\sigma\in\mathcal{L}(e)\).
+  Structurally, \(\texttt{next}(e)=\{a\in \Sigma\mid\exists\tau.\;a\tau\in\mathcal{L}(e)\}\), so every selected branch or derivative residual is nonempty.  A concatenation step emits one symbol and recurses on a residual with shorter words; a union step descends to a strict subexpression. Finiteness rules out infinite descent. If the emitted word is \(\sigma\), then \(\varepsilon\in\mathcal{L}(\partial_\sigma e)\), hence \(\sigma\in\mathcal{L}(e)\).
 \end{proof}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

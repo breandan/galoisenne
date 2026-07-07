@@ -680,7 +680,7 @@ fun repairWithSparseGRE(brokenStr: List<Σᐩ>, cfg: CFG): GRE? {
   val led = (3..<upperBound).firstNotNullOfOrNull { r -> nonemptyLevIntSparse(makeLevFSA(brokenStr, r)) }
     ?: upperBound.also { println("Hit upper bound") }
 
-  val radius = (led + LED_BUFFER).coerceAtMost(MAX_RADIUS.coerceAtLeast(led))
+  val radius = (led + LED_BUFFER).coerceAtMost((MAX_RADIUS + LED_BUFFER))
   latestLangEditDistance = led
   println("Identified LED=$led, radius=$radius in ${timer.elapsedNow()}")
 
