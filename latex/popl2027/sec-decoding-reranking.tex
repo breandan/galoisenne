@@ -93,8 +93,7 @@ At decoding time, the same model is queried inside the derivative-guided decoder
 \]
 Expanding an ordinary terminal $a\in\mathsf{Next}(e)$ pushes \( \big\langle \sigma a,\partial_a e, s-\log P_\theta^e(a\mid\err\sigma,\sigma) \big\rangle \) onto the priority queue, while choosing $\mathtt{EOS}$ emits the current prefix as a complete repair.
 
-This decoder has the conditional information missing from the $n$-gram model: its score can depend jointly on the broken snippet, the entire candidate prefix, and long-range syntactic cues that are not visible in a fixed suffix.  At the same time, the grammar constraint ensures that the model only orders repairs in $\ell_\cap$; it does not enlarge the candidate language, and when decoding runs
-to saturation the same exact repair set remains available.
+This decoder has the conditional information missing from the $n$-gram model: its score can depend jointly on the broken snippet, the entire candidate prefix, and long-range syntactic cues that are not visible in a fixed suffix.  At the same time, the grammar constraint ensures that the model only orders repairs in $\ell_\cap$; it does not enlarge the candidate language, and when decoding runs to saturation the same exact repair set remains available.
 
 The limitation is throughput.  Each expansion requires transformer scores for the active prefix and its admissible continuations, and the grammar mask is applied only after the neural forward pass.  Batching candidate tokens helps, but the constrained GPT scorer is still expensive in the tight inner loop where a Markov table or finite-state model performs a constant-time update.  We therefore use constrained LLM decoding as the high-fidelity GPT baseline: it is the most direct conditional scorer for $P(\sigma\mid\err\sigma)$ over $\ell_\cap$, but its latency overhead makes it a poor first-stage retriever under realtime latency constraints.
 %\subsection{Constrained LLM decoding}

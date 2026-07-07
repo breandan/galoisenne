@@ -38,11 +38,11 @@ The key observation is that finite CFL--regular intersection can be treated as C
 \end{proof}
 
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
-  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Thus, \(\Psi(G,A)\) implies a concrete repair witness exists.
+  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A)\). Thus, \(\Psi(G,A)\) implies a concrete string witnessing intersection nonemptiness exists.
 \end{theorem}
 
 \begin{proof}
-  We will work over an algebra of \((\varepsilon,\land, \text{star})\)-free REs plus \(\varnothing\), \(E_+ \ni e ::= \varnothing\mid \Sigma \mid e\vee e\mid e\cdot e\) and define a provenance semiring variant of Thm.~\ref{thm:parallel_decision_complexity}, using $E_+$ union and concatenation:
+  We will work over an algebra of \((\varepsilon,\land, \text{star})\)-free REs plus \(\varnothing\), \(E_+ \ni e ::= \varnothing\mid \Sigma \mid e\vee e\mid e\cdot e\). Let us define a provenance semiring variant of Thm.~\ref{thm:parallel_decision_complexity}, using $E_+$ union and concatenation:
   \[
     \begin{aligned}
       R_0[p,r,w]&=\bigvee_{\mathclap{\substack{a\in\Sigma\\(p\overset{a}{\rightarrow}r)\in\delta\\(w\rightarrow a)\in P}}}a, \qquad [X\odot Y][p,r,w]&=\bigvee_{\mathclap{\substack{q\in Q,\;x,z\in V\\(w\rightarrow xz)\in P}}}
@@ -57,13 +57,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
     \land w\Rightarrow_{\le j}\sigma\}. \tag{*}
   \]
   Similar to Thm.~\ref{thm:parallel_decision_complexity}:
-  terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\)
-  and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded
-  closure reaches \(R_\star\).  Taking
-  \(S_\cap=\bigvee_{q_\omega\in F}R_\star[q_\alpha,q_\omega,S]\), (*) gives the
-  claimed language equality. Since products use strict subpaths in topological
-  order, the shared representation is an acyclic RE DAG. If nonempty, pruning
-  \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
+  terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\) and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded closure reaches \(R_\star\).  Taking \(S_\cap=\bigvee_{q_\omega\in F}R_\star[q_\alpha,q_\omega,S]\), (*) gives the claimed language equality. Since products use strict subpaths in topological order, the shared representation is an acyclic RE DAG. If nonempty, pruning \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
 \end{proof}
 
 \begin{definition}[Brzozowski derivative]\label{def:brzozowski_derivative}
