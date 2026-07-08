@@ -56,7 +56,7 @@ The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, le
 \[
   P_c(a\mid\sigma) = \frac{C\big(h_c(\sigma),a\big)+\lambda} {\sum_{b\in\Sigma\cup\{\mathtt{BOS}, \mathtt{EOS}\}} C\big(h_c(\sigma),b\big) +\lambda(|\Sigma|+1)}.
 \]
-The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto (\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
+The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto \big(\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)\big), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
 
 The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \quad\Longrightarrow\quad P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This identifies contexts that a repair model should keep separate: delimiter balance, indentation regime, nearby binding structure, and the side of an ambiguous syntactic pattern already selected by the prefix. Thus $n$-grams are a good latency baseline and expose a large candidate set quickly but do not, by themselves, model the conditional probability $P(\sigma \mid \err\sigma)$.
 
@@ -87,7 +87,7 @@ At decoding time, the same model is queried inside the derivative-guided decoder
     \displaystyle
     \frac{P_\theta(a\mid\err\sigma,\sigma)}
     {\sum_{b\in\mathsf{Next}(e)}P_\theta(b\mid\err\sigma,\sigma)}
-    & a\in\mathsf{Next}(e),\\[1.0em]
+    & \text{if } a\in\mathsf{Next}(e),\\[1.0em]
     0 & \text{otherwise.}
   \end{cases}
 \]

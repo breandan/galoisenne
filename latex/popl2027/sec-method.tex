@@ -3,14 +3,11 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-The key observation is that finite CFL--regular intersection can be treated as CFL reachability over an acyclic NFA. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals derive the labels of paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives the start symbol. Brent and Goldschlager's parallel parser treats a length-\(n\) string as a triangular chart; here the input is instead a ANFA, so the relevant depth is the longest directed path in the automaton.
+Our key observation is that finite repairability can be treated as CFL reachability over an acyclic NFA. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals derive the labels of paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives the start symbol. Brent and Goldschlager's parallel parser treats a length-\(n\) string as a triangular chart; here the input is instead a ANFA, so the relevant depth is the longest directed path in the automaton.
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
-  Let \(G=\langle V,\Sigma,P,S\rangle\) be a CFG in CNF and let \(A_\varnothing=\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be an \(\varepsilon\)-free acyclic NFA. Define its directed depth by \( D_A=\max\{|\sigma|\mid \sigma \in \mathcal{L}(A_\varnothing)\}.\) There is a decision procedure \(\Psi\) such that
-  \(
-    \Psi(G,A)=\top \Longleftrightarrow \mathcal L(G)\cap\mathcal L(A_\varnothing)\neq\varnothing .
-  \)
-  Its chart closure stabilizes after at most \(D_A\) parallel squaring rounds over \(\mathcal O(|Q|^2|V|)\) chart entries.
+  Let \(G=\langle V,\Sigma,P,S\rangle\) be a CFG in CNF and let \(A_\varnothing=\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be an \(\varepsilon\)-free acyclic NFA (ANFA). Define its width as \( W_A=\max\{|\sigma|\mid \sigma \in \mathcal{L}(A_\varnothing)\}.\) There exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that
+  \(\Psi(G,A)\vDash [\mathcal L(G)\cap\mathcal L(A_\varnothing)\neq\varnothing]\) requiring \(\mathcal{O}(W_A)\) time using $\mathcal{O}(|Q|^2|V|)$ parallel random access (PRAM) processors.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -20,7 +17,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
     \item $p$ steps directly to $r$ in which case it suffices to check $\exists a.\big((p \overset{a}{\rightarrow} r)\in \delta \land (w \rightarrow a) \in P\big)$, or, \item there is some midpoint $q \in Q$, $p \rightsquigarrow q \rightsquigarrow r$ such that $\exists x, z.\big((w \rightarrow xz) \in P\land\overbrace{\underbrace{p \rightsquigarrow q}_x, \underbrace{q \rightsquigarrow r}_z}^w\big)$.
   \end{enumerate}
 
-  \noindent Since we assumed \(\delta\) is acyclic, there exists a topological sort of \(\delta\) imposing a total order on \(Q\) such that the chart is strictly upper triangular (SUT). Note \(Q\) can be ordered topologically in \(\mathcal O(\log^2 |Q|)\) time~\cite{dekel1981parallel} using matrix multiplication. Let \(\mathcal C=\mathbb B^{Q\times Q\times V}\) be Boolean charts with pointwise join \(\vee\) and bottom \(\bot\). Define the product
+  \noindent Since we assumed \(\delta\) is acyclic, there exists a topological sort of \(\delta\) imposing a total order on \(Q\) such that the chart is strictly upper triangular (SUT). Note \(Q\) can be ordered topologically in \(\mathcal O(\log^2 |Q|)\) time~\cite{dekel1981parallel} using matrix multiplication. Let \(\mathcal C=\mathbb B^{|Q|\times |Q|\times |V|}\) be Boolean charts with pointwise join \(\vee\) and bottom \(\bot\). Define the product
   \[
     (X\otimes Y)[p,r,w]= \bigvee_{\mathclap{q\in Q,\;x,z\in V}} X[p,q,x]\land Y[q,r,z]\land[(w\to xz)\in P]
   \]
@@ -37,7 +34,7 @@ The key observation is that finite CFL--regular intersection can be treated as C
 
   Let \(H_j[p,r,w]\) assert that some word labeling a path \(p\rightsquigarrow r\) is derived from \(w\) by a CNF parse tree of height at most \(j\), with terminal productions at height \(0\). We prove \(T_j[p,r,w]\Leftrightarrow H_j[p,r,w]\) by induction on \(j\). The base case is exactly \(M\). For the step, a height-\((j+1)\) parse is either already of height at most \(j\), or has root \(w\to xz\) and a split state \(q\) whose two subpaths have height-\(\le j\) parses from \(x\) and \(z\); this is precisely \(T_j\vee(T_j\otimes T_j)\), and the converse reads the same argument bottom-up.
 
-  Since \(A_\varnothing\) is \(\varepsilon\)-free, a path of \(m\) arcs has a label of length \(m\). Every CNF parse of such a label has at most \(m\) terminal leaves and height \(<m\), so no productive chart fact over \(A_\varnothing\) can require height exceeding \(D_A\). Hence \(T_{D_A}\) is the least fixed point, \(T_{\infty}\). Finally,
+  Since \(A_\varnothing\) is \(\varepsilon\)-free, a path of \(m\) arcs has a label of length \(m\). Every CNF parse of such a label has at most \(m\) terminal leaves and height \(<m\), so no productive chart fact over \(A_\varnothing\) can require height exceeding \(W_A\). Hence \(T_{W_A}\) is the least fixed point, \(T_{\infty}\). Finally,
   \[
     \Psi(G,A_\varnothing)=\bigvee_{q_\omega\in F}\exp(M)[q_\alpha,q_\omega,S],
   \]
