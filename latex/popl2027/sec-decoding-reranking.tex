@@ -58,7 +58,7 @@ The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, le
 \]
 The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto \big(\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)\big), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
 
-The weakness is fidelity.  The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \quad\Longrightarrow\quad P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This identifies contexts that a repair model should keep separate: delimiter balance, indentation regime, nearby binding structure, and the side of an ambiguous syntactic pattern already selected by the prefix. Thus $n$-grams are a good latency baseline and expose a large candidate set quickly but do not, by themselves, model the conditional probability $P(\sigma \mid \err\sigma)$.
+The primary weakness is fidelity. The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \Longrightarrow P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This conflates stylometric properties that a repair model should be able to distinguish, e.g., delimiter balance, indentation, and binding structure. While they provide a good latency baseline, $n$-gram models are far too coarse approximations and, by themselves, incapable of modeling the conditional probability $P(\sigma \mid \err\sigma)$.
 
 \subsection{Constrained LLM decoding}
 
