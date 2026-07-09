@@ -47,11 +47,11 @@ This can be converted to a uniform sampler by drawing integers without replaceme
 The main problem with Thm.~\ref{thm:enumeration} is that it counts distinct trees, which overcounts the number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, uniform tree sampling causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
 
 \begin{lemma}\label{lemma:ambiguity}
-If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
+If the FSA, $A_\varnothing$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
 \end{lemma}
 
 \begin{proof}
-Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following repair with two parses: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $A_\varnothing=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(A_\varnothing)$. Then $\mathcal{L}(G_\cap)$ contains a word that can be parsed with two different trees: \texttt{\hlred{)}(\hlgreen{)}}  $\Rightarrow S_\cap \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} $\Rightarrow S_\cap \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
 \noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset. If we are to sample repairs uniformly at random, ambiguity cannot be permitted. To obtain the exact normalizing constant and disambiguate $\ell_\cap$, we require a different representation which will now be described.

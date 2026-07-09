@@ -42,7 +42,7 @@ Our key observation is that repairability can be treated as an instance of CFL r
 \end{proof}
 
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
-  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A_\varnothing)\). Thus, \(\Psi(G,A_\varnothing)\) implies a concrete string witnessing intersection nonemptiness exists.
+  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(e_\cap\) with \(\mathcal{L}(e_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A_\varnothing)\). Thus, \(\Psi(G,A_\varnothing)\) implies a concrete string witnessing intersection nonemptiness exists.
 \end{theorem}
 
 \begin{proof}
@@ -60,7 +60,7 @@ Our key observation is that repairability can be treated as an instance of CFL r
     \{\sigma\mid p\overset{\sigma}{\rightsquigarrow}r\text{ in }A
     \land w\Rightarrow_{\le j}\sigma\}. \tag{*}
   \]
-  Similar to Thm.~\ref{thm:parallel_decision_complexity}: terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\) and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded closure reaches \(R_\infty\). Taking \(S_\cap=\bigvee_{q_\omega\in F}R_\infty[q_\alpha,q_\omega,S]\) (*), gives the claimed language equality. Since products use strict subpaths in topological order, the shared representation is an acyclic RE DAG. If nonempty, pruning \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
+  Similar to Thm.~\ref{thm:parallel_decision_complexity}: terminals prove the base case, and each step chooses a rule \(w\rightarrow xz\) and midpoint \(q\). Acyclicity bounds accepting paths, hence the bounded closure reaches \(R_\infty\). Taking \(e_\cap=\bigvee_{q_\omega\in F}R_\infty[q_\alpha,q_\omega,S]\) (*), gives the claimed language equality. Since products use strict subpaths in topological order, the shared representation is an acyclic RE DAG. If nonempty, pruning \(\varnothing\) yields a productive $E_+$, to which Lemma~\ref{lem:generation} applies.
 \end{proof}
 
 \begin{definition}[Brzozowski derivative]\label{def:brzozowski_derivative}

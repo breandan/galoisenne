@@ -3,18 +3,19 @@
 
 \clearpage\section{Raw data}\label{sec:raw_prec_data}
 
-Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ indicates the snippet length and $\Delta$ indicates the Levenshtein distance between the broken code and human fix computed over lexical tokens. For Tidyparse, we sample until exhausting the intersection or a 10 second timeout is reached, whichever happens first, then rank the results. For the other models Precision@1, we sample one repair and report the percentage of repairs matching the human repair. For Precision@All, we report the percentage of repairs matching the human repair within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
+Raw data from Precision@k experiments across snippet length and Levenshtein distance from \S~\ref{sec:rq2}. $|\err\sigma|$ is the snippet length and $\Delta$ is the Levenshtein distance between the broken code and human fix in terms of lexical tokens. For Precision@1, we report the percentage of top-1 repairs matching the human repair. For Precision@All, we report the percentage of repairs is contained within the top 20,000 samples. Each entry in the following table represents a pairwise disjoint subset of $D_{\text{test}}$, with at least 50 distinct Python syntax errors and repairs matching the length and distance criteria, sampled uniformly from the full StackOverflow dataset~\cite{wong2019syntax}.
 
 \begin{table}[!h]
 \centering
+\newcommand{\bestp}[1]{\cellcolor{black!15}#1}
 \begin{tabular}{c|c|cccccccc}
 \hline\hline
 & $\Delta$ & \multicolumn{8}{c}{Precision@1} \\ \hline
 $|\err\sigma|$ &  & $(0,10)$ & $[10,20)$ & $[20,30)$ & $[30, 40)$ & $[40,50)$ & $[50, 60)$ & $[60,70)$ & $[70, 80)$ \\ \hline
 Tidyparse
-& 1 & 0.578 & 0.459 & 0.421 & 0.416 & 0.330 & 0.269 & 0.282 & 0.313 \\
-& 2 & 0.387 & 0.376 & 0.428 & 0.456 & 0.475 & 0.346 & 0.460 & 0.380 \\
-& 3 & 0.241 & 0.129 & 0.120 & 0.105 & 0.120 & 0.185 & 0.218 & 0.179 \\ \hline
+& 1 & \bestp{0.578} & \bestp{0.459} & 0.421 & 0.416 & 0.330 & 0.269 & 0.282 & 0.313 \\
+& 2 & \bestp{0.387} & \bestp{0.376} & \bestp{0.428} & \bestp{0.456} & \bestp{0.475} & \bestp{0.346} & \bestp{0.460} & \bestp{0.380} \\
+& 3 & \bestp{0.241} & \bestp{0.129} & \bestp{0.120} & \bestp{0.105} & \bestp{0.120} & \bestp{0.185} & \bestp{0.218} & \bestp{0.179} \\ \hline
 Seq2Parse
 & 1 & 0.35 & 0.41 & 0.40 & 0.37 & 0.31 & 0.29 & 0.27 & 0.21 \\
 & 2 & 0.12 & 0.13 & 0.14 & 0.12 & 0.11 & 0.11 & 0.10 & 0.12 \\
@@ -23,6 +24,10 @@ BIFI
 & 1 & 0.20 & 0.33 & 0.32 & 0.27 & 0.21 & 0.21 & 0.25 & 0.18 \\
 & 2 & 0.18 & 0.18 & 0.21 & 0.19 & 0.19 & 0.18 & 0.11 & 0.11 \\
 & 3 & 0.02 & 0.02 & 0.03 & 0.02 & 0.03 & 0.05 & 0.03 & 0.02 \\ \hline
+GPT-5.4
+& 1 & 0.485 & 0.401 & \bestp{0.477} & \bestp{0.459} & \bestp{0.453} & \bestp{0.472} & \bestp{0.629} & \bestp{0.553} \\
+& 2 & 0.040 & 0.094 & 0.062 & 0.077 & 0.056 & 0.075 & 0.222 & 0.158 \\
+& 3 & 0.089 & 0.063 & 0.052 & 0.050 & 0.043 & 0.100 & 0.054 & 0.029 \\ \hline
 & & \multicolumn{8}{c}{Precision@All} \\ \hline
 Tidyparse
 & 1 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\

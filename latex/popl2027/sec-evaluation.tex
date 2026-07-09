@@ -38,7 +38,7 @@ In the following experiments, we use a dataset of Python snippets consisting of 
 \begin{figure}[h!]
 \input{repair_statistics}
 \vspace{-0.2cm}
-\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.2cm}
+\caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about $90\%$ in under $\sim$1s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.2cm}
 \end{figure}
 
 We observe that slightly over 6,800 code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and four lexical edits, which are computationally feasible to process in a few hundred milliseconds. We also note a slight primacy or recency bias in the edit locations, evidenced by a large fraction of human repairs which modify the boundaries of the broken code snippet.
@@ -70,7 +70,7 @@ For our first experiment, we measure the top-1 precision of our repair procedure
 \caption{Probability of the first recommendation matching the true repair for Tidyparse, Seq2Parse, BIFI, and ChatGPT across various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
 \end{figure}\vspace{-0.2cm}
 
-As seen in Fig.~\ref{fig:len_dist_prec}, Tidyparse attains state-of-the-art top-1 repair precision by a significant margin among syntax-repair baselines. Precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are slightly mixed across edit distance. The ChatGPT probe is competitive on single-edit repairs, but Precision@1 degrades sharply as edit distance increases. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all four models.
+As seen in Fig.~\ref{fig:len_dist_prec}, Tidyparse attains state-of-the-art top-1 repair precision by a significant margin among syntax-repair baselines. Precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are slightly mixed across edit distance. Although the GPT-5.4 probe is competitive on longer single-edit repairs, Precision@1 degrades sharply as edit distance increases. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all four models.
 
 \begin{wrapfigure}{r}{0.50\textwidth}
 \vspace{-0.1cm}
