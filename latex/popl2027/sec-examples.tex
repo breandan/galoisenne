@@ -65,7 +65,7 @@ Once the fixpoint $M_\infty$ is attained, the proposition $[S \in \Lambda^*_\sig
 Let us now consider a problem of intermediate difficulty, wherein we are given a string template admitting edits at fixed locations, which can be filled by any terminal. When intersected with a CFL, this specifies a finite language whose contents are the set of all words consistent with the template. We call this problem \textit{completion}. Formally,
 
 \begin{definition}[Completion]
-  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all members $\{\sigma': \Sigma^+ \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^+$ we seek all syntactically valid members, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
+  Let $\underline\Sigma = \Sigma \cup \{\_\}$, where $\_$ denotes a hole. We denote $\sqsubseteq: \Sigma^n \times \underline\Sigma^n$ as the relation $\{\langle\sigma', \sigma\rangle \mid \sigma_i \in \Sigma \implies \sigma_i' = \sigma_i\}$ and the set of all members $\{\sigma': \Sigma^n \mid \sigma' \sqsubseteq \sigma\}$ as $\text{H}(\sigma)$. Given a \textit{porous string}, $\sigma: \underline\Sigma^n$ we seek all syntactically valid members, i.e., $A(\sigma)=\text{H}(\sigma)\cap\ell$.
 \end{definition}
 
 Here, the FSA takes a similar shape but can have multiple arcs between adjacent states, e.g.:
