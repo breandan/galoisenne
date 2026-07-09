@@ -3,7 +3,7 @@
 
 \clearpage\section{Discussion}\label{sec:discussion}
 
-The main lesson we draw from \S~\ref{sec:eval} is that it is feasible to significantly improve the precision of real-time syntax repair by incorporating syntactic constraints such as edit distance, then sampling and evaluating a large set of candidate repairs using a fast primary decoder and a more intensive secondary reranker. Though sample-efficient, transformer decoding comes at considerable cost to throughput, resulting in fewer repairs being discovered in a fixed amount of time.
+The main lesson we draw from \S~\ref{sec:eval} is that it is feasible to significantly improve the precision of real-time syntax repair by incorporating syntactic constraints such as edit distance, then sampling and evaluating a large set of candidate repairs using a fast primary decoder and a more intensive secondary reranker. Though sample-efficient, direct transformer decoding comes at considerable cost to throughput, resulting in fewer repairs being discovered in a fixed amount of time.
 
 Our approach uses a grammar and a high-throughput $c$-gram decoder to fetch the initial candidate repairs, then employs the transformer-encoder to rerank only the top-scoring repairs from the retrieved set. This allows us to repair errors in real-world programming languages and provides far more flexibility and controllability during the repair process, resulting in significantly higher precision on downstream repairs and ultimately, a smoother user experience.
 

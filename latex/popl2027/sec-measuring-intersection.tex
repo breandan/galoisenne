@@ -3,7 +3,7 @@
 
 \section{Measuring the language intersection}\label{sec:measurement}
 
-We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illuminative approaches, then proceed towards a more refined solution.
+We will now attempt to put a probability distribution over the language intersection. We shall start with a few cursory but illustrative approaches, then proceed towards a more refined solution.
 
 \subsection{Mode collapse}
 
@@ -21,9 +21,8 @@ Such a sampler will almost always yield $a b$, but most of $\mathcal{L}(G)$ is c
 
 To correct for mode collapse, a brute force solution would be to simply generate every tree. While the whole set can be materialized in some cases when the intersection language is small, this strategy is clearly suboptimal in the worst-case. Nevertheless, it is useful for checking completeness.
 
-\begin{theorem}[Enumeration]
+\begin{theorem}[Enumeration]\label{thm:enumeration}
   We will first denote the number of unique trees in a regex as $|e|$:
-
   \begin{equation}
     |e|: E \rightarrow \mathbb{N} = \begin{cases}
         1           & \text{if } e \in \Sigma \\
@@ -31,9 +30,7 @@ To correct for mode collapse, a brute force solution would be to simply generate
         x + z       & \text{if } e = x \vee z
     \end{cases}
   \end{equation}
-
   To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|R|}\big\{\texttt{enum}(R, i)\big\}$:
-
   \begin{equation}
     \texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^* = \begin{cases}
          e &\text{if } e \in \Sigma \\
@@ -47,7 +44,7 @@ This can be converted to a uniform sampler by drawing integers without replaceme
 
 \subsection{The problem with ambiguity}
 
-The main problem with the previous approach is that it counts distinct trees, which overcounts the total number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, this causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
+The main problem with Thm.~\ref{thm:enumeration} is that it counts distinct trees, which overcounts the number of words, $|\mathcal{L}(G_\cap)|$. Since the Levenshtein automaton can be ambiguous, uniform tree sampling causes certain repairs to be overrepresented, resulting in a pernicious bias. Consider, for example,
 
 \begin{lemma}\label{lemma:ambiguity}
 If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can be ambiguous.
@@ -57,12 +54,11 @@ If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can
 Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
-\noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset.
+\noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset. If we are to sample repairs uniformly at random, ambiguity cannot be permitted. To obtain the exact normalizing constant and disambiguate $\ell_\cap$, we require a different representation which will now be described.
 
 \subsection{Disambiguation}\label{sec:transfer_method}
 
 To count the number of distinct repairs, we will need to convert $G_\cap$ to an automaton. Since $\mathcal{L}(G_\cap)$ is finite, it must be regular a fortiori. Recalling the definition for an NFA, $\langle Q, \Sigma, \delta, q_\alpha: Q, F \subseteq Q \rangle$, and star-free regex, $e \rightarrow \Sigma \mid e \cdot e \mid e \lor e$, we will proceed by structural induction on the regex:
-
 \begin{equation*}
 N(e) =
 \begin{cases}
@@ -94,8 +90,7 @@ N(e) =
   \end{alignedat}
 \end{cases}\vspace{0.2cm}
 \end{equation*}
-
-\noindent Though less conventional than Thompson's construction, $N(e)$ avoids the creation of unnecessary $\varepsilon$ arcs. And while slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be more favorable for minimization. Continuing with our running example from \S~\ref{sec:repair_ex}, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$: \vspace{-0.4cm}
+Though less conventional than Thompson's construction, $N(e)$ avoids the creation of unnecessary $\varepsilon$ arcs. And while slightly more verbose, we find the topology induced by the first version of the $\lor$ case to be more favorable for minimization. Continuing with our running example from \S~\ref{sec:repair_ex}, we will use Brzozowski's algorithm~\cite{brzozowski1962canonical} to construct the unique minimal DFA, $D^*_\cap \equiv_\mathcal{L} G_\cap$: \vspace{-0.4cm}
 
 \begin{figure}[H]
   \centering
@@ -151,6 +146,6 @@ Since $\mathcal{L}(G_\cap)$ is necessarily finite, we can infer that the corresp
         &    &    &   &   & 1 \\
 \end{pmatrix}\end{tiny} \text{ therefore, } \big|\mathcal{L}(D_\cap^*)\big| = C\big(A, q_0, \{q_3, q_5\}\big) = \underline{1} + \underline{2} = 3.
 \end{align}
-Note the model counting problem for arbitrary REs is strictly harder than deciding intersection nonemptiness as it requires determinization, however, weak bounds may be obtained by applying $C$ to the FSA generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous, whereas $C_{D_\cap^*}$ is exact.
+Note the model counting problem for arbitrary REs is strictly harder than deciding intersection nonemptiness as it requires determinization, however, weak bounds may be obtained by applying $C$ to the FSA generated by $N(e)$ or by direct analysis of $e$. While the inequality $C_{D_\cap^*} \leq C_{N(e)} \leq |e|$ will hold, the bounds provided by the latter approximations may be vacuous, whereas $C_{D_\cap^*}$ is exact. $D_\cap^*$ may be enumerated by standard methods~\cite{flajolet2009analytic} and sampled uniformly with a suitable PRNG.
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}
