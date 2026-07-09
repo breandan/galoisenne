@@ -92,7 +92,7 @@ For an ordinary terminal \(a\in\mathsf{Next}(e)\), the decoder pushes
   s-\log P_\theta^e(a\mid\err\sigma,\sigma)
   \big\rangle
 \]
-onto the queue. If \(a=\mathtt{EOS}\), the prefix \(\sigma\) is emitted as a complete repair  Therefore, the LLM only orders prefixes whose residual language is nonempty.  It cannot introduce strings outside \(\ell_\cap\), and if the queue is run to saturation, the support remains exactly the same finite language as in Lemma~\ref{lem:derivative_decoder_support}.
+onto the queue. If \(a=\mathtt{EOS}\), the prefix \(\sigma\) is emitted as a complete repair. Therefore, the LLM only orders prefixes whose residual language is nonempty.  It cannot introduce strings outside \(\ell_\cap\), and if the queue is run to saturation, the support remains exactly the same finite language as in Lemma~\ref{lem:derivative_decoder_support}.
 
 The advantage of this scorer is fidelity: it conditions jointly on the broken snippet, the entire repair prefix, and long-range syntactic or stylistic cues that are invisible to a fixed suffix model.  The disadvantage is throughput. Each expansion requires a transformer forward pass before the grammar mask can discard inadmissible successors. A width-\(B\) beam can reduce cost, but it loses support completeness unless \( B \ge \max_i |\operatorname{Pref}_i(\ell_\cap)|\), which is exhaustive search in disguise.  In practice, constrained LLM decoding is therefore a useful high-fidelity baseline for scoring \(P(\sigma\mid\err\sigma)\) over \(\ell_\cap\), but a poor first-stage retriever under realtime latency constraints, and as we will show in \S~\ref{sec:rq3}, underperforms a dedicated reranker even when given a generous test-time latency advantage.
 
@@ -168,9 +168,7 @@ Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and
 \end{lemma}
 
 \begin{proof}
-  Every derivation in \(G\) has an equivalent well-nested accepting run in the RTN for \(S\).  Terminal and \(\varepsilon\)-arcs are copied directly.  A call at depth \(<h\) is simulated by entering the fresh callee copy and returning from one of its final states to the original continuation state.  A call at depth \(\ge h\) is simulated through the shared callee copy.  The finite automaton may also admit non-stack-disciplined returns, which accounts for the overapproximation, but every stack-disciplined RTN run remains an ordinary accepting path.  Since \(\varepsilon\)-removal and determinization preserve the accepted language, \(\mathcal{L}(G)\subseteq
-  \mathcal{L}(\alpha_h)\).  Intersecting both sides with $\mathcal{L}(\alpha_h)$
-  preserves inclusion.
+  Every derivation in \(G\) has an equivalent well-nested accepting run in the RTN for \(S\).  Terminal and \(\varepsilon\)-arcs are copied directly.  A call at depth \(<h\) is simulated by entering the fresh callee copy and returning from one of its final states to the original continuation state.  A call at depth \(\ge h\) is simulated through the shared callee copy.  The finite automaton may also admit non-stack-disciplined returns, which accounts for the overapproximation, but every stack-disciplined RTN run remains an ordinary accepting path. Since \(\varepsilon\)-removal and determinization preserve the accepted language, \(\mathcal{L}(G)\subseteq \mathcal{L}(\alpha_h)\).  Intersecting both sides with $\mathcal{L}\big(L(\err\sigma, d)\big)$ preserves inclusion.
 \end{proof}
 
 We then attach weights without changing the support. Let \(\alpha_{h,\hat\theta}\) be the weighted version of \(\alpha_h\), with deterministic transition function \(\delta\), initial state \(q_0\), positive transition weights \(w(q,a)>0\) on retained arcs, and positive final weights \(w_F(q)>0\) at accepting states.  For an accepting run \(q_i=\delta(q_{i-1},\sigma_i)\), define
@@ -192,7 +190,7 @@ During exact decoding, a queue element therefore carries both the residual expre
 
 \subsection{LaTeR reranking}\label{sec:LaTeR}
 
-The WDFA prior is fast, but it is still an unconditional language model: \(P_{\hat\theta}(\sigma)\), not \(P(\sigma\mid\err\sigma)\), which is what we need. The final challenge will be to restore this missing conditional information by reranking a small exact candidate list. Let \( C_K^\infty(\err\sigma) = \operatorname{TopK}_{P_{\hat\theta}}(\ell_\cap) \) denote the exact top-\(K\) members of \(\ell_\cap\) under the WDFA prior. In the implementation, the WDFA-guided decoder is stopped after a budget \(T\) or after exhuasting $\ell_\cap$, whichever occurs first, yielding an anytime retrieved set
+The WDFA prior is fast, but it is still an unconditional language model: \(P_{\hat\theta}(\sigma)\), not \(P(\sigma\mid\err\sigma)\), which is what we need. The final challenge will be to restore this missing conditional information by reranking a small exact candidate list. Let \( C_K^\infty(\err\sigma) = \operatorname{TopK}_{P_{\hat\theta}}(\ell_\cap) \) denote the exact top-\(K\) members of \(\ell_\cap\) under the WDFA prior. In the implementation, the WDFA-guided decoder is stopped after a budget \(T\) or after exhausting $\ell_\cap$, whichever occurs first, yielding an anytime retrieved set
 \[ C_{K,T}(\err\sigma)\subseteq \ell_\cap, \qquad |C_{K,T}(\err\sigma)|\le K. \]
 The Levenshtein-aligned Transformer Reranker (LaTeR), scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet.  The reranker uses a query encoder and an alignment-aware candidate encoder,
 \[

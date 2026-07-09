@@ -89,7 +89,7 @@ For the next experiment, we evaluate the BIFI model, giving it a generous comput
 \label{fig:sankey}
 \end{wrapfigure}
 
-\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma^\star) < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 604 cases, the true repair was not contained in the language intersection and thus never sampled, in 1,637 cases the true repair was sampled, of which 659 cases the first prediction matched the true repair, in 1,285 cases, the true repair was in the top-10 results, and in the remaining 349 cases the true repair was drawn, but ranked lower than 10\textsuperscript{th} in the final results.
+\noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma^\star) < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 604 cases, the true repair was not contained in the language intersection and thus never sampled, in 1,634 cases the true repair was sampled, of which 659 cases the first prediction matched the true repair, in 1,285 cases, the true repair was in the top-10 results, and in the remaining 349 cases the true repair was drawn, but ranked lower than 10\textsuperscript{th} in the final results.
 
 \clearpage\enlargethispage{2\baselineskip}\subsection{Internal evaluation}\label{sec:rq3}
 

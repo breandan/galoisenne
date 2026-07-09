@@ -26,8 +26,8 @@ To correct for mode collapse, a brute force solution would be to simply generate
   \begin{equation}
     |e|: E \rightarrow \mathbb{N} = \begin{cases}
         1           & \text{if } e \in \Sigma \\
-        x \times z  & \text{if } e = x \cdot z \\
-        x + z       & \text{if } e = x \vee z
+        |x| \times |z|  & \text{if } e = x \cdot z \\
+        |x| + |z|       & \text{if } e = x \vee z
     \end{cases}
   \end{equation}
   To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|R|}\big\{\texttt{enum}(R, i)\big\}$:
