@@ -64,7 +64,7 @@ Our key observation is that repairability can be treated as an instance of CFL r
 \end{proof}
 
 \begin{definition}[Brzozowski derivative]\label{def:brzozowski_derivative}
-  Following Brzozowski~\cite{brzozowski1964derivatives}, let \(E\) be the star-free RE, \(E \ni e ::= \varnothing\mid\varepsilon\mid a\mid e\vee e\mid e\land e\mid e\cdot e\). Write \(\delta(e)\in\{\varnothing,\varepsilon\}\) for the nullable projection, where \(\delta(e)=\varepsilon\) iff \(\varepsilon\in\mathcal{L}(e)\).  For \(a,b\in\Sigma\), define:
+  Following Brzozowski~\cite{brzozowski1964derivatives}, let \(E\) be the star-free RE, \(E \ni e ::= \varnothing\mid\varepsilon\mid \Sigma \mid e\vee e\mid e\land e\mid e\cdot e\). Write \(\delta(e)\in\{\varnothing,\varepsilon\}\) for the nullable projection, where \(\delta(e)=\varepsilon\) iff \(\varepsilon\in\mathcal{L}(e)\).  For \(a,b\in\Sigma\), define a quotient operator $\partial_a: \Sigma \rightarrow E \rightarrow E$:
 
   \vspace{-0.8cm}
   \begin{multicols}{2}
