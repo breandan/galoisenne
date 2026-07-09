@@ -3,7 +3,7 @@
 
 \clearpage\section{Evaluation}\label{sec:eval}
 
-We call our method Tidyparse and consider the following research questions:
+We call our end-to-end syntax repair tool Tidyparse and consider the following research questions:
 
 \begin{itemize}
 \item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
@@ -25,9 +25,9 @@ We use the Precision@k statistic, which measures the frequency of the true repai
 
 Our full dataset~\cite{wong2019syntax} consists of $2\times 10^4$ naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 2,238 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma^\star\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma^\star) \in [1, 3]\}$, each test bin containing at least 50 instances.
 
-To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma^\star: \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 512}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma^\star)$, and up to $512$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained $4$-gram model. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 13,000 steps which takes $\sim 4$ hours, and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameters are provided in Appendix~\ref{sec:hyperparams}.
+To train the reranker, we augment each instance in the training and test set with a list of repair confounders. Each instance consists of a tuple, $\langle\err\sigma: \bar{\ell}, \sigma^\star: \ell_\cap, \bm{\sigma}: \ell_\cap^{\leq 512}\rangle$, with a single syntax error $(\err\sigma)$, the ground truth repair, $(\sigma^\star)$, and up to $512$ confounders $(\bm{\sigma})$ sampled without replacement from $\ell_\cap$ using our pretrained WDFA. We then train the reranker on $\mathcal{D}_{\text{train}}$ for 13,000 steps which takes $\sim 4$ hours, and evaluate on $\mathcal{D}_{\text{test}}$. Hyperparameters are provided in Appendix~\ref{sec:hyperparams}.
 
-For our final repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same pretrained $4$-gram model used in reranker training, and pass the top-$512$ results by WDFA probability to the transformer encoder, then finally rerank the top-$512$ by softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
+For our final repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same WDFA used during reranker training, and pass the top-$512$ results by WDFA probability to the transformer encoder, then finally rerank the top-$512$ by softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
 
 We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, on the same test set. The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}.~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9} For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c},\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b} the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-$\{1, 2\times 10^4\}$ repairs. Finally, for Tidyparse, we use a standard Apple MacBook M4 Max with 128 GB of memory.
 
@@ -91,37 +91,36 @@ For the next experiment, we evaluate the BIFI model, giving it a generous comput
 
 \noindent We present a Sankey diagram of the Tidyparse repair pipeline in Fig.~\ref{fig:sankey}. Across 2,238 test set repairs filtered by length and distance ($\lfloor|\err\sigma| / 10\rfloor \in [0, 8], \Delta(\err\sigma, \sigma^\star) < 4$), we evaluated Tidyparse with a timeout of 10s and tracked individual repair outcomes. In 604 cases, the true repair was not contained in the language intersection and thus never sampled, in 1,637 cases the true repair was sampled, of which 659 cases the first prediction matched the true repair, in 1,285 cases, the true repair was in the top-10 results, and in the remaining 349 cases the true repair was drawn, but ranked lower than 10\textsuperscript{th} in the final results.
 
-\clearpage\subsection{Internal evaluation}\label{sec:rq3}
+\clearpage\enlargethispage{2\baselineskip}\subsection{Internal evaluation}\label{sec:rq3}
 
-The primary question of interest here is not whether reranking changes the candidate language; it does not. All methods in this ablation operate over the same exact language intersection, $\ell_\cap$. When decoding runs to saturation, the complete repair set remains available regardless of the scoring model; under a timeout, recall is limited by the shared retrieval budget rather than by the reranker. The models differ only in how quickly and accurately they score repairs from $\ell_\cap$.
+This ablation isolates the effect of scoring and reranking after the intersection expression has already been constructed. All methods search the same finite support, \(\ell_\cap\), and validity is enforced before any statistical model is consulted. If derivative decoding is allowed to exhaust the prefix tree, every scorer eventually exposes the same complete repair set. Under a rank cutoff or timeout, however, the order in which \(\ell_\cap\) is explored matters: a better first-stage scorer places the intended repair earlier in the queue, while a better reranker improves the final order of the retrieved list.
 
 \begin{wrapfigure}{r}{0.50\textwidth}
-\vspace{-0.35cm}
-\input{experiments/rank_cdf}
-\vspace{-0.3cm}
-\caption{Cumulative rank of the ground-truth repair under various scoring and reranking models.}
-\label{fig:rank_cdf}
-\vspace{-0.2cm}
+  \vspace{-0.35cm}
+  \input{experiments/rank_cdf}
+  \vspace{-0.3cm}
+  \caption{Cumulative rank of the ground-truth repair under various scoring and reranking models.}
+  \label{fig:rank_cdf}
+  \vspace{-0.2cm}
 \end{wrapfigure}
 
-We compare LATeR to three scoring models. The \textbf{GPT} model is a left-to-right neural scorer trained on paired broken and repaired snippets, but is expensive to query under a tight decoding loop. The \textbf{4-gram} model is a Laplace-smoothed Markov model trained on valid snippets and used as our lightweight baseline. The \textbf{WDFA} model is a weighted deterministic finite automaton whose support overapproximates the target grammar, giving a faster regular scoring function while preserving coverage of valid programs. Finally, \textbf{LATeR} reranks the top-$512$ PDFA-scored repairs with the Levenshtein-aligned transformer cross-encoder implemented in the training pipeline. Since LATeR only reorders a retrieved list, it cannot make invalid repairs valid or valid repairs invalid; any coverage loss comes from top-$k$ retrieval or timeout before reranking.
+We compare LaTeR against three first-stage scoring models.  The
+\textbf{4-gram} model is a Laplace-smoothed Markov baseline over valid snippets, chosen for its very low decoding latency. The \textbf{GPT-2} model is a left-to-right conditional repair model trained on paired broken and repaired snippets; it has access to the broken input, but is expensive to query inside the decoding loop.  The \textbf{WDFA} model is a learned weighted finite-state prior whose support is a Nederhof overapproximation of the target grammar.  It does not generate repairs by itself: the derivative decoder still draws candidates from the exact language \(\ell_\cap\), while the WDFA supplies a constant-time score for ordering prefix expansions.  Finally, \textbf{LaTeR} reranks the top-\(512\) WDFA-retrieved repairs using the Levenshtein-aligned transformer cross-encoder.
 
-Fig.~\ref{fig:rank_cdf} plots the cumulative distribution of the ground-truth repair's rank. Higher curves indicate that the true repair is surfaced earlier after scoring, not that a different repair language was searched. The shuffle curve is a sanity check for random ordering, while the timeout marker shows the fraction of instances recovered before the decoder stops. The gap between 4-gram and PDFA scoring illustrates the benefit of replacing a local Markov approximation with a learned regular scorer; the additional gap from PDFA to LATeR isolates the effect of conditional reranking. In all cases, validity remains enforced by the grammar intersection, so ranking errors only affect presentation order.
+Fig.~\ref{fig:rank_cdf} plots, for each method, the cumulative distribution \(P(\operatorname{Rank}(\sigma^\star)<x)\) of the ground-truth repair's rank across the test set. The higher the curve, the earlier the intended repair is found, on average, across the test set. The shuffle curve gives a random-ordering baseline, the dashed vertical line marks the \(512\)-candidate handoff to LaTeR. The constrained GPT-2 decoder is terminated after sampling $\sim 10^4$ repairs, which can take several minutes per repair. The gap between the 4-gram and WDFA curves demonstrates the value of replacing a local suffix model with a learned regular-state scorer and the gain from WDFA retrieval to LaTeR reranking illustrates additional value of conditioning on the broken snippet and the edit alignment with an expressive neural model. Since LaTeR only reorders candidates it has already received, it cannot alter syntactic validity or edit distance, nor can it recover a true repair that was not retrieved before the cutoff.
 
 \begin{wrapfigure}{l}{0.35\textwidth}
 \vspace{-0.3cm}
 \centering
 \resizebox{\linewidth}{!}{\input{experiments/timings}}
-\vspace{-0.65cm}
+\vspace{-0.6cm}
 \caption{End-to-end repair timings.}
 \label{fig:timings}
 \end{wrapfigure}
 \noindent\leavevmode\par\vspace{-\baselineskip}
 \begingroup
 \hangindent=\dimexpr0.35\textwidth+\columnsep\relax
-\hangafter=-10
-\noindent Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rank the entire intersection language $(\ell_\cap)$. Then, using our GPU implementation of the same algorithm (described in \S~\ref{sec:implementation}), we compare the individual repair timings across the same test set. As shown in Fig.~\ref{fig:timings}, GPU execution has slightly lower variance and confers a 3-5x speedup across common repairs, while the observed end-to-end latency reflects the combined cost of automaton construction, matrix closure, exhaustive decoding, and ranking. The GPU implementation finishes processing nearly all repairs the 10s timeout and about $90\%$ of all instances in under 1s; the CPU implementation may miss that target on longer or multi-edit repairs. We therefore use 10s as a practical upper bound for interactive repair latency.
+\noindent Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rerank the intersection language $(\ell_\cap)$. Then, using our GPU implementation of the same algorithm (described in \S~\ref{sec:implementation}), we compare the individual repair timings across the same test set. Both the GPU and CPU versions run on the Apple M4 processor. As shown in Fig.~\ref{fig:timings}, GPU execution has slightly lower variance and confers a 3-5x speedup across common repairs scenarios. We conjecture the visible clustering effect is an artifact of thermal throttling on the M4, as repair instances in the same cluster share no salient properties in common such as LED or intersection size that would explain the observed timing variance. The GPU implementation finishes processing nearly all repairs the 10s timeout and about $90\%$ of all instances in under 1s; the CPU implementation may miss that target on longer or multi-edit repairs.
 \par\endgroup
-\vspace{0.05cm}
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

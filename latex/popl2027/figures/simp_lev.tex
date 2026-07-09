@@ -23,16 +23,16 @@
   \draw [->] (11) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (21);
   \draw [->] (21) edge[below] node[shift={(-0.2cm,0cm)}]{\tiny{$[= \texttt{)}]$}} (31);
 
-  \draw [->] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
-  \draw [->] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
-  \draw [->] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
+  \draw [->,orange] (00) edge[left] node{\tiny{$[\neq \texttt{(}]$}} (11);
+  \draw [->,orange] (10) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+  \draw [->,orange] (20) edge[left] node{\tiny{$[\neq \texttt{)}]$}} (31);
 
-  \draw [->] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
-  \draw [->] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
-  \draw [->] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
-  \draw [->] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
+  \draw [->,green] (00) edge[bend left=10, left] node{\tiny{$[\neq \texttt{(}]$}} (01);
+  \draw [->,green] (10) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (11);
+  \draw [->,green] (20) edge[bend left=10, left] node{\tiny{$[\neq \texttt{)}]$}} (21);
+  \draw [->,green] (30) edge[bend left=10, left] node{\tiny{$[=.]$}} (31);
 
 
-  \draw [->, blue] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
-  \draw [->, blue] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
+  \draw [->, red!85] (00) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (21);
+  \draw [->, red!85] (10) edge[bend right=11,below] node[shift={(0.2cm,0.8cm)}]{\tiny{$[= \texttt{)}]$}}    (31);
 \end{tikzpicture}

@@ -3,11 +3,11 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-Our key observation is that finite repairability can be treated as CFL reachability over an acyclic NFA. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals derive the labels of paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives the start symbol. Brent and Goldschlager~\cite{brent1984parallel} present a polylogarithmic time parallel parser for length-\(n\) strings requiring $n^6$ processors, however we find the following linear algorithm more suitable in practice; here the input is instead a ANFA and the relevant parameter is the longest directed path in the automaton.
+Our key observation is that repairability can be treated as an instance of CFL reachability. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals can derive the paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives $S$. As long as one of the participants in the language intersection is presented as an acyclic FSA, we show the intersection nonemptiness problem is decidable in linear parallel time in the span of the transition relation. Formally,
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
-  Let \(G=\langle V,\Sigma,P,S\rangle\) be a CFG in CNF and let \(A_\varnothing=\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be an \(\varepsilon\)-free acyclic NFA (ANFA). Define its width as \( W_A=\max\{|\sigma|\mid \sigma \in \mathcal{L}(A_\varnothing)\}.\) There exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that
-  \(\Psi(G,A)\vDash [\mathcal L(G)\cap\mathcal L(A_\varnothing)\neq\varnothing]\) requiring \(\mathcal{O}(W_A)\) time using $\mathcal{O}(|Q|^2|V|)$ parallel random access (PRAM) processors.
+  Let \(G=\langle V,\Sigma,P,S\rangle\) be a CFG in CNF and let \(A_\varnothing=\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be an \(\varepsilon\)-free acyclic NFA (ANFA). Define its span as \( |A_\varnothing|=\max\{|\sigma|\mid \sigma \in \mathcal{L}(A_\varnothing)\}.\) There exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that
+  \(\Psi(G,A_\varnothing)\vDash [\mathcal L(G)\cap\mathcal L(A_\varnothing)\neq\varnothing]\) requiring \(\mathcal{O}(|A_\varnothing|)\) time using $\mathcal{O}(|Q|^2|V|)$ parallel random access (PRAM) processors.
 \end{theorem}
 
 \begin{proof}[Proof]
@@ -27,14 +27,14 @@ Our key observation is that finite repairability can be treated as CFL reachabil
     \bigvee_{a\in\Sigma}
     \big[(p\xrightarrow{a}r)\in\delta\land(w\to a)\in P\big].
   \]
-  Borrowing the exponentiation-by-squaring\footnote{By slight abuse of notation: customarily, semiring multiplication is associative and unital; here \(\otimes\) is merely monotone and join-distributive, so \(\exp\) denotes the exact parenthesized iteration. See Bernardy \& Jansson (2016)~\cite{jansson2016certified} for further details.} notation, set
+  Borrowing the exponentiation-by-squaring\footnote{By slight abuse of notation: customarily, semiring multiplication is associative and unital; here \(\otimes\) is merely monotone and join-distributive, so \(\exp\) denotes the exact parenthesized iteration. See Bernardy and Jansson~\cite{jansson2016certified} for further details.} notation, set
   \[
     T_0=M,\qquad T_{j+1}=T_j\vee(T_j\otimes T_j),\qquad \exp(M)=T_{\infty}
   \]
 
   Let \(H_j[p,r,w]\) assert that some word labeling a path \(p\rightsquigarrow r\) is derived from \(w\) by a CNF parse tree of height at most \(j\), with terminal productions at height \(0\). We prove \(T_j[p,r,w]\Leftrightarrow H_j[p,r,w]\) by induction on \(j\). The base case is exactly \(M\). For inductive case, a height-\((j+1)\) parse is either already of height at most \(j\), or has root \(w\to xz\) and a pivot state \(q\) whose two subpaths have height-\(\le j\) parses from \(x\) and \(z\); by the induction hypothesis, this is exactly \(T_{j+1}\).
 
-  Since \(A_\varnothing\) is \(\varepsilon\)-free, a path of \(m\) arcs has a label of length \(m\). Every CNF parse of such a label has at most \(m\) terminal leaves and height \(<m\), so no productive chart fact over \(A_\varnothing\) can require height exceeding \(W_A\). Hence \(T_{W_A}\) is the least fixed point, \(T_{\infty}\). Finally,
+  Since \(A_\varnothing\) is \(\varepsilon\)-free, a path of \(m\) arcs has a label of length \(m\). Every CNF parse of such a label has at most \(m\) terminal leaves and height \(<m\), so no productive chart fact over \(A_\varnothing\) can require height exceeding \(|A_\varnothing|\). Hence \(T_{|A_\varnothing|}\) is the least fixed point, \(T_{\infty}\). Finally,
   \[
     \Psi(G,A_\varnothing)=\bigvee_{q_\omega\in F}\exp(M)[q_\alpha,q_\omega,S],
   \]
@@ -42,7 +42,7 @@ Our key observation is that finite repairability can be treated as CFL reachabil
 \end{proof}
 
 \begin{theorem}[Witness construction]\label{thm:witness_construction}
-  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A_\varnothing)\). Thus, \(\Psi(G,A)\) implies a concrete string witnessing intersection nonemptiness exists.
+  Under the hypotheses of Theorem~\ref{thm:parallel_decision_complexity}, the saturated chart can be lifted to a finite star-free regular expression (RE), \(S_\cap\) with \(\mathcal{L}(S_\cap)=\mathcal{L}(G)\cap\mathcal{L}(A_\varnothing)\). Thus, \(\Psi(G,A_\varnothing)\) implies a concrete string witnessing intersection nonemptiness exists.
 \end{theorem}
 
 \begin{proof}
