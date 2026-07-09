@@ -30,7 +30,7 @@ To correct for mode collapse, a brute force solution would be to simply generate
         |x| + |z|       & \text{if } e = x \vee z
     \end{cases}
   \end{equation}
-  To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|e|}\big\{\texttt{enum}(e, i)\big\}$:
+  To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|e|-1}\big\{\texttt{enum}(e, i)\big\}$:
   \begin{equation}
     \texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^* = \begin{cases}
          e &\text{if } e \in \Sigma \\

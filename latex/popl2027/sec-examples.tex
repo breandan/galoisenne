@@ -2,7 +2,7 @@
 \begin{document}
 \clearpage\section{Examples}
 
-In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of intersection with a singleton language. Second, we will introduce \textit{completion} as an intersection that admits terminal wildcards in fixed locations. Thirdly, we consider syntax repair, where we will intersect a language representing all possible edit paths within a certain distance to determine the location(s) and fill them with the appropriate terminal(s).
+In this section, we will consider three examples of intersections with finite languages. First, parsing can be viewed as a special case of intersection with a singleton language. Second, we will introduce \textit{completion} as an intersection that admits terminal wildcards in fixed locations. Third, we consider syntax repair, where we will intersect a language representing all possible edit paths within a certain distance to determine the location(s) and fill them with the appropriate terminal(s).
 
 \subsection{Recognition as intersection}
 
@@ -140,7 +140,7 @@ Now, we are ready to consider the general case of syntax repair, in which case t
   \vspace{-0.5cm}
 \end{wrapfigure}
 
-As the original construction defined by Schulz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a symbolic form that supports infinite alphabets and simplifies the description to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schultz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not contain any $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
+As the original construction defined by Schulz and Mihov~\cite{schulz2002fast} contains cycles and $\varepsilon$-transitions, we propose a variant which is $\varepsilon$-free and acyclic. Furthermore, we adopt a symbolic form that supports infinite alphabets and simplifies the description to follow. Illustrated in Fig.~\ref{fig:lev_nfa} is an example of a small Levenshtein automaton recognizing $\mathcal{L}\big(L(\sigma: \Sigma^5, 3)\big)$. Unlabeled arcs accept any terminal from the alphabet, $\Sigma$. Equivalently, this transition system can be viewed as a kind of proof system within an unlabeled lattice. The following construction is equivalent to Schulz and Mihov's original Levenshtein automaton, but is more amenable to our purposes as it does not contain any $\varepsilon$-arcs, and instead uses skip connections to recognize consecutive deletions of varying lengths.
 
 \input{figures/arc_rules}
 

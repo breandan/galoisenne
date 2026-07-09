@@ -7,7 +7,7 @@ We call our end-to-end syntax repair tool Tidyparse and consider the following r
 
 \begin{itemize}
 \item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
-\item \textbf{RQ 2}: How effective is Tidyparse at fixing syntax errors? (i.e., versus Seq2Parse and BIFI)
+\item \textbf{RQ 2}: How effective is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse, BIFI, GPT-5.4)
 \item \textbf{RQ 3}: Which design choices are most significant? (e.g., decoding, reranking, parallelism)
 \end{itemize}
 
@@ -29,7 +29,7 @@ To train the reranker, we augment each instance in the training and test set wit
 
 For our final repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same WDFA used during reranker training, and pass the top-$512$ results by WDFA probability to the transformer encoder, then finally rerank the top-$512$ by softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
 
-We compare our method with three external baselines on the same test set: Seq2Parse, Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, and GPT 5.4 mini prompted for one tokenized repair. The Seq2Parse and BIFI experiments ran on a single Nvidia V100 GPU with 32 GB RAM. For Seq2Parse, we use the default pretrained model from commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-$\{1, 2\times 10^4\}$ repairs. Tidyparse runs on an Apple MacBook M4 Max with 128 GB RAM.
+We compare our method with three external baselines on the same test set: Seq2Parse, Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, and GPT-5.4 mini prompted for one tokenized repair. The Seq2Parse and BIFI experiments ran on a single Nvidia V100 GPU with 32 GB RAM. For Seq2Parse, we use the default pretrained model from commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-$\{1, 2\times 10^4\}$ repairs. Tidyparse runs on an Apple MacBook M4 Max with 128 GB RAM.
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
@@ -41,7 +41,7 @@ In the following experiments, we use a dataset of Python snippets consisting of 
 \caption{Repair statistics across the StackOverflow dataset, of which Tidyparse can handle about half in under $\sim$3s and $\sim$4 GB. Larger repairs and edit distances are possible, albeit requiring additional time and memory.}\label{fig:patch_stats}\vspace{-0.2cm}
 \end{figure}
 
-We observe that slightly over 6,700 code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and four lexical edits, which are computationally feasible to process in a few hundred milliseconds. We also note a slight primacy or recency bias in the edit locations, evidenced by a large fraction of human repairs which modify the boundaries of the broken code snippet.
+We observe that slightly over 6,800 code snippet pairs in the StackOverflow dataset contain fewer than 80 tokens and four lexical edits, which are computationally feasible to process in a few hundred milliseconds. We also note a slight primacy or recency bias in the edit locations, evidenced by a large fraction of human repairs which modify the boundaries of the broken code snippet.
 
 For the stability profile, we enumerate repairs for each syntax error and estimate the average fraction of all edit locations that were never altered by any repair in the $L\big(\err\sigma, \Delta(\err\sigma, \sigma^\star)\big)$-ball. For example, on average roughly half of the string is stable for 3-edit syntax repairs in the $[10-20)$ token range, whereas 1-edit repairs of the same length could modify only $\sim 10\%$ of all locations. For a fixed edit distance, we observe an overall decrease in the number of degrees of caret freedom with increasing length, which intuitively makes sense, as the repairs are more heavily constrained by the surrounding context and their locations grow more concentrated relative to the entire string.
 
