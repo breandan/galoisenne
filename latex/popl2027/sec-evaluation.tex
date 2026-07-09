@@ -7,11 +7,11 @@ We call our end-to-end syntax repair tool Tidyparse and consider the following r
 
 \begin{itemize}
 \item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
-\item \textbf{RQ 2}: How effective is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
+\item \textbf{RQ 2}: How effective is Tidyparse at fixing syntax errors? (i.e., versus Seq2Parse and BIFI)
 \item \textbf{RQ 3}: Which design choices are most significant? (e.g., decoding, reranking, parallelism)
 \end{itemize}
 
-We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing Tidyparse against two existing syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on precision and latency.
+We address \textbf{RQ 1} in \S~\ref{sec:rq1} by analyzing the distribution of natural code snippet lengths and edit distances, \textbf{RQ 2} in \S~\ref{sec:rq2} by comparing against three external syntax repair baselines, and \textbf{RQ 3} in \S~\ref{sec:rq3} by ablating various design choices and evaluating the impact on precision and latency.
 
 \subsection{Experimental setup}
 
@@ -29,7 +29,7 @@ To train the reranker, we augment each instance in the training and test set wit
 
 For our final repair procedure, we use the CNF Python grammar, $G_{\text{Python}}$ and let $d_{\max}$ be the smallest value such that $\ell_\cap = \mathcal{L}(G)\cap\mathcal{L}\big(L(\err\sigma, d_{\max} - 1)\big)$ is nonempty. We decode $\ell_\cap$ with the same WDFA used during reranker training, and pass the top-$512$ results by WDFA probability to the transformer encoder, then finally rerank the top-$512$ by softmax probability and measure the Precision@k across repairs of differing length and edit distance in the test set.
 
-We compare our method with two external baselines, Seq2Parse and Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, on the same test set. The Seq2Parse and BIFI experiments were conducted on a single Nvidia V100 GPU with 32 GB of RAM. For Seq2Parse, we use the default pretrained model provided in commit \texttt{7ae0681}.~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9} For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c},\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b} the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-$\{1, 2\times 10^4\}$ repairs. Finally, for Tidyparse, we use a standard Apple MacBook M4 Max with 128 GB of memory.
+We compare our method with three external baselines on the same test set: Seq2Parse, Break-It-Fix-It (BIFI)~\cite{yasunaga2021break}, and GPT 5.4 mini prompted for one tokenized repair. The Seq2Parse and BIFI experiments ran on a single Nvidia V100 GPU with 32 GB RAM. For Seq2Parse, we use the default pretrained model from commit \texttt{7ae0681}~\footnote{https://github.com/gsakkas/seq2parse/tree/7ae0681f1139cb873868727f035c1b7a369c3eb9}. For BIFI, we use the Round 2 breaker and fixer from commit \texttt{ee2a68c}\footnote{https://github.com/michiyasunaga/BIFI/tree/ee2a68cff8dbe88d2a2b2b5feabc7311d5f8338b}, the highest-performing model reported by the authors, with a variable-width beam search to control the number of predictions, and let the BIFI fixer model predict the top-$\{1, 2\times 10^4\}$ repairs. Tidyparse runs on an Apple MacBook M4 Max with 128 GB RAM.
 
 \clearpage\subsection{Dataset statistics}\label{sec:rq1}
 
@@ -58,18 +58,19 @@ For an intuition about the size of the language intersections involved in syntax
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
-For our first experiment, we measure the top-1 precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse, and BIFI on the same test set. Each bin in the test set contains at least 50 distinct repairs sampled uniformly at random from the StackOverflow dataset, none of which were present in the training set of any repair model.\vspace{-0.2cm}
+For our first experiment, we measure the top-1 precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse and BIFI on the same test set. We also include a ChatGPT token-repair probe using the same tokenized repair format. Each bin in the test set contains at least 50 distinct repairs sampled uniformly at random from the StackOverflow dataset, none of which were present in the training set of any repair model.\vspace{-0.2cm}
 
 \begin{figure}[h!]
-\resizebox{.29\textwidth}{!}{\input{len_dist_tidy}}\hspace{0.5cm}
-\resizebox{.29\textwidth}{!}{\input{len_dist_s2p}}\hspace{0.5cm}
-\resizebox{.29\textwidth}{!}{\input{len_dist_bifi}}
+\resizebox{.235\textwidth}{!}{\input{len_dist_tidy}}\hfill
+\resizebox{.235\textwidth}{!}{\input{len_dist_s2p}}\hfill
+\resizebox{.235\textwidth}{!}{\input{len_dist_bifi}}\hfill
+\resizebox{.235\textwidth}{!}{\input{len_dist_chatgpt}}
 %\resizebox{.24\textwidth}{!}{\input{len_dist_tidy_p10}}
 %\resizebox{.19\textwidth}{!}{\input{len_dist_bifi_all}}
-\caption{Probability of the first recommendation matching the true repair for Tidyparse, Seq2Parse and BIFI across various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
+\caption{Probability of the first recommendation matching the true repair for Tidyparse, Seq2Parse, BIFI, and ChatGPT across various lengths and Levenshtein distances.}\label{fig:len_dist_prec}
 \end{figure}\vspace{-0.2cm}
 
-As seen in Fig.~\ref{fig:len_dist_prec}, Tidyparse attains state-of-the-art top-1 repair precision by a significant margin. Precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are slightly mixed across edit distance. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all three models, as does a slightly negative correlation between repair length and precision.
+As seen in Fig.~\ref{fig:len_dist_prec}, Tidyparse attains state-of-the-art top-1 repair precision by a significant margin among syntax-repair baselines. Precision does not monotonically decrease with edit distance, as Tidyparse's double-edit Precision@1 slightly outperforms single-edit Precision@1 across the test set. Although Seq2Parse outperforms BIFI by a lower margin, results are slightly mixed across edit distance. The ChatGPT probe is competitive on single-edit repairs, but Precision@1 degrades sharply as edit distance increases. Similar to Fig.~\ref{fig:volumetric_plot}, the nonlinear correlation between edit distance and repair precision holds across all four models.
 
 \begin{wrapfigure}{r}{0.50\textwidth}
 \vspace{-0.1cm}
