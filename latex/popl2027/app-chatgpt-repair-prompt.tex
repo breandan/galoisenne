@@ -1,8 +1,8 @@
 \documentclass[popl.tex]{subfiles}
 \begin{document}
-\section{ChatGPT repair prompt}\label{sec:chatgpt-prompt}
+\section{GPT-5.4 repair prompt}\label{sec:chatgpt-prompt}
 
-For the ChatGPT baseline in Fig.~\ref{fig:len_dist_prec}, we queried the OpenAI Responses API with model \texttt{gpt-5.4-mini}, \texttt{max\_output\_tokens=1024}, \texttt{store=false}, no temperature override, and no reasoning parameter. Each request used a single user message containing the following prompt, with \texttt{\$brokenTokens} replaced by the tokenized broken snippet:
+For the GPT-5.4 baseline in Fig.~\ref{fig:len_dist_prec}, we queried the OpenAI Responses API with model \texttt{gpt-5.4-mini}, \texttt{max\_output\_tokens=1024}, \texttt{store=false}, no temperature override, and no reasoning parameter. Each request used a single user message containing the following prompt, with \texttt{\$brokenTokens} replaced by the tokenized broken snippet:
 
 \begin{lstlisting}[basicstyle=\ttfamily\scriptsize,breaklines=true]
    You are repairing a Python syntax error in tokenized form.
@@ -21,6 +21,6 @@ For the ChatGPT baseline in Fig.~\ref{fig:len_dist_prec}, we queried the OpenAI 
    $brokenTokens
 \end{lstlisting}
 
-The response was interpreted as a single whitespace-separated token sequence after stripping code fences, optional \texttt{Repair:} prefixes, surrounding quotes, and redundant whitespace. Across 2,238 repair instances in the test set, this costed roughly \$1 USD to evaluate as of June 2026 pricing.
+The response was interpreted as a single whitespace-separated token sequence after stripping code fences, optional \texttt{Repair:} prefixes, surrounding quotes, and redundant whitespace. Across 2,238 repair instances in the test set, this costed roughly US \$1 to evaluate as of June 2026 pricing.
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

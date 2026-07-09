@@ -58,7 +58,7 @@ For an intuition about the size of the language intersections involved in syntax
 
 \clearpage\subsection{StackOverflow evaluation}\label{sec:rq2}
 
-For our first experiment, we measure the top-1 precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse and BIFI on the same test set. We also include a ChatGPT token-repair probe using the same tokenized repair format. Each bin in the test set contains at least 50 distinct repairs sampled uniformly at random from the StackOverflow dataset, none of which were present in the training set of any repair model.\vspace{-0.2cm}
+For our first experiment, we measure the top-1 precision of our repair procedure at various lengths and Levenshtein distances, comparing Tidyparse against Seq2Parse and BIFI on the same test set. We also include a GPT-5.4 token-repair baseline using a short prompt followed by the same tokenized repair format. Each bin in the test set contains at least 50 distinct repairs sampled uniformly at random from the StackOverflow dataset, none of which were present in the training set.\vspace{-0.2cm}
 
 \begin{figure}[h!]
 \resizebox{.235\textwidth}{!}{\input{len_dist_tidy}}\hfill
