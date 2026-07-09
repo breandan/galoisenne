@@ -36,7 +36,7 @@ explored.
 
 The simplest low-latency scorer is a smoothed $n$-gram model.  For order $c$, let $h_c(\sigma)$ be the last $c-1$ symbols of $\sigma$, padded on the left, and let $C(h,a)$ be the count of token $a$ after history $h$ in valid programs.  For our experiments, we use the Laplace-smoothed conditional,
 \[
-  P_c(a\mid\sigma) = \frac{C\big(h_c(\sigma),a\big)+\lambda} {\sum_{b\in\Sigma\cup\{\mathtt{BOS}, \mathtt{EOS}\}} C\big(h_c(\sigma),b\big) +\lambda(|\Sigma|+1)}.
+  P_c(a\mid\sigma) = \frac{C\big(h_c(\sigma),a\big)+\lambda} {\sum_{b\in\Sigma\cup\{\mathtt{BOS}, \mathtt{EOS}\}} C\big(h_c(\sigma),b\big) +\lambda(|\Sigma|+2)}.
 \]
 The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto \big(\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)\big), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
 
@@ -44,7 +44,7 @@ The primary weakness is fidelity. The Markov state is the explicit suffix $h_c(\
 
 \subsection{Constrained LLM decoding}
 
-A natural high-fidelity baseline is to keep the exact admissibility layer from \S~\ref{lem:derivative_decoder_support}, but replace the Markov table with a conditional repair model.  We train a small GPT-style completer on paired broken and repaired snippets.  For a training pair \(\langle\err\sigma,\sigma^\star\rangle\), form the sequence
+A natural high-fidelity baseline is to keep the exact admissibility layer from Lem.~\ref{lem:derivative_decoder_support}, but replace the Markov table with a conditional repair model.  We train a small GPT-style completer on paired broken and repaired snippets.  For a training pair \(\langle\err\sigma,\sigma^\star\rangle\), form the sequence
 \[
   x =
   (\mathtt{BOS},\err\sigma_1,\ldots,\err\sigma_m,
@@ -94,11 +94,11 @@ For an ordinary terminal \(a\in\mathsf{Next}(e)\), the decoder pushes
 \]
 onto the queue. If \(a=\mathtt{EOS}\), the prefix \(\sigma\) is emitted as a complete repair. Therefore, the LLM only orders prefixes whose residual language is nonempty.  It cannot introduce strings outside \(\ell_\cap\), and if the queue is run to saturation, the support remains exactly the same finite language as in Lemma~\ref{lem:derivative_decoder_support}.
 
-The advantage of this scorer is fidelity: it conditions jointly on the broken snippet, the entire repair prefix, and long-range syntactic or stylistic cues that are invisible to a fixed suffix model.  The disadvantage is throughput. Each expansion requires a transformer forward pass before the grammar mask can discard inadmissible successors. A width-\(B\) beam can reduce cost, but it loses support completeness unless \( B \ge \max_i |\operatorname{Pref}_i(\ell_\cap)|\), which is exhaustive search in disguise.  In practice, constrained LLM decoding is therefore a useful high-fidelity baseline for scoring \(P(\sigma\mid\err\sigma)\) over \(\ell_\cap\), but a poor first-stage retriever under realtime latency constraints, and as we will show in \S~\ref{sec:rq3}, underperforms a dedicated reranker even when given a generous test-time latency advantage.
+The advantage of this scorer is fidelity: it conditions jointly on the broken snippet, the entire repair prefix, and long-range syntactic or stylistic cues that are invisible to a fixed suffix model.  The disadvantage is throughput. Each expansion requires a transformer forward pass before the grammar mask can discard inadmissible successors. A width-\(B\) beam can reduce cost, but it loses support completeness unless \( B \ge \max_i |\operatorname{Pref}_i(\ell_\cap)|\), which is exhaustive search in disguise.  In practice, constrained LLM decoding is therefore a useful high-fidelity baseline for scoring \(P(\sigma\mid\err\sigma)\) over \(\ell_\cap\), but a poor first-stage retriever under real-time latency constraints, and as we will show in \S~\ref{sec:rq3}, underperforms a dedicated reranker even when given a generous test-time latency advantage.
 
 Instead, we will consider a sound regular overapproximation which provides a much faster next-token scoring interface for retrieval without compromising completeness with respect to $\ell_\cap$.
 
-\subsection{Weighted Nederhof overapproximation}\label{sec:wdfa_retrival}
+\subsection{Weighted Nederhof overapproximation}\label{sec:wdfa_retrieval}
 
 Our goal is to construct a finite-state decoder whose next-token queries are as cheap as an \(n\)-gram lookup, but whose state can summarize more than a fixed suffix. To achieve this, we turn to Nederhof's regular approximation. Importantly, this approximation is not used to generate repairs directly. Repairs are still generated from the exact expression \(e_\cap\). The approximation supplies only a lightweight language prior used to order the next-token distribution.
 
@@ -192,7 +192,7 @@ During exact decoding, a queue element therefore carries both the residual expre
 
 The WDFA prior is fast, but it is still an unconditional language model: \(P_{\hat\theta}(\sigma)\), not \(P(\sigma\mid\err\sigma)\), which is what we need. The final challenge will be to restore this missing conditional information by reranking a small exact candidate list. Let \( C_K^\infty(\err\sigma) = \operatorname{TopK}_{P_{\hat\theta}}(\ell_\cap) \) denote the exact top-\(K\) members of \(\ell_\cap\) under the WDFA prior. In the implementation, the WDFA-guided decoder is stopped after a budget \(T\) or after exhausting $\ell_\cap$, whichever occurs first, yielding an anytime retrieved set
 \[ C_{K,T}(\err\sigma)\subseteq \ell_\cap, \qquad |C_{K,T}(\err\sigma)|\le K. \]
-The Levenshtein-aligned Transformer Reranker (LaTeR), scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet.  The reranker uses a query encoder and an alignment-aware candidate encoder,
+The Levenshtein-aligned Transformer Reranker (LaTeR) scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet.  The reranker uses a query encoder and an alignment-aware candidate encoder,
 \[
   E_\phi(\err\sigma)\in\mathbb{R}^p,
   \qquad
@@ -233,7 +233,7 @@ the user:
 
 This factorization separates support from fidelity. The CFL--regular intersection determines the exact candidate language \(\ell_\cap\) and the Nederhof WDFA is a sound support overapproximation for retrieving promising candidates quickly, which LaTeR then reorders using the broken snippet and edit alignment. While reranking can improve presentation order, it cannot repair retrieval failure: if the true repair is not in \(C_{K,T}(\err\sigma)\), LaTeR will not be able to recover it.
 
-This pipeline, consisting of language intersection (\S~\ref{sec:method}), WDFA-guided retrieval (\S~\ref{sec:wdfa_retrival}) and LaTeR reranking (\S~\ref{sec:LaTeR}), forms the basis for the syntax repair tool used in the following experiments.
+This pipeline, consisting of language intersection (\S~\ref{sec:method}), WDFA-guided retrieval (\S~\ref{sec:wdfa_retrieval}) and LaTeR reranking (\S~\ref{sec:LaTeR}), forms the basis for the syntax repair tool used in the following experiments.
 
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}

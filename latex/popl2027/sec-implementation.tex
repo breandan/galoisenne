@@ -88,13 +88,13 @@ The implementation essentially consists of four stages, each dependent on its pr
 \end{algorithmic}
 \end{algorithm}
 
-Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. We use two priority queues to store partial and total trajectories, which are ranked by the WDFA language prior $\alpha_{\hat\theta}$ from \S~\ref{sec:wdfa_retrival}. During the beam search, each partial trajectory carries the current residual expression and WDFA state. A one-token extension by $a$ advances the WDFA to $\delta(q,a)$ and adds $\ln w(q,a)$ to the running score; when a trajectory terminates, we add the final weight $\ln w_F(q)$ before placing it on the total queue and the top-$k$ total trajectories are returned.
+Finally, once we have the expression for $G_\cap$, we can decode it to extract a small set of candidates. We use two priority queues to store partial and total trajectories, which are ranked by the WDFA language prior $\alpha_{\hat\theta}$ from \S~\ref{sec:wdfa_retrieval}. During the beam search, each partial trajectory carries the current residual expression and WDFA state. A one-token extension by $a$ advances the WDFA to $\delta(q,a)$ and adds $\ln w(q,a)$ to the running score; when a trajectory terminates, we add the final weight $\ln w_F(q)$ before placing it on the total queue and the top-$k$ total trajectories are returned.
 
 \begin{algorithm}[H]
   \caption{\texttt{reg\_dcode} pseudocode}
   \label{alg:reg_dcode}
   \begin{algorithmic}[1]
-  \Require $\alpha_{\hat\theta}=\langle Q_\alpha,\Sigma,\delta,q_0,F_\alpha,w,w_F\rangle$, a positive-weight WDFA (\S~\ref{sec:wdfa_retrival}), and $\ell_\cap=\mathcal{L}(e)\subseteq\mathcal{L}(\alpha_h)$.
+  \Require $\alpha_{\hat\theta}=\langle Q_\alpha,\Sigma,\delta,q_0,F_\alpha,w,w_F\rangle$, a positive-weight WDFA (\S~\ref{sec:wdfa_retrieval}), and $\ell_\cap=\mathcal{L}(e)\subseteq\mathcal{L}(\alpha_h)$.
   \Procedure{\texttt{reg\_dcode}$\big(e: \text{RE}, \alpha_{\hat\theta}: \text{WDFA}, k: \mathbb{N}\big)$}{}
     \State $\mathcal{T} \gets [], \mathcal{E} \gets \big[\langle \varepsilon, e, q_0, 0\rangle\big]$ \Comment{Initialize total and partial trajectories.}
     \Repeat

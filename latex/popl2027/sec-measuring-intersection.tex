@@ -8,13 +8,13 @@ We will now attempt to put a probability distribution over the language intersec
 \subsection{Mode collapse}
 
 Ordinarily, one might think to train a top-down PCFG sampler using a treebank of well-formed code snippets, however this method is highly degenerate in the finite case, exhibiting poor sample diversity. Consider an illustrative pathological case for top-down ancestral (TDA) sampling:
-$$
+\[
 G=\left\{ S \rightarrow A\:B \: \left(\frac{10^5 - 1}{10^5}\right), \hspace{2pt}
      S \rightarrow C\:C \: \left(\frac{1}{10^5}\right), \hspace{2pt}
      A \rightarrow a \: (1), \hspace{2pt}
      B  \rightarrow b \: (1), \hspace{2pt}
      C  \rightarrow a \: \left(\frac{1}{26}\right) \mid \ldots \mid z \: \left(\frac{1}{26}\right)\right\}
-$$
+\]
 Such a sampler will almost always yield $a b$, but most of $\mathcal{L}(G)$ is concealed in the hidden branch, $S \rightarrow C C$. Though a contrived example, it illustrates why TDA sampling is unviable: our sampler should match the true distribution over the finite CFL, not the PCFG's local approximation thereof.
 
 \subsection{Exact enumeration}
@@ -30,7 +30,7 @@ To correct for mode collapse, a brute force solution would be to simply generate
         |x| + |z|       & \text{if } e = x \vee z
     \end{cases}
   \end{equation}
-  To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|R|}\big\{\texttt{enum}(R, i)\big\}$:
+  To enumerate, we construct a bijection between trees and integers, then invoke $\bigcup_{i = 0}^{|E|}\big\{\texttt{enum}(E, i)\big\}$:
   \begin{equation}
     \texttt{enum}(e, n): E \times \mathbb{N} \rightarrow \Sigma^* = \begin{cases}
          e &\text{if } e \in \Sigma \\
@@ -51,7 +51,7 @@ If the FSA, $\alpha$, is ambiguous, then the intersection grammar, $G_\cap$, can
 \end{lemma}
 
 \begin{proof}
-Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following two identical repairs: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
+Let $\ell$ be the language defined by $G=\{S\rightarrow LR, L \rightarrow\texttt{(}, R \rightarrow\texttt{)}\}$, where $\alpha=L(\err\sigma, 2)$, the broken string $\err\sigma$ is $\texttt{)(}$, and $\mathcal{L}(G_\cap) = \ell \cap \mathcal{L}(\alpha)$. Then, $\mathcal{L}(G_\cap)$ contains the following repair with two parses: \texttt{\hlred{)}(\hlgreen{)}} with the parse $S \rightarrow q_{00}Lq_{21}\phantom{.}q_{21}Rq_{22}$, and \texttt{\hlorange{(}\hlorange{)}} with the parse $S \rightarrow q_{00}Lq_{11}\phantom{.}q_{11}Rq_{22}$.
 \end{proof}
 
 \noindent We would expect the underlying sample space to be a proper set, \textit{not} a multiset. If we are to sample repairs uniformly at random, ambiguity cannot be permitted. To obtain the exact normalizing constant and disambiguate $\ell_\cap$, we require a different representation which will now be described.

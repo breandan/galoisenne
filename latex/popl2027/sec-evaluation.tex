@@ -7,7 +7,7 @@ We call our end-to-end syntax repair tool Tidyparse and consider the following r
 
 \begin{itemize}
 \item \textbf{RQ 1}: What statistical properties do human repairs exhibit? (e.g., length, edit distance)
-\item \textbf{RQ 2}: How performant is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
+\item \textbf{RQ 2}: How effective is Tidyparse at fixing syntax errors? (i.e., vs. Seq2Parse and BIFI)
 \item \textbf{RQ 3}: Which design choices are most significant? (e.g., decoding, reranking, parallelism)
 \end{itemize}
 
@@ -20,7 +20,7 @@ In the following set of experiments, we use syntax errors and fixes from the Pyt
 We use the Precision@k statistic, which measures the frequency of the true repair appearing in the top-$k$ results, across a dataset of repair instances. Specifically, given a repair model, $R: \Sigma^* \rightarrow (\Sigma^*)^t$ and a test set, $\mathcal{D}_{\text{test}}$, containing pairwise aligned errors ($\err\sigma$) and fixes ($\sigma^\star$), we define Precision@k as:\vspace{-0.1cm}
 
 \begin{equation}
-\text{Precision@k}(R) = |\mathcal{D}_{\text{test}}|^{-1}\sum_{\mathcal{D}_{\text{test}}} \mathds{1}\left[\sigma^\star \in R(\err\sigma)_{0\ldots k}\right]
+\text{Precision@k}(R) = |\mathcal{D}_{\text{test}}|^{-1}\sum_{\mathclap{\langle\err\sigma, \sigma^\star\rangle\in\mathcal{D}_{\text{test}}}} \mathds{1}\left[\sigma^\star \in R(\err\sigma)_{0\ldots k}\right]
 \end{equation}
 
 Our full dataset~\cite{wong2019syntax} consists of $2\times 10^4$ naturally-occurring pairs of Python errors and human fixes from StackOverflow, which we use to evaluate the precision of each model at blind recovery of the ground truth repair. From the StackOverflow dataset, we filter for syntax errors shorter than 80 tokens and fewer than four lexical edits apart from the corresponding repair, then divide the remaining repairs into two disjoint sets: a training set $(\mathcal{D}_{\text{train}})$ of 4,586 repair instances and a test set $(\mathcal{D}_{\text{test}})$ of 2,238 repair instances, balanced across each length interval and edit distance, i.e., $\mathcal{D}_{\text{test}} = \{\langle\err\sigma, \sigma^\star\rangle \mid \lfloor |\err\sigma|/10 \rfloor \in [0, 8], \Delta(\err\sigma, \sigma^\star) \in [1, 3]\}$, each test bin containing at least 50 instances.
@@ -120,7 +120,7 @@ Fig.~\ref{fig:rank_cdf} plots, for each method, the cumulative distribution \(P(
 \noindent\leavevmode\par\vspace{-\baselineskip}
 \begingroup
 \hangindent=\dimexpr0.35\textwidth+\columnsep\relax
-\noindent Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wallclock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rerank the intersection language $(\ell_\cap)$. Then, using our GPU implementation of the same algorithm (described in \S~\ref{sec:implementation}), we compare the individual repair timings across the same test set. Both the GPU and CPU versions run on the Apple M4 processor. As shown in Fig.~\ref{fig:timings}, GPU execution has slightly lower variance and confers a 3-5x speedup across common repairs scenarios. We conjecture the visible clustering effect is an artifact of thermal throttling on the M4, as repair instances in the same cluster share no salient properties in common such as LED or intersection size that would explain the observed timing variance. The GPU implementation finishes processing nearly all repairs the 10s timeout and about $90\%$ of all instances in under 1s; the CPU implementation may miss that target on longer or multi-edit repairs.
+\noindent Finally, we investigate the impact of increased parallelism on repair throughput. To simulate a realistic editing scenario, we measure the end-to-end wall-clock runtime required to construct the Levenshtein automaton, form the intersection regex $(S_\cap)$, decode and rerank the intersection language $(\ell_\cap)$. Then, using our GPU implementation of the same algorithm (described in \S~\ref{sec:implementation}), we compare the individual repair timings across the same test set. Both the GPU and CPU versions run on the Apple M4 processor. As shown in Fig.~\ref{fig:timings}, GPU execution has slightly lower variance and confers a 3-5x speedup across common repairs scenarios. We conjecture the visible clustering effect is an artifact of thermal throttling on the M4, as repair instances in the same cluster share no salient properties in common such as LED or intersection size that would explain the observed timing variance. The GPU implementation finishes processing nearly all repairs the 10s timeout and about $90\%$ of all instances in under 1s; the CPU implementation may miss that target on longer or multi-edit repairs.
 \par\endgroup
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}
