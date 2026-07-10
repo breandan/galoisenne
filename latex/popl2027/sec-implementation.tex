@@ -12,7 +12,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \item $\texttt{reg\_dcode}: \text{RE} \times \text{WDFA} \times \mathbb{N} \rightarrow\hspace{-0.02cm} (\Sigma^+)^{k\approx 10^4}$ -- returns a short list of high-probability repairs.
 \end{enumerate}
 
-\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automata constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
+\noindent We will now explore the imperative pseudocode for each stage, starting with the Levenshtein automaton constructor, which is a straightforward translation of the inference rules in \S~\ref{sec:repair_ex}.
 
 \begin{algorithm}[H]
 \caption{\texttt{lev\_build} pseudocode}
@@ -62,7 +62,7 @@ The implementation essentially consists of four stages, each dependent on its pr
   \end{algorithmic}
 \end{algorithm}\vspace{-0.2cm}
 
-\noindent Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_{\max}$ should be enlarged before proceeding.
+\noindent Note we may short-circuit for three reasons, if: $M_{i+1} = M_i$, when two states $q, q'$ are unreachable, or whenever a $\langle q, q', v\rangle$ is already present. Once we obtain $M_\infty$, we can immediately tell whether $\ell_\cap \neq \varnothing$ by checking whether $M_\infty[q_\alpha, q_\omega, S] = \bs$ for some $q_\omega: F$. Otherwise, if no such $q_\omega$ exists, then $\ell_\cap$ must be empty and $d_{\max}$ should be enlarged before proceeding.
 
 \noindent Now we can perform a second sweep over nonempty entries of the Boolean parse chart, reconstructing the provenance of each $\langle q, q', v\rangle$ constituent. For compactness it will be convenient to use a pointer-based representation of the regular expression instead of manipulating strings.
 
@@ -114,7 +114,7 @@ Finally, once we have the expression for $G_\cap$, we can decode it to extract a
 
 The foregoing architecture can be translated to a series of high-performance GPU kernels. Our strategy will be to maximize GPU utilization by distributing the workload for each stage across as many independent threads as we can simultaneously dispatch. Each thread will be responsible for writing to a dedicated portion of a shared buffer without locking or external communication.
 
-We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. On a GPU, all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. The main challenge of GPU programming then, becomes careful memory management and efficiently mapping aggregate datatypes to and from the integers. Conceptually, each $\langle r, c, v\rangle$ triple will be dispatched to a single GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Consistent with the PRAM model used in Theorem~\ref{thm:parallel_decision_complexity}, each thread will correspond to a single processor, with $|Q|^2|V|$ threads in total. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency.
+We will make the simplifying assumption that each GPU kernel is a pure function that takes as input a coordinate triple $r, c, v: \mathbb{N}$ and one or more flat buffers $b_1: \mathbb{N}^{d_1}, \ldots b_n: \mathbb{N}^{d_n}$ containing encoded data, does some arithmetic, and returns a single output buffer, $b_{\text{out}}: \mathbb{N}^{d}$. On a GPU, all memory must be sized ahead of time, as dynamic allocation is forbidden during a GPU kernel's execution. The main challenge of GPU programming then becomes careful memory management and efficiently mapping aggregate datatypes to and from the integers. Conceptually, each $\langle r, c, v\rangle$ triple will be dispatched to a single GPU thread with global read access to the input buffers and exclusive write access to a contiguous region of the output buffer. Consistent with Theorem~\ref{thm:parallel_decision_complexity}, each thread will correspond to a single processor, with $|Q|^2|V|$ threads in total. Absent a GPU, this can be rewritten as a triply-nested loop, subject to additional latency.
 
 For the CFG and NFA datatypes, we elect to use a dense representation $\mathbb{B}^{|V|\times|V|\times|V|}$ and $\mathbb{B}^{|Q|\times|Q|\times |\Sigma|}$ due to the tripartite coordinate structure and thread dispatching API. While these datatypes can be encoded sparsely as $\mathbb{N}^{3|P|}$ and $\mathbb{N}^{3|\delta|}$, for most repair instances and memory configurations representation size is not a bottleneck. It will be helpful to define characteristic functions $\texttt{nt\_enc}: \Sigma \rightarrow 2^V$, $\texttt{nt\_dec}: V \rightarrow 2^\Sigma$ for nonterminal encoding and decoding, and index sets $\Sigma \leftharpoonrightarrow \mathbb{N}$, $V \leftharpoonrightarrow \mathbb{N}$, $Q \leftharpoonrightarrow \mathbb{N}$ for getting in and out of the \texttt{uint} domain, with $|V|, |Q| \lesssim 10^3$ adjustable upward if memory permits.
 
@@ -132,7 +132,7 @@ Once \texttt{cfl\_fixpt} (Alg.~\ref{alg:cfl_fixpt}) is complete, we can calculat
 
 \noindent where each $\texttt{bp}_i$ represents a nonempty $\langle q, q', v\rangle$ constituent with at least one back-pointer pair, $\texttt{bp\_count}(p, r, w) = \big|\big\{\langle q, x, z\rangle\mid  M[p, q, x] \land M[q, r, z] \land (w \rightarrow xz)\in P\big\}\big|$ counts the number of unique backpointers held by each nonterminal $w$ parseable from $p \rightsquigarrow r$, and $\texttt{bp\_storage}$ stores pointers to memory locations in the same data structure. These pointers should also be tied to locations in the parse chart $M[q, q', v]$ to recover the terminal subsets for terminal productions.
 
-In total, the GPU should have at least 4 GBs of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V| \lesssim 10^6\times10^3\times 32 \text{ bits} \approx \text{4 GBs}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
+In total, the GPU should have at least 4 GB of onboard memory to accommodate language intersections with up to $10^3$ states and nonterminals $\big(|Q|^2\times|V| \lesssim 10^6\times10^3\times 32 \text{ bits} \approx \text{4 GBs}\big)$, however occupancy can be roughly halved by exploiting the upper-triangular structure of $M$.
 
 \clearpage\subsection{Training the reranker}\label{sec:training}
 
