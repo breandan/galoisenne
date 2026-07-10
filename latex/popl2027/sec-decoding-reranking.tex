@@ -7,7 +7,7 @@ The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L
 
 \subsection{Derivative-guided exact decoding}
 
-Let \(e_\cap\) be the star-free regular expression produced by Theorem~\ref{thm:witness_construction}, so \(\mathcal{L}(e_\cap)=\ell_\cap\). Brzozowski derivatives expose the legal continuations of a prefix without enumerating its completions. For a residual \(e\), define \(\mathsf{Done}(e)\iff\varepsilon\in\mathcal{L}(e)\) and \(\texttt{next}(e)=\{a\in\Sigma\mid\mathcal{L}(\partial_a e)\neq\varnothing\}\). A search item is either an open prefix \(\langle\sigma,e,s\rangle\), where \(e=\partial_\sigma e_\cap\), or a completed item \(\langle\mathsf{Done}(e),s\rangle\). Popping an open prefix applies
+Let \(e_\cap\) be the star-free regular expression produced by Theorem~\ref{thm:witness_construction}, so \(\mathcal{L}(e_\cap)=\ell_\cap\). Brzozowski derivatives expose the legal continuations of a prefix without enumerating its completions. For a residual \(e\), define \(\mathsf{Done}(e)\iff\varepsilon\in\mathcal{L}(e)\). A search item is either an open prefix \(\langle\sigma,e,s\rangle\), where \(e=\partial_\sigma e_\cap\), or a completed item \(\langle\mathsf{Done}(e),s\rangle\). Popping an open prefix applies one of two cases,
 \[
   \begin{aligned}
     \langle\sigma,e,s\rangle&\longmapsto
@@ -39,9 +39,9 @@ The simplest possible low-latency scorer is a smoothed \(n\)-gram model. For ord
   {\sum_{b\in\Sigma_{\mathtt{EOS}}}C\big(h_c(\sigma),b\big)+\lambda|\Sigma_{\mathtt{EOS}}|},
   \qquad a\in\Sigma_{\mathtt{EOS}}.
 \]
-The derivative decoder can query this table with no neural inference and no parser call.  Its state update is simply \( (\sigma,e,s) \longmapsto \big(\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)\big), \) so it can often saturate small intersections and sample large intersections without replacement under an interactive latency budget.
+Next-token decoding is effectively free: the derivative decoder can query this distribution with essentially zero latency. Its state update is simply \( (\sigma,e,s) \longmapsto \big(\sigma a,\partial_a e,s-\log P_c(a\mid\sigma)\big)\), so it can often saturate small intersections and quickly sample very large intersections without replacement.
 
-The primary weakness here is fidelity. The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \Longrightarrow P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This conflates stylometric properties that a repair model should be able to distinguish, e.g., delimiter balance, indentation, and binding structure. While they provide a good latency baseline, $n$-gram  approximations are generally too coarse and, by themselves, incapable of modeling the conditional probability $P(\sigma \mid \err\sigma)$.
+The primary weakness here is fidelity. The Markov state is the explicit suffix $h_c(\sigma)$, so \( h_c(\sigma)=h_c(\tau) \Longrightarrow P_c(\cdot\mid\sigma)=P_c(\cdot\mid\tau). \) This conflates stylometric properties that a good repair model should be able to distinguish, e.g., delimiter balance, indentation, and binding structure. While they provide a good latency baseline, $n$-gram  approximations are generally too coarse and, by themselves, incapable of modeling the conditional probability $P(\sigma \mid \err\sigma)$.
 
 \subsection{Constrained LLM decoding}
 
@@ -170,29 +170,24 @@ and set \(P_{\hat\theta}(\sigma)=0\) when \(\sigma\notin \mathcal{L}(\alpha_h)\)
   \operatorname{supp}(P_{\hat\theta}).
 \]
 
-During exact decoding, a queue element carries both the residual expression \(e=\partial_\sigma e_\cap\) and the WDFA state \(q_\sigma\). An extension \(a\in\texttt{next}(e)\) advances the scorer by the query update \(q_{\sigma a}=\delta(q_\sigma,a)\) and adds the cost \(-\log w(q_\sigma,a)\), a constant-time lookup operation. If \(\mathsf{Done}(e)\), termination adds \(-\log w_F(q_\sigma)\). Transitions are only pushed when admitted by $\texttt{next}$, \textit{not} the WDFA. Thus strings in \(\widehat{\ell}_{h,\cap}\setminus\ell_\cap\) may influence the learned state representation, but are never emitted as repairs. This gives the intended first-stage tradeoff: latency comparable to an \(n\)-gram model, with a richer regular abstraction and a formal guarantee that every valid repair has nonzero probability.
+During exact decoding, a queue element carries both the residual expression \(e=\partial_\sigma e_\cap\) and the WDFA state \(q_\sigma\). An extension \(a\in\texttt{next}(e)\) advances the scorer by the query update \(q_{\sigma a}=\delta(q_\sigma,a)\) and adds the cost \(-\log w(q_\sigma,a)\), a constant-time lookup operation. If \(\mathsf{Done}(e)\), termination adds \(-\log w_F(q_\sigma)\). Transitions are only pushed when admitted by $\texttt{next}(e)$, \textit{not} the WDFA. Thus strings in \(\widehat{\ell}_{h,\cap}\setminus\ell_\cap\) may influence the learned state representation, but are never emitted as repairs. This gives the intended first-stage tradeoff: latency comparable to an \(n\)-gram model, with a richer regular abstraction and a formal guarantee that every valid repair has nonzero probability.
 
-By default, we choose $h=2$ and... further details can be found in Appendix~\ref{sec:hyperparams}.
+By default, we choose $h=2$ and learn weights over the resulting DFA. In our Python repair experiments, this produces a DFA with $2{,}115$ states and $82{,}257$ transitions, to which we fit locally-normalized weights on a corpus of Python snippets; further details can be found in Appendix~\ref{sec:hyperparams}.
 
 \subsection{LaTeR reranking}\label{sec:LaTeR}
 
 The WDFA prior is fast, but it is still an unconditional language model: \(P_{\hat\theta}(\sigma)\), not \(P(\sigma\mid\err\sigma)\), which is what we need. The final challenge will be to restore this missing conditional information by reranking a small exact candidate list. Let \( C_K^\infty(\err\sigma) = \operatorname{TopK}_{P_{\hat\theta}}(\ell_\cap) \) denote the exact top-\(K\) members of \(\ell_\cap\) under the WDFA prior. In the implementation, the WDFA-guided decoder is stopped after a budget \(T\) or after exhausting $\ell_\cap$, whichever occurs first, yielding an anytime retrieved list
 \[ C_{K,T}(\err\sigma)\subseteq \ell_\cap, \qquad |C_{K,T}(\err\sigma)|\le K. \]
 
-The Levenshtein-aligned Transformer Reranker (LaTeR) scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet. We encode it as a sequence over \((\Sigma\cup\{\bot\})\times(\Sigma\cup\{\bot\})\times\{\texttt{M},\hlorange{\texttt{S}},\hlgreen{\texttt{I}},\hlred{\texttt{D}}\}\), represented explicitly. The reranker uses a query encoder and an alignment-aware candidate encoder,
+The Levenshtein-aligned Transformer Reranker (LaTeR) scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet. We encode it as a sequence over \((\Sigma\cup\{\bot\})^+\times(\Sigma\cup\{\bot\})^+\times\{\texttt{O},\hlorange{\texttt{S}},\hlgreen{\texttt{I}},\hlred{\texttt{D}}\}^+\). The reranker uses a query encoder and an alignment-aware candidate encoder,
 \[
   E_\phi(\err\sigma):  (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p,
   \qquad
   E'_\phi\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big): (\Sigma\times \mathbb{N} \times \mathbb{Z}_4)^{[m, n]} \rightarrow \mathbb{R}^p,
 \]
-and assigns a scalar relevance score
+and uses an $\text{MLP}: \mathbb{R}^p\times\mathbb{R}^p$ to assign a scalar relevance score to each candidate repair,
 \[
-  r_\phi(\err\sigma,\sigma)
-  =
-  \mathrm{MLP}_\phi\!\left(
-                       E_\phi(\err\sigma),
-    E'_\phi\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big)
-  \right).
+  r_\phi(\err\sigma,\sigma) = \mathrm{MLP}_\phi\!\left( E_\phi(\err\sigma), E'_\phi\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big) \right).
 \]
 For a training pair \(\langle\err\sigma,\sigma^\star\rangle\) with
 \(\sigma^\star\in\ell_\cap\), define

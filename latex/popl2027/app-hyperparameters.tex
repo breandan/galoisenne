@@ -23,5 +23,14 @@ Below is a listing of the hyperparameter settings used for training the rerankin
 \end{multicols}
 
 The full parameters $\theta$ are partitioned into two sets, $\theta_e, \theta_r$, for the encoder and reranker layers. The encoder is pretrained on next-token prediction, then fine-tuned on the reranking task. During optimization, we use a smaller learning rate ($\alpha = 10^{-5}$) so as not to disturb the pretrained encoder parameters and a larger learning rate ($\alpha = 10^{-4}$) for the reranker parameters. We train the encoder for $2\times 10^4$ steps and the reranker for $1.3 \times 10^4$ steps, taking $\sim 4$ hours on an Nvidia H100 GPU.
+
+\subsection{WDFA training}
+
+For WDFA-guided retrieval, we construct the $h=2$ Nederhof approximation for the Python grammar, remove $\varepsilon$-arcs and determinize it. The resulting serialized WDFA has $2{,}115$ states and $82{,}257$ transitions. We then fit a locally normalized stochastic model to the deterministic support using a training corpus consists of $6{,}097{,}537$ Python snippets and $243{,}521{,}023$ total repair tokens. For each snippet, we increment every traversed arc count. This estimates
+\begin{equation*}
+  w(q,a) &= \log\frac{c(q,a)+\lambda}{D_q}\qquad
+  D_q = \sum_{\mathclap{b\in\mathrm{out}(q)}} c(q,b)+\lambda\big(|\mathrm{out}(q)|+\mathds{1}[q\in F]\big).
+\end{equation*}
+We use Lidstone smoothing with $\lambda=1$.
 \ifSubfilesClassLoaded{\par\clearpage\bibliography{../bib/acmart}}{}
 \end{document}
