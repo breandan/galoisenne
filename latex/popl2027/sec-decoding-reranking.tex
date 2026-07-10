@@ -10,7 +10,7 @@ The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L
 Let $e_\cap$ be the star-free regular expression produced by Theorem~\ref{thm:witness_construction}, so $\mathcal{L}(e_\cap)=\ell_\cap$.  Brzozowski derivatives expose the legal continuations of a prefix without enumerating the rest of the language.  For a residual $e$, define \(\mathsf{Done}(e) \iff \mathtt{EOS}\in\mathcal{L}(e)\). A left-to-right decoder keeps a priority queue of triples
 $\langle\sigma,e,s\rangle$, where $e=\partial_\sigma e_\cap$ and $s$ is a running cost.  Popping a prefix and pushing
 \[
-  \big\langle \sigma a,\partial_a e, s - \log P(a\mid \sigma)\big\rangle \qquad(a\in\mathsf{Next}(e))
+  \big\langle \sigma a,\partial_a e, s - \log P(a\mid \sigma)\big\rangle \qquad(a\in\texttt{next}(e))
 \]
 performs best-first search over the prefix tree of $\ell_\cap$.  If
 $\mathsf{Done}(e)$, the current prefix is emitted as a complete repair, with an optional end-of-string cost $-\log P(\mathtt{EOS}\mid\sigma)$.
@@ -22,7 +22,7 @@ $\mathsf{Done}(e)$, the current prefix is emitted as a complete repair, with an 
 \end{lemma}
 
 \begin{proof}
-  The invariant $e=\partial_\sigma e_\cap$ holds initially and is preserved by each transition.  If the decoder emits $\sigma$, then $\varepsilon\in\mathcal{L}(\partial_\sigma e_\cap)$, hence $\sigma\in\mathcal{L}(e_\cap)=\ell_\cap$.  Conversely, if $\tau=a_1\cdots a_n\in\ell_\cap$, then every strict prefix $a_1\cdots a_i$ has nonempty residual language, so $a_{i+1}\in\mathsf{Next}(\partial_{a_1\cdots a_i}e_\cap)$ until the final nullable residual is reached. The prefix tree of a finite language is finite, so all of these queue elements are eventually popped. Since the state of a queue element is indexed by the emitted prefix rather than by a parse derivation, each word has a single path through the prefix tree.
+  The invariant $e=\partial_\sigma e_\cap$ holds initially and is preserved by each transition.  If the decoder emits $\sigma$, then $\varepsilon\in\mathcal{L}(\partial_\sigma e_\cap)$, hence $\sigma\in\mathcal{L}(e_\cap)=\ell_\cap$.  Conversely, if $\tau=a_1\cdots a_n\in\ell_\cap$, then every strict prefix $a_1\cdots a_i$ has nonempty residual language, so $a_{i+1}\in\textt{next}(\partial_{a_1\cdots a_i}e_\cap)$ until the final nullable residual is reached. The prefix tree of a finite language is finite, so all of these queue elements are eventually popped. Since the state of a queue element is indexed by the emitted prefix rather than by a parse derivation, each word has a single path through the prefix tree.
 \end{proof}
 
 Thus derivative decoding gives an exact admissibility layer.  If end-of-string is treated as an ordinary transition and scores are negative log probabilities, all edge costs are nonnegative; the same queue is Dijkstra search on the prefix DAG and emits complete repairs in nondecreasing model cost.  With a timeout, it becomes an anytime top-$k$ approximation whose recall is determined only by the visited prefix set.  The remaining design choice is therefore the scoring oracle $P(a\mid\sigma)$, which determines the order in which the finite support is
@@ -66,7 +66,7 @@ Thus the broken snippet is visible as context, while the trained distribution is
 At decoding time, this model is queried inside the derivative-guided decoder. Suppose the current prefix is \(\sigma\) and the residual language is
 \(e=\partial_\sigma e_\cap\).  The admissible next actions are
 \[
-  \mathsf{Adm}(e) = \mathsf{Next}(e) \cup \big\{\mathtt{EOS}\big\}.
+  \mathsf{Adm}(e) = \texttt{next}(e)(e) \cup \big\{\mathtt{EOS}\big\}.
 \]
 We mask the neural distribution to this set and renormalize:
 \[
@@ -81,7 +81,7 @@ We mask the neural distribution to this set and renormalize:
     0 & \text{otherwise.}
   \end{cases}
 \]
-For an ordinary terminal \(a\in\mathsf{Next}(e)\), the decoder pushes
+For an ordinary terminal \(a\in\texttt{next}(e)(e)\), the decoder pushes
 \[
   \big\langle
   \sigma a,\partial_a e,
@@ -182,7 +182,7 @@ and set \(P_{\hat\theta}(\sigma)=0\) when \(\sigma\notin \mathcal{L}(\alpha_h)\)
   \operatorname{supp}(P_{\hat\theta}).
 \]
 
-During exact decoding, a queue element therefore carries both the residual expression \(e=\partial_\sigma e_\cap\) and the WDFA state \(q_\sigma\). An extension \(a\in\mathsf{Next}(e)\) advances the scorer by the constant-time update \(q_{\sigma a}=\delta(q_\sigma,a)\) and adds the cost \(-\log w(q_\sigma,a)\).  If \(\mathsf{Done}(e)\), termination adds \(-\log w_F(q_\sigma)\).  No transition is ever pushed merely because \(\alpha_h\) allows it: the derivative residual remains the exact admissibility test. Thus strings in \(\widehat{\ell}_{h,\cap}\setminus\ell_\cap\) may influence the learned state representation, but are never emitted as repairs. This gives the intended first-stage tradeoff: latency comparable to an \(n\)-gram model, with a richer regular abstraction of the prefix and a formal guarantee that every valid repair has nonzero probability.
+During exact decoding, a queue element therefore carries both the residual expression \(e=\partial_\sigma e_\cap\) and the WDFA state \(q_\sigma\). An extension \(a\in\texttt{next}(e)\) advances the scorer by the constant-time update \(q_{\sigma a}=\delta(q_\sigma,a)\) and adds the cost \(-\log w(q_\sigma,a)\).  If \(\mathsf{Done}(e)\), termination adds \(-\log w_F(q_\sigma)\).  No transition is ever pushed merely because \(\alpha_h\) allows it: the derivative residual remains the exact admissibility test. Thus strings in \(\widehat{\ell}_{h,\cap}\setminus\ell_\cap\) may influence the learned state representation, but are never emitted as repairs. This gives the intended first-stage tradeoff: latency comparable to an \(n\)-gram model, with a richer regular abstraction of the prefix and a formal guarantee that every valid repair has nonzero probability.
 
 \subsection{LaTeR reranking}\label{sec:LaTeR}
 
