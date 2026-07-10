@@ -7,7 +7,7 @@ The construction above gives us an exact finite language, \(\ell_\cap=\mathcal{L
 
 \subsection{Derivative-guided exact decoding}
 
-Let \(e_\cap\) be the star-free regular expression produced by Theorem~\ref{thm:witness_construction}, so \(\mathcal{L}(e_\cap)=\ell_\cap\). Brzozowski derivatives expose the legal continuations of a prefix without enumerating its completions. For a residual \(e\), define \(\mathsf{Done}(e)\iff\varepsilon\in\mathcal{L}(e)\). A search item is either an open prefix \(\langle\sigma,e,s\rangle\), where \(e=\partial_\sigma e_\cap\), or a completed item \(\langle\mathsf{Done}(e),s\rangle\). Popping an open prefix applies one of two cases,
+Let \(e_\cap\) be the star-free regular expression produced by Theorem~\ref{thm:witness_construction}, so \(\mathcal{L}(e_\cap)=\ell_\cap\). For a residual $e$, define \(\mathsf{Done}(e) \iff \mathtt{EOS}\in\mathcal{L}(e)\). A left-to-right decoder keeps a priority queue of triples $\langle\sigma,e,s\rangle$, where $\sigma$ is a prefix, $e=\partial_\sigma e_\cap$ is the residual and $s$ is a running total cost, which maintains order. Initially it is $[\langle\varepsilon, e_\cap, 0\rangle]$. Popping an item from the queue applies one of two possible cases,
 \[
   \begin{aligned}
     \langle\sigma,e,s\rangle&\longmapsto
@@ -28,11 +28,11 @@ and a repair is emitted only when its completed item is popped. Here \(c\) is a 
   The invariant \(e=\partial_\sigma e_\cap\) holds initially and is preserved by every ordinary transition. A completed item for \(\sigma\) is created only when \(\mathsf{Done}(e)\), i.e., when \(\varepsilon\in\mathcal{L}(\partial_\sigma e_\cap)\), hence \(\sigma\in\mathcal{L}(e_\cap)=\ell_\cap\). Conversely, if \(\tau=a_1\cdots a_n\in\ell_\cap\), then every strict prefix \(a_1\cdots a_i\) has nonempty residual language, so \(a_{i+1}\in\texttt{next}(\partial_{a_1\cdots a_i}e_\cap)\), and the final residual is nullable. The prefix tree of a finite language is finite, so all corresponding open and completed items are eventually popped. Each concrete prefix has a unique parent in this tree, so each word has exactly one completed item.
 \end{proof}
 
-If \(c=-\log P\) for positive action probabilities, all costs are nonnegative and the queue is Dijkstra search over the finite prefix tree. Completed repairs are then emitted in nondecreasing total cost, equivalently nonincreasing full-string probability including \(\mathtt{EOS}\). A cutoff preserves soundness but not full support, yielding an anytime prefix of the exact top-\(k\) order. The remaining design choice is the scoring oracle, which controls how quickly likely repairs are reached.
+If \(c=-\log P\) for positive action probabilities, all costs are nonnegative and the queue is Dijkstra search over the finite prefix tree. Completed repairs are then emitted in nondecreasing total cost, or equivalently nonincreasing full-string probability. A cutoff preserves soundness but not full support, yielding an anytime top-\(k\) prefix decoder. The remaining design choice is the scoring oracle, which controls how quickly probable repairs are reached.
 
 \subsection{Fast Markov retrieval}
 
-The simplest possible low-latency scorer is a smoothed \(n\)-gram model. For order \(c\), let \(h_c(\sigma)\) be the last \(c-1\) symbols of \(\sigma\), padded on the left with \(\mathtt{BOS}\), and let \(C(h,a)\) count occurrences of next token \(a\) after history \(h\) in valid programs. Writing \(\Sigma_{\mathtt{EOS}}=\Sigma\cup\{\mathtt{EOS}\}\), we use
+The simplest possible low-latency decoder is a smoothed \(n\)-gram model. For order \(c\), let \(h_c(\sigma)\) be the last \(c-1\) symbols of \(\sigma\), padded on the left with \(\mathtt{BOS}\), and let \(C(h,a)\) count occurrences of next token \(a\) after history \(h\) in valid programs. Writing \(\Sigma_{\mathtt{EOS}}=\Sigma\cup\{\mathtt{EOS}\}\), we use
 \[
   P_c(a\mid\sigma)=
   \frac{C\big(h_c(\sigma),a\big)+\lambda}
@@ -76,10 +76,10 @@ We use \(\mathsf{Adm}(e)\) as a hard support mask. For an ordinary terminal \(a\
   \big\langle\sigma a,\partial_a e,
   s-\log P_\theta(a\mid\err\sigma,\sigma)\big\rangle;
 \]
-when \(\mathsf{Done}(e)\), it pushes \(\langle\mathtt{done}(\sigma),
-s-\log P_\theta(\mathtt{EOS}\mid\err\sigma,\sigma)\rangle\) onto the queue. If \(a=\mathtt{EOS}\), the prefix \(\sigma\) is emitted as a complete repair. Therefore, the LLM only orders prefixes whose residual language is nonempty. It cannot introduce strings outside \(\ell_\cap\), and if the queue is run to saturation, the support remains exactly the same finite language as in Lemma~\ref{lem:derivative_decoder_support}.
+when \(\mathsf{Done}(e)\), it pushes \(\big\langle\mathtt{done}(\sigma),
+s-\log P_\theta(\mathtt{EOS}\mid\err\sigma,\sigma)\big\rangle\) onto the queue. If \(a=\mathtt{EOS}\), the prefix \(\sigma\) is emitted as a complete repair. Therefore, the LLM only orders prefixes whose residual language is nonempty. It cannot introduce strings outside \(\ell_\cap\), and if the queue is run to saturation, the support remains exactly the same finite language as in Lemma~\ref{lem:derivative_decoder_support}.
 
-The advantage of this scorer is fidelity: it conditions jointly on the broken snippet, the entire repair prefix, and long-range syntactic or stylistic cues that are invisible to a fixed suffix model.  The disadvantage is throughput. Each expansion requires a transformer forward pass before the grammar mask can discard inadmissible successors. A width-\(B\) beam can reduce cost, but it loses support completeness unless \( B \ge \max_i |\operatorname{Pref}_i(\ell_\cap)|\), which is exhaustive search in disguise.  In practice, constrained LLM decoding is therefore a useful high-fidelity baseline for scoring \(P(\sigma\mid\err\sigma)\) over \(\ell_\cap\), but a poor first-stage retriever under real-time latency constraints, and as we will show in \S~\ref{sec:rq3}, underperforms a dedicated reranker even when given a generous test-time latency advantage.
+The advantage of this decoder is fidelity: it conditions jointly on the broken snippet, the entire repair prefix, and long-range syntactic or stylistic cues that are invisible to a fixed suffix model. The disadvantage is throughput. Each expansion requires a transformer forward pass before the grammar mask can discard inadmissible successors. A width-\(B\) beam can reduce cost, but it loses support completeness unless \(B \ge |\ell_\cap|\), which is exhaustive search in disguise. In practice, constrained LLM decoding is therefore a useful high-fidelity baseline for scoring \(P(\sigma\mid\err\sigma)\) over \(\ell_\cap\), but a poor first-stage retriever under real-time latency constraints, and as we will show in \S~\ref{sec:rq3}, underperforms a dedicated reranker even with a generous test-time latency advantage.
 
 Instead, we will consider a sound regular overapproximation which provides a much faster next-token scoring interface for retrieval without compromising completeness with respect to $\ell_\cap$.
 
@@ -93,7 +93,7 @@ Nederhof~\cite{nederhof2000practical} constructs \(\alpha_h\) with \(\mathcal{L}
   \qquad
   \delta_A\subseteq Q_A\times(\Sigma\cup V\cup\{\varepsilon\})\times Q_A
 \]
-be the RTN for the CFG \(G=\langle \Sigma, V,P,S\rangle\).  An arc \(p\overset{B}{\longrightarrow}q\) is a call to the component \(R_B\). For an unfolding depth \(h\), the automaton \(\alpha_h\) is obtained by expanding calls for the first \(h\) call levels:
+be the RTN for the CFG \(G=\langle\Sigma,V,P,S\rangle\).  An arc \(p\overset{B}{\longrightarrow}q\) is a call to the component \(R_B\). For an unfolding depth \(h\), the automaton \(\alpha_h\) is obtained by expanding calls for the first \(h\) call levels:
 \[
   p\overset{B}{\longrightarrow}q
   \quad\leadsto\quad
@@ -141,7 +141,7 @@ Then we replace $p\overset{S}{\longrightarrow}q$ arcs with a copy of the RTN and
   \vspace{-0.3cm}
   \caption{Minimal DFA generated by the Nederhof construction for $h\in [1,4].$}
 \end{figure}
-We will now show that the Nederhof overpparoximation does not compromise completeness:
+We will now show that the Nederhof overapproximation does not compromise completeness:
 
 \begin{lemma}[Nederhof support cover]\label{lem:nederhof_support_cover}
   For every unfolding depth \(h\ge0\), \(\mathcal{L}(G)\subseteq\mathcal{L}(\alpha_h)\). Consequently, for every \(\err\sigma\) and edit radius \(d\),
@@ -181,9 +181,9 @@ The WDFA prior is fast, but it is still an unconditional language model: \(P_{\h
 
 The Levenshtein-aligned Transformer Reranker (LaTeR) scores only this retrieved set.  Let \(\mathrm{LA}(\err\sigma,\sigma)\) be a minimum-cost Levenshtein alignment, encoded as token-level edit features indicating which parts of the candidate match, substitute, insert, or correspond to deletions in the broken snippet. We encode it as a sequence over \((\Sigma\cup\{\bot\})^+\times(\Sigma\cup\{\bot\})^+\times\{\texttt{O},\hlorange{\texttt{S}},\hlgreen{\texttt{I}},\hlred{\texttt{D}}\}^+\). The reranker uses a query encoder and an alignment-aware candidate encoder,
 \[
-  E_\phi(\err\sigma):  (\Sigma\times \mathbb{N})^n \rightarrow \mathbb{R}^p,
+  E_\phi(\err\sigma):  \Sigma^n \rightarrow \mathbb{R}^p,
   \qquad
-  E'_\phi\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big): (\Sigma\times \mathbb{N} \times \mathbb{Z}_4)^{[m, n]} \rightarrow \mathbb{R}^p,
+  E'_\phi\big(\sigma,\mathrm{LA}(\err\sigma,\sigma)\big): (\Sigma\times  \mathbb{Z}_4)^{[m, n]} \rightarrow \mathbb{R}^p,
 \]
 and uses an $\text{MLP}: \mathbb{R}^p\times\mathbb{R}^p$ to assign a scalar relevance score to each candidate repair,
 \[
