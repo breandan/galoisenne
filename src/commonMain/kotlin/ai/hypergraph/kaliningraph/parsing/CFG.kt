@@ -155,6 +155,7 @@ val CFG.nonparametricForm: CFG by cache { rewriteHistory[this]!![1] }
  */
 val CFG.reachability by cache { mutableMapOf<Σᐩ, Set<Σᐩ>>() }
 
+
 fun CFG.calcStats() = "CFG(|Σ|=${terminals.size}, |V|=${nonterminals.size}, |P|=${nonterminalProductions.size})"
 fun CFG.stats() = if (this is FrozenCFG) stats else calcStats()
 

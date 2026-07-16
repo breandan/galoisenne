@@ -6,6 +6,7 @@ import ai.hypergraph.kaliningraph.parsing.freeze
 import ai.hypergraph.kaliningraph.parsing.noEpsilonOrNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.noNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.parseCFG
+import ai.hypergraph.kaliningraph.parsing.parseCNF
 
 val s2pCFGStr = """
 START -> Stmts_Or_Newlines
@@ -985,8 +986,7 @@ val pythonStatementCNF: CFG by lazy {
     Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite -> Simple_Name Open_Paren.Arglist.Close_Paren.Colon.Suite
     START -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-  """.trimIndent()
-    .lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  """.parseCNF()
 }
 
 // Not filtered by popularity
@@ -2475,7 +2475,7 @@ val pythonStatementCNFAllProds: CFG by lazy {
     START -> Def_Keyword Simple_Name.Parameters.Arrow.Test.Colon.Suite
     START -> For_Keyword Exprlist.In_Keyword.Testlist_Endcomma.Colon.Suite.Else_Stmt
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-  """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  """.parseCNF()
 }
 
 val s2pg by lazy {
@@ -4298,7 +4298,7 @@ val s2pg by lazy {
     Stmt_Or_Newline -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     Stmts_Or_Newlines -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
     START -> Class_Keyword Simple_Name.Open_Paren.Arglist.Close_Paren.Colon.Suite
-  """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  """.parseCNF()
 }
 
 val dyck by lazy {
@@ -4309,7 +4309,7 @@ val dyck by lazy {
     F -> START R
     L -> (
     R -> )
-  """.trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  """.parseCNF()
 }
 
 val ifWhl by lazy {

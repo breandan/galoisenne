@@ -505,8 +505,7 @@ class ProbabilisticLBH {
   }
 
   val miniktcfg by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/cnf_cfg.txt")
-      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+    File(File("").absolutePath + "/src/jvmTest/resources/cnf_cfg.txt").readText().parseCNF()
   }
 
 /*
@@ -531,8 +530,7 @@ class ProbabilisticLBH {
   }
 
   val miniktcfgapi by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/api_cnf_cfg.txt")
-      .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+    File(File("").absolutePath + "/src/jvmTest/resources/api_cnf_cfg.txt").readText().parseCNF()
   }
 
 
@@ -711,8 +709,7 @@ class ProbabilisticLBH {
   }
 
   val slp by lazy {
-    File(File("").absolutePath + "/src/jvmTest/resources/slp_k2_n2.cnf").readText().trimIndent().lines()
-      .map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+    File(File("").absolutePath + "/src/jvmTest/resources/slp_k2_n2.cnf").readText().parseCNF()
   }
 
 /*

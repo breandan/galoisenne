@@ -5,6 +5,7 @@ import ai.hypergraph.kaliningraph.automata.*
 import ai.hypergraph.kaliningraph.repair.*
 import ai.hypergraph.kaliningraph.types.*
 import ai.hypergraph.kaliningraph.types.times
+import java.io.File
 import java.util.stream.*
 import kotlin.streams.*
 import kotlin.time.Duration.Companion.minutes

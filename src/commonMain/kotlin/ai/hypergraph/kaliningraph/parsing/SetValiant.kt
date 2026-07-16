@@ -418,6 +418,7 @@ fun generateRandomCFG(
   return grammar
 }
 
+fun String.parseCNF(): CFG = trimIndent().lines().map { it.split(" -> ").let { it[0] to it[1].split(" ") } }.toSet().freeze()
 fun Σᐩ.parseCFG(
   normalize: Bln = true,
   validate: Bln = false
