@@ -1,7 +1,7 @@
 package ai.hypergraph.kaliningraph.approximation
 
 import ai.hypergraph.kaliningraph.automata.*
-import ai.hypergraph.kaliningraph.languages.*
+import ai.hypergraph.kaliningraph.languages.Python
 import ai.hypergraph.kaliningraph.languages.Python.subwords
 import ai.hypergraph.kaliningraph.parsing.*
 import ai.hypergraph.kaliningraph.parsing.NFA.Companion.toNFA
@@ -101,10 +101,15 @@ class ApproximationTest {
 */
 //  @Test
   fun benchmarkJavaUtilCollectionsSampling() {
+    val cfg = File(File("").absolutePath + "/src/jvmTest/resources/java_util.cnf").readText().parseCNF()
+
     measureTime {
-      val cfg = File(File("").absolutePath + "/src/jvmTest/resources/java_util_collections.cnf").readText().parseCNF()
-      cfg.sliceSample(30).take(100).toList().forEach { println(it) }
+      cfg.sliceSample(60).take(100).toList().forEach { println(it); println(it in cfg.language) }
     }.also { println("Sampled 100 java.util.Collections words of length 30 in $it") }
+
+//    measureTime {
+//      completeWithSparseGRE(List(30) {"_"}, cfg)!!.enumerate().take(100).toList().forEach { println(it) }
+//    }.also { println("GRE sampled 100 java.util.Collections words of length 30 in $it") }
   }
 
 /*
