@@ -34,7 +34,7 @@ private class FrozenCFG(val cfg: CFG): CFG by cfg {
   override fun equals(other: Any?) =
     ((other as? FrozenCFG)?.cfgId == cfgId) || (other as? CFG) == cfg
   override fun hashCode(): Int = cfgId
-  val stats = calcStats()
+  val stats by lazy(::calcStats)
 }
 
 val CFG.language: CFL by cache { CFL(this) }
