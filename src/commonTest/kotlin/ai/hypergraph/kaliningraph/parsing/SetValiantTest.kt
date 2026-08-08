@@ -274,10 +274,11 @@ class SetValiantTest {
   @Test
   fun testEscapeChars() {
       """
-        S -> a `->` b `|` c
-      """.parseCFG().let { cfg ->
+        S -> a `->` b `|` c | x `||` y
+      """.parseCFG(validate = true).let { cfg ->
         println(cfg.prettyPrint())
         assertTrue("a -> b | c".matches(cfg))
+        assertTrue("x || y".matches(cfg))
       }
   }
 

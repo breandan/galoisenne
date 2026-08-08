@@ -15,8 +15,7 @@ class RepairServer {
 
   fun handleRequest(template: String, cfg: String): String {
     val cfgHash = cfg.hashCode()
-    val cfg = if (cfgHash in map) map[cfgHash]!!
-    else cfg.trimIndent().lines().map { it.split(" -> ").let { it[0] to it[1].split(" ") } }.toSet().freeze()
+    val cfg = if (cfgHash in map) map[cfgHash]!! else cfg.parseCNF()
 
     val tks = template.tokenizeByWhitespace()
     return (if (tks.any { it == "_" }) cfg.startPTree(tks)?.sampleStrWithoutReplacement()

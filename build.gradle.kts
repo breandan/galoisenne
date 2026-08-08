@@ -12,7 +12,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "2.4.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("com.github.ben-manes.versions") version "0.54.0"
+  id("io.github.ben-manes.versions") version "0.60.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 

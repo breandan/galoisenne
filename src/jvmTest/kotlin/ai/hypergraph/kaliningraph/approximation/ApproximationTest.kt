@@ -91,6 +91,22 @@ class ApproximationTest {
   }
 
 /*
+./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.benchmarkJavaUtilCollectionsSampling"
+*/
+//  @Test
+  fun benchmarkJavaUtilCollectionsSampling() {
+    val cfg = File(File("").absolutePath + "/src/jvmTest/resources/java_util.cnf").readText().parseCNF()
+
+    measureTime {
+      cfg.sliceSample(60).take(100).toList().forEach { println(it); println(it in cfg.language) }
+    }.also { println("Sampled 100 java.util.Collections words of length 30 in $it") }
+
+//    measureTime {
+//      completeWithSparseGRE(List(30) {"_"}, cfg)!!.enumerate().take(100).toList().forEach { println(it) }
+//    }.also { println("GRE sampled 100 java.util.Collections words of length 30 in $it") }
+  }
+
+/*
 ./gradlew jvmTest --tests "ai.hypergraph.kaliningraph.approximation.ApproximationTest.testWFA"
 */
   @Test

@@ -3,19 +3,17 @@ package ai.hypergraph.kaliningraph.languages
 import ai.hypergraph.kaliningraph.parsing.freeze
 import ai.hypergraph.kaliningraph.parsing.noEpsilonOrNonterminalStubs
 import ai.hypergraph.kaliningraph.parsing.parseCFG
+import ai.hypergraph.kaliningraph.parsing.parseCNF
 import java.io.File
 
 val k1 by lazy {
-  File(File("").absolutePath + "/src/jvmTest/resources/fun_k1.cnf")
-    .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  File(File("").absolutePath + "/src/jvmTest/resources/fun_k1.cnf").readText().parseCNF()
 }
 val k2 by lazy {
-  File(File("").absolutePath + "/src/jvmTest/resources/fun_k2.cnf")
-    .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  File(File("").absolutePath + "/src/jvmTest/resources/fun_k2.cnf").readText().parseCNF()
 }
 val k3 by lazy {
-  File(File("").absolutePath + "/src/jvmTest/resources/fun_k3.cnf")
-    .readText().trimIndent().lines().map { it.split(" -> ").let { Pair(it[0], it[1].split(" ")) } }.toSet().freeze()
+  File(File("").absolutePath + "/src/jvmTest/resources/fun_k3.cnf").readText().parseCNF()
 }
 
 val k2_orig by lazy {

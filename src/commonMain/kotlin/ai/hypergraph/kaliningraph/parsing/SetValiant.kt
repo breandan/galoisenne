@@ -418,6 +418,7 @@ fun generateRandomCFG(
   return grammar
 }
 
+fun String.parseCNF(): CFG = trimIndent().lines().map { it.split(" -> ").let { it[0] to it[1].split(" ") } }.toSet().freeze()
 fun Σᐩ.parseCFG(
   normalize: Bln = true,
   validate: Bln = false
@@ -431,7 +432,25 @@ fun Σᐩ.stripEscapeChars(c: Char = '`'): Σᐩ =
   if (first() == c && last() == c) drop(1).dropLast(1) else this
 
 val PRODCFG = Regex("\\s*[^|]+\\s+->\\s+([^|]+\\s+\\|\\s+)*[^|]+\\s*")
-fun Σᐩ.isValidProd() = lines().filter { "->" in it }.all { l -> l.matches(PRODCFG) }
+
+private fun Σᐩ.isEscapedCFGToken() =
+  length > 2 && first() == '`' && last() == '`' && substring(1, lastIndex).none { it == '`' }
+
+private fun Σᐩ.isValidCFGToken() =
+  isEscapedCFGToken() || ('`' !in this && '|' !in this && "->" !in this)
+
+fun Σᐩ.isValidProd() = lines().filter { "->" in it }.all { line ->
+  val tokens = line.tokenizeByWhitespace()
+  tokens.size >= 3 &&
+    tokens[1] == "->" &&
+    tokens[0].isValidCFGToken() &&
+    tokens.drop(2).let { rhs ->
+      rhs.first() != "|" &&
+        rhs.last() != "|" &&
+        rhs.all { it == "|" || it.isValidCFGToken() } &&
+        rhs.zipWithNext().none { (left, right) -> left == "|" && right == "|" }
+    }
+}
 
 fun CFGCFG(names: Collection<Σᐩ>): CFG = """
     START -> CFG
