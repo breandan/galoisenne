@@ -12,7 +12,7 @@ plugins {
   `maven-publish`
   kotlin("multiplatform") version "2.4.0"
 //  kotlin("jupyter.api") version "0.11.0-225"
-  id("io.github.ben-manes.versions") version "0.60.0"
+  id("io.github.ben-manes.versions") version "0.61.0"
   id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -120,7 +120,7 @@ kotlin {
 
         // TODO: Replace LogicNG with KoSAT?
         // https://github.com/UnitTestBot/kosat
-        implementation("org.logicng:logicng:2.6.1")
+        implementation("org.logicng:logicng:2.6.2")
 
         implementation("com.google.ortools:ortools-java:9.15.6755")
 
@@ -134,7 +134,7 @@ kotlin {
       dependencies {
         implementation(kotlin("test-junit5"))
 
-        implementation(project.dependencies.platform("org.junit:junit-bom:6.1.0"))
+        implementation(project.dependencies.platform("org.junit:junit-bom:6.1.3"))
         implementation("org.junit.jupiter:junit-jupiter-api")
         implementation("org.junit.jupiter:junit-jupiter-params")
         runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
