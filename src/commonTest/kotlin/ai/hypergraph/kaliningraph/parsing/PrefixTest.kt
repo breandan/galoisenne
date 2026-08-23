@@ -6,6 +6,27 @@ import kotlin.test.*
 
 class PrefixTest {
   @Test
+  fun findsSingleTokenContinuations() {
+    val cfg = linkedSetOf(
+      START_SYMBOL to listOf("P", "A"),
+      START_SYMBOL to listOf("P", "B"),
+      START_SYMBOL to listOf("p"),
+      START_SYMBOL to listOf("Q", "C"),
+      "P" to listOf("p"),
+      "Q" to listOf("q"),
+      "A" to listOf("a"),
+      "B" to listOf("b"),
+      "C" to listOf("c")
+    ).freeze()
+
+    assertEquals(listOf("p", "q"), cfg.singleTokenContinuations(emptyList()).toList())
+    assertEquals(listOf("a", "b"), cfg.singleTokenContinuations(listOf("p")).toList())
+    assertEquals(listOf("c"), cfg.singleTokenContinuations(listOf("q")).toList())
+    assertTrue(cfg.singleTokenContinuations(listOf("p", "a")).isEmpty())
+    assertTrue(cfg.singleTokenContinuations(listOf("bogus")).isEmpty())
+  }
+
+  @Test
   fun constructsPrefixGrammar() {
     val cfg: CFG = setOf(
       START_SYMBOL to listOf("A", "B"),

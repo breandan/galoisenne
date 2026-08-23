@@ -99,6 +99,33 @@ class CompletionTest {
     assertNull(cfg.minimumSuffixLength(listOf("x")))
   }
 
+  @Test
+  fun batchesExactShortestCompletionsByFirstTerminal() {
+    val cfg = linkedSetOf(
+      START_SYMBOL to listOf("P", "A"),
+      START_SYMBOL to listOf("P", "T"),
+      "T" to listOf("B", "C"),
+      "P" to listOf("p"),
+      "A" to listOf("a"),
+      "B" to listOf("b"),
+      "C" to listOf("c")
+    ).freeze()
+    val prefix = listOf("p")
+    val frontier = cfg.minimumSuffixLengthsByFirstTerminal(prefix)
+
+    assertEquals(mapOf("a" to 1, "b" to 2), frontier)
+    frontier.forEach { (terminal, minimum) ->
+      assertEquals(minimum, cfg.completionIndex.minimumSuffixLength(prefix, setOf(terminal)))
+    }
+    assertEquals(mapOf("p" to 2), cfg.minimumSuffixLengthsByFirstTerminal(emptyList()))
+    assertTrue(cfg.minimumSuffixLengthsByFirstTerminal(listOf("bogus")).isEmpty())
+    assertEquals(
+      mapOf("a" to 2),
+      paired.minimumSuffixLengthsByFirstTerminal(listOf("p", "a", "b")),
+      "The frontier excludes the empty completion of an already-complete prefix"
+    )
+  }
+
   private fun finiteTailGrammar(vararg tailLengths: Int): CFG {
     val grammar = linkedSetOf<Production>(
       "P" to listOf("p"),

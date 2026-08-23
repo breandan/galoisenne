@@ -3,6 +3,7 @@
 package ai.hypergraph.kaliningraph.parsing
 
 import ai.hypergraph.kaliningraph.KBitSet
+import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.types.cache
 
 /** Cached indexes for exact, unbounded suffix-length queries. */
@@ -13,6 +14,10 @@ fun CFG.minimumSuffixLength(prefix: List<Σᐩ>): Int? =
 
 fun CFG.minimumNonemptySuffixLength(prefix: List<Σᐩ>): Int? =
   completionIndex.minimumSuffixLength(prefix, terminals)
+
+/** Exact shortest positive suffix length for every viable first terminal. */
+fun CFG.minimumSuffixLengthsByFirstTerminal(prefix: List<Σᐩ>): Map<Σᐩ, Int> =
+  completionIndex.minimumSuffixLengthsByFirstTerminal(prefix)
 
 /** Exact distinct positive suffix lengths, generated in ascending order without a horizon. */
 fun CFG.nonemptySuffixLengths(prefix: List<Σᐩ>): Sequence<Int> =
@@ -83,14 +88,54 @@ class CFGCompletionIndex(private val grammar: CFG) {
     }
   }
 
+  private inner class PrefixQuery(val prefix: List<Σᐩ>, val chart: Array<Array<KBitSet>>?) {
+    private val minima = mutableMapOf<Set<Σᐩ>?, Int?>()
+
+    val completion: CompletionLengths by lazy { buildCompletion(prefix, chart) }
+
+    val minimumByFirstTerminal: Map<Σᐩ, Int> by lazy {
+      linkedMapOf<Σᐩ, Int>().apply {
+        completion.nextTerminals.forEach { terminal ->
+          minimum(setOf(terminal))?.let { put(terminal, it) }
+        }
+      }
+    }
+
+    fun minimum(allowedFirstTerminals: Set<Σᐩ>?): Int? {
+      val allowed = allowedFirstTerminals?.toSet()
+      if (allowed?.isEmpty() == true) return null
+      if (minima.containsKey(allowed)) return minima[allowed]
+      return computeMinimumSuffixLength(
+        prefix = prefix,
+        full = chart,
+        constrainedMinimum = allowed?.let(::minimumWordLengthsStartingWithCached)
+      ).also { minima[allowed] = it }
+    }
+  }
+
+  private val constrainedMinimums = LRUCache<Set<Σᐩ>, LongArray>(64)
+
+  private fun query(prefix: List<Σᐩ>): PrefixQuery {
+    val key = prefix.toList()
+    return PrefixQuery(key, prefixChart(key))
+  }
+
   /** Exact min-plus query; an optional terminal set constrains the first emitted token. */
-  fun minimumSuffixLength(prefix: List<Σᐩ>, allowedFirstTerminals: Set<Σᐩ>? = null): Int? {
-    if (allowedFirstTerminals?.isEmpty() == true) return null
-    val constrainedMinimum = allowedFirstTerminals?.let(::minimumWordLengthsStartingWith)
+  fun minimumSuffixLength(prefix: List<Σᐩ>, allowedFirstTerminals: Set<Σᐩ>? = null): Int? =
+    query(prefix).minimum(allowedFirstTerminals)
+
+  /** Exact positive suffix minima, grouped by the first emitted terminal. */
+  fun minimumSuffixLengthsByFirstTerminal(prefix: List<Σᐩ>): Map<Σᐩ, Int> = query(prefix).minimumByFirstTerminal
+
+  private fun computeMinimumSuffixLength(
+    prefix: List<Σᐩ>,
+    full: Array<Array<KBitSet>>?,
+    constrainedMinimum: LongArray?
+  ): Int? {
     if (prefix.isEmpty())
       return (constrainedMinimum ?: minimumWordLength)[start]
         .takeIf { it < COMPLETION_INFINITY }?.toInt()
-    val full = prefixChart(prefix) ?: return null
+    full ?: return null
     val size = prefix.size
     val completion = Array(size + 1) { LongArray(variableCount) { COMPLETION_INFINITY } }
     (constrainedMinimum ?: minimumWordLength).copyInto(completion[size])
@@ -123,8 +168,10 @@ class CFGCompletionIndex(private val grammar: CFG) {
     return completion[0][start].takeIf { it < COMPLETION_INFINITY }?.toInt()
   }
 
-  fun after(prefix: List<Σᐩ>): CompletionLengths {
-    val full = prefixChart(prefix) ?: return EMPTY_COMPLETION
+  fun after(prefix: List<Σᐩ>): CompletionLengths = query(prefix).completion
+
+  private fun buildCompletion(prefix: List<Σᐩ>, full: Array<Array<KBitSet>>?): CompletionLengths {
+    full ?: return EMPTY_COMPLETION
     val n = prefix.size
     val nodeCount = variableCount * (n + 2)
     fun word(variable: Int) = variable
@@ -241,6 +288,10 @@ class CFGCompletionIndex(private val grammar: CFG) {
     closeWeightedParents(result, heap)
     return result
   }
+
+  private fun minimumWordLengthsStartingWithCached(allowedTerminals: Set<Σᐩ>): LongArray =
+    if (allowedTerminals == grammar.terminals) minimumWordLength
+    else constrainedMinimums.getOrPut(allowedTerminals) { minimumWordLengthsStartingWith(allowedTerminals) }
 
   private fun closeWeightedParents(distance: LongArray, heap: PackedMinHeap) {
     heap.clear()
