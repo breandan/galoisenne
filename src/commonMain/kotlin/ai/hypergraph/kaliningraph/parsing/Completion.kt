@@ -6,6 +6,9 @@ import ai.hypergraph.kaliningraph.KBitSet
 import ai.hypergraph.kaliningraph.cache.LRUCache
 import ai.hypergraph.kaliningraph.types.cache
 
+/** Maximum exact suffix length retained by the grammar-wide completion spectrum. */
+const val DEFAULT_COMPLETION_SPECTRUM_BOUND = 32
+
 /** Cached indexes for exact, unbounded suffix-length queries. */
 val CFG.completionIndex: CFGCompletionIndex by cache { CFGCompletionIndex(this) }
 
@@ -18,6 +21,41 @@ fun CFG.minimumNonemptySuffixLength(prefix: List<Σᐩ>): Int? =
 /** Exact shortest positive suffix length for every viable first terminal. */
 fun CFG.minimumSuffixLengthsByFirstTerminal(prefix: List<Σᐩ>): Map<Σᐩ, Int> =
   completionIndex.minimumSuffixLengthsByFirstTerminal(prefix)
+
+/** One exact, bounded suffix-frontier analysis for a prefix. */
+data class BoundedSuffixLengthAnalysis(
+  /** Exact viable first terminals, including those whose shortest suffix exceeds [maxLength]. */
+  val nextTerminals: Set<Σᐩ>,
+  /** Exact positive suffix lengths within [maxLength], including the first terminal. */
+  val lengthsByFirstTerminal: Map<Σᐩ, List<Int>>,
+  val maxLength: Int
+) {
+  /** Viable terminals which cannot be represented by this bounded analysis. */
+  val terminalsBeyondBound: Set<Σᐩ>
+    get() = nextTerminals - lengthsByFirstTerminal.keys
+}
+
+/**
+ * The first [countPerTerminal] exact positive suffix lengths no larger than [maxLength],
+ * grouped by their first emitted terminal. The first terminal is included in each length.
+ *
+ * Unlike the unbounded scalar queries, this constructs one residual system for the whole
+ * frontier. Terminals whose shortest completion exceeds [maxLength] are intentionally absent.
+ */
+fun CFG.boundedSuffixLengthsByFirstTerminal(
+  prefix: List<Σᐩ>,
+  countPerTerminal: Int,
+  maxLength: Int = DEFAULT_COMPLETION_SPECTRUM_BOUND
+): Map<Σᐩ, List<Int>> =
+  completionIndex.boundedSuffixLengthsByFirstTerminal(prefix, countPerTerminal, maxLength)
+
+/** As above, retaining exact unbounded first-terminal viability alongside the bounded spectra. */
+fun CFG.boundedSuffixLengthAnalysis(
+  prefix: List<Σᐩ>,
+  countPerTerminal: Int,
+  maxLength: Int = DEFAULT_COMPLETION_SPECTRUM_BOUND
+): BoundedSuffixLengthAnalysis =
+  completionIndex.boundedSuffixLengthAnalysis(prefix, countPerTerminal, maxLength)
 
 /** Exact distinct positive suffix lengths, generated in ascending order without a horizon. */
 fun CFG.nonemptySuffixLengths(prefix: List<Σᐩ>): Sequence<Int> =
@@ -55,6 +93,11 @@ class CompletionLengths internal constructor(
  * The grammar must be unit-free CNF (terminal units and binary variable rules).
  */
 class CFGCompletionIndex(private val grammar: CFG) {
+  private data class BoundedSpectra(
+    val lengths: IntArray,
+    val firstLengths: IntArray,
+    val firstTerminals: IntArray
+  )
   private data class BinaryRule(val parent: Int, val left: Int, val right: Int)
   private data class WeightedParent(val parent: Int, val appendedLength: Long)
   private data class UnaryRule(val parent: Int, val child: Int)
@@ -73,6 +116,7 @@ class CFGCompletionIndex(private val grammar: CFG) {
 
   private val variableCount = grammar.nonterminals.size
   private val terminalCount = grammar.terminals.size
+  private val terminalWordCount = (terminalCount + Int.SIZE_BITS - 1) / Int.SIZE_BITS
   private val start = grammar.bindex[START_SYMBOL]
   private val binaryRules = grammar.mapNotNull { (lhs, rhs) ->
     if (rhs.size == 2)
@@ -80,6 +124,10 @@ class CFGCompletionIndex(private val grammar: CFG) {
     else null
   }
   private val minimumWordLength = minimumWordLengths()
+  private val boundedWordSpectra = boundedWordSpectra()
+  private val binaryRulesByLeft = Array(variableCount) { mutableListOf<BinaryRule>() }.also { uses ->
+    binaryRules.forEach { uses[it.left] += it }
+  }
   private val weightedParents = Array(variableCount) { mutableListOf<WeightedParent>() }.also { parents ->
     binaryRules.forEach { rule ->
       val appendedLength = minimumWordLength[rule.right]
@@ -126,6 +174,38 @@ class CFGCompletionIndex(private val grammar: CFG) {
 
   /** Exact positive suffix minima, grouped by the first emitted terminal. */
   fun minimumSuffixLengthsByFirstTerminal(prefix: List<Σᐩ>): Map<Σᐩ, Int> = query(prefix).minimumByFirstTerminal
+
+  /**
+   * Exact positive suffix lengths within the precomputed grammar-wide spectrum bound.
+   * This performs one prefix chart construction and one bounded residual fixed point,
+   * independent of the number of viable first terminals.
+   */
+  fun boundedSuffixLengthsByFirstTerminal(
+    prefix: List<Σᐩ>,
+    countPerTerminal: Int,
+    maxLength: Int = DEFAULT_COMPLETION_SPECTRUM_BOUND
+  ): Map<Σᐩ, List<Int>> =
+    boundedSuffixLengthAnalysis(prefix, countPerTerminal, maxLength).lengthsByFirstTerminal
+
+  /** Bounded exact spectra plus the exact unbounded viable first-terminal set. */
+  fun boundedSuffixLengthAnalysis(
+    prefix: List<Σᐩ>,
+    countPerTerminal: Int,
+    maxLength: Int = DEFAULT_COMPLETION_SPECTRUM_BOUND
+  ): BoundedSuffixLengthAnalysis {
+    require(countPerTerminal >= 0) { "countPerTerminal must be nonnegative" }
+    require(maxLength in 0..DEFAULT_COMPLETION_SPECTRUM_BOUND) {
+      "maxLength must be between 0 and $DEFAULT_COMPLETION_SPECTRUM_BOUND"
+    }
+    val key = prefix.toList()
+    val full = prefixChart(key) ?: return BoundedSuffixLengthAnalysis(emptySet(), emptyMap(), maxLength)
+    return solveBoundedSuffixLengths(
+      prefixSize = key.size,
+      full = full,
+      countPerTerminal = countPerTerminal,
+      maxLength = maxLength
+    )
+  }
 
   private fun computeMinimumSuffixLength(
     prefix: List<Σᐩ>,
@@ -255,6 +335,245 @@ class CFGCompletionIndex(private val grammar: CFG) {
     }
     return full
   }
+
+  /**
+   * Solves all first-terminal spectra together. Bit d-1 denotes an exact positive length d.
+   * Grammar-word spectra are precomputed above; only residual rows depend on the prefix.
+   */
+  private fun solveBoundedSuffixLengths(
+    prefixSize: Int,
+    full: Array<Array<KBitSet>>,
+    countPerTerminal: Int,
+    maxLength: Int
+  ): BoundedSuffixLengthAnalysis {
+    val rowLengths = Array(prefixSize + 1) { IntArray(variableCount) }
+    val rowFirstLengths = Array(prefixSize + 1) { IntArray(variableCount * terminalCount) }
+    val rowFirstTerminals = Array(prefixSize + 1) { IntArray(variableCount * terminalWordCount) }
+    val rowNullable = Array(prefixSize + 1) { BooleanArray(variableCount) }
+    boundedWordSpectra.lengths.copyInto(rowLengths[prefixSize])
+    boundedWordSpectra.firstLengths.copyInto(rowFirstLengths[prefixSize])
+    boundedWordSpectra.firstTerminals.copyInto(rowFirstTerminals[prefixSize])
+
+    for (begin in prefixSize - 1 downTo 0) {
+      val lengths = rowLengths[begin]
+      val firstLengths = rowFirstLengths[begin]
+      val firstTerminals = rowFirstTerminals[begin]
+      val nullable = rowNullable[begin]
+
+      for (variable in full[begin][prefixSize].iterator()) nullable[variable] = true
+      for (split in begin + 1 until prefixSize)
+        for (leftVariable in full[begin][split].iterator())
+          (grammar.leftAdj[leftVariable] ?: continue).forEachIfIn(ALL_VARIABLES) { right, parent ->
+            unionBoundedState(
+              targetVariable = parent,
+              targetLengths = lengths,
+              targetFirstLengths = firstLengths,
+              targetFirstTerminals = firstTerminals,
+              targetNullable = nullable,
+              sourceVariable = right,
+              sourceLengths = rowLengths[split],
+              sourceFirstLengths = rowFirstLengths[split],
+              sourceFirstTerminals = rowFirstTerminals[split],
+              sourceNullable = rowNullable[split]
+            )
+          }
+
+      val queued = BooleanArray(variableCount)
+      val queue = ArrayDeque<Int>()
+      fun enqueue(variable: Int) {
+        if (!queued[variable]) {
+          queued[variable] = true
+          queue += variable
+        }
+      }
+      for (variable in 0 until variableCount)
+        if (nullable[variable] || lengths[variable] != 0 ||
+          hasFirstTerminal(firstTerminals, variable)) enqueue(variable)
+
+      while (queue.isNotEmpty()) {
+        val left = queue.removeFirst().also { queued[it] = false }
+        val leftLengthMask = lengths[left]
+        val leftOffset = left * terminalCount
+        binaryRulesByLeft[left].forEach { rule ->
+          val rightLengthMask = boundedWordSpectra.lengths[rule.right]
+          if (minimumWordLength[rule.right] >= COMPLETION_INFINITY) return@forEach
+          var changed = false
+          val parent = rule.parent
+          val candidateLengths = concatenateLengthMasks(leftLengthMask, rightLengthMask) or
+            if (nullable[left]) rightLengthMask else 0
+          val mergedLengths = lengths[parent] or candidateLengths
+          if (mergedLengths != lengths[parent]) {
+            lengths[parent] = mergedLengths
+            changed = true
+          }
+
+          val parentOffset = parent * terminalCount
+          val rightOffset = rule.right * terminalCount
+          for (terminal in 0 until terminalCount) {
+            val candidateFirstLengths =
+              concatenateLengthMasks(firstLengths[leftOffset + terminal], rightLengthMask) or
+                if (nullable[left]) boundedWordSpectra.firstLengths[rightOffset + terminal] else 0
+            val index = parentOffset + terminal
+            val merged = firstLengths[index] or candidateFirstLengths
+            if (merged != firstLengths[index]) {
+              firstLengths[index] = merged
+              changed = true
+            }
+          }
+          val parentTerminalOffset = parent * terminalWordCount
+          val leftTerminalOffset = left * terminalWordCount
+          val rightTerminalOffset = rule.right * terminalWordCount
+          for (word in 0 until terminalWordCount) {
+            val candidateFirstTerminals = firstTerminals[leftTerminalOffset + word] or
+              if (nullable[left]) boundedWordSpectra.firstTerminals[rightTerminalOffset + word] else 0
+            val index = parentTerminalOffset + word
+            val merged = firstTerminals[index] or candidateFirstTerminals
+            if (merged != firstTerminals[index]) {
+              firstTerminals[index] = merged
+              changed = true
+            }
+          }
+          if (changed) enqueue(parent)
+        }
+      }
+    }
+
+    val rootFirstLengths = rowFirstLengths[0]
+    val rootOffset = start * terminalCount
+    val admittedBits = lowLengthBits(maxLength)
+    val nextTerminals = linkedSetOf<Σᐩ>()
+    val rootFirstTerminalOffset = start * terminalWordCount
+    for (terminal in 0 until terminalCount)
+      if (rootFirstTerminals(rootFirstTerminalOffset, terminal, rowFirstTerminals[0]))
+        nextTerminals += grammar.tmLst[terminal]
+    val lengthsByFirstTerminal = linkedMapOf<Σᐩ, List<Int>>().apply {
+      for (terminal in 0 until terminalCount) {
+        var lengths = rootFirstLengths[rootOffset + terminal] and admittedBits
+        if (lengths == 0) continue
+        val admitted = ArrayList<Int>(countPerTerminal)
+        while (lengths != 0 && admitted.size < countPerTerminal) {
+          val bit = lengths.countTrailingZeroBits()
+          admitted += bit + 1
+          lengths = lengths and (lengths - 1)
+        }
+        if (admitted.isNotEmpty()) put(grammar.tmLst[terminal], admitted)
+      }
+    }
+    return BoundedSuffixLengthAnalysis(nextTerminals, lengthsByFirstTerminal, maxLength)
+  }
+
+  /** Exact grammar-word spectra, shared by every prefix query. */
+  private fun boundedWordSpectra(): BoundedSpectra {
+    val lengths = IntArray(variableCount)
+    val firstLengths = IntArray(variableCount * terminalCount)
+    val firstTerminals = IntArray(variableCount * terminalWordCount)
+    grammar.forEach { (lhs, rhs) ->
+      if (rhs.size == 1) {
+        val parent = grammar.bindex[lhs]
+        val terminal = grammar.tmMap.getValue(rhs.single())
+        lengths[parent] = lengths[parent] or 1
+        val index = parent * terminalCount + terminal
+        firstLengths[index] = firstLengths[index] or 1
+        val terminalIndex = parent * terminalWordCount + terminal / Int.SIZE_BITS
+        firstTerminals[terminalIndex] =
+          firstTerminals[terminalIndex] or (1 shl (terminal % Int.SIZE_BITS))
+      }
+    }
+
+    var changed: Boolean
+    do {
+      changed = false
+      binaryRules.forEach { rule ->
+        val candidateLengths = concatenateLengthMasks(lengths[rule.left], lengths[rule.right])
+        val mergedLengths = lengths[rule.parent] or candidateLengths
+        if (mergedLengths != lengths[rule.parent]) {
+          lengths[rule.parent] = mergedLengths
+          changed = true
+        }
+        val parentOffset = rule.parent * terminalCount
+        val leftOffset = rule.left * terminalCount
+        for (terminal in 0 until terminalCount) {
+          val candidateFirstLengths =
+            concatenateLengthMasks(firstLengths[leftOffset + terminal], lengths[rule.right])
+          val index = parentOffset + terminal
+          val merged = firstLengths[index] or candidateFirstLengths
+          if (merged != firstLengths[index]) {
+            firstLengths[index] = merged
+            changed = true
+          }
+        }
+        if (minimumWordLength[rule.left] < COMPLETION_INFINITY &&
+          minimumWordLength[rule.right] < COMPLETION_INFINITY) {
+          val parentOffset = rule.parent * terminalWordCount
+          val leftOffset = rule.left * terminalWordCount
+          for (word in 0 until terminalWordCount) {
+            val merged = firstTerminals[parentOffset + word] or firstTerminals[leftOffset + word]
+            if (merged != firstTerminals[parentOffset + word]) {
+              firstTerminals[parentOffset + word] = merged
+              changed = true
+            }
+          }
+        }
+      }
+    } while (changed)
+    return BoundedSpectra(lengths, firstLengths, firstTerminals)
+  }
+
+  private fun unionBoundedState(
+    targetVariable: Int,
+    targetLengths: IntArray,
+    targetFirstLengths: IntArray,
+    targetFirstTerminals: IntArray,
+    targetNullable: BooleanArray,
+    sourceVariable: Int,
+    sourceLengths: IntArray,
+    sourceFirstLengths: IntArray,
+    sourceFirstTerminals: IntArray,
+    sourceNullable: BooleanArray
+  ): Boolean {
+    var changed = false
+    if (sourceNullable[sourceVariable] && !targetNullable[targetVariable]) {
+      targetNullable[targetVariable] = true
+      changed = true
+    }
+    val mergedLengths = targetLengths[targetVariable] or sourceLengths[sourceVariable]
+    if (mergedLengths != targetLengths[targetVariable]) {
+      targetLengths[targetVariable] = mergedLengths
+      changed = true
+    }
+    val targetOffset = targetVariable * terminalCount
+    val sourceOffset = sourceVariable * terminalCount
+    for (terminal in 0 until terminalCount) {
+      val targetIndex = targetOffset + terminal
+      val merged = targetFirstLengths[targetIndex] or sourceFirstLengths[sourceOffset + terminal]
+      if (merged != targetFirstLengths[targetIndex]) {
+        targetFirstLengths[targetIndex] = merged
+        changed = true
+      }
+    }
+    val targetTerminalOffset = targetVariable * terminalWordCount
+    val sourceTerminalOffset = sourceVariable * terminalWordCount
+    for (word in 0 until terminalWordCount) {
+      val index = targetTerminalOffset + word
+      val merged = targetFirstTerminals[index] or sourceFirstTerminals[sourceTerminalOffset + word]
+      if (merged != targetFirstTerminals[index]) {
+        targetFirstTerminals[index] = merged
+        changed = true
+      }
+    }
+    return changed
+  }
+
+  private fun hasFirstTerminal(firstTerminals: IntArray, variable: Int): Boolean {
+    val offset = variable * terminalWordCount
+    for (word in 0 until terminalWordCount)
+      if (firstTerminals[offset + word] != 0) return true
+    return false
+  }
+
+  private fun rootFirstTerminals(offset: Int, terminal: Int, firstTerminals: IntArray): Boolean =
+    firstTerminals[offset + terminal / Int.SIZE_BITS] and
+      (1 shl (terminal % Int.SIZE_BITS)) != 0
 
   private fun minimumWordLengths(): LongArray {
     val result = LongArray(variableCount) { COMPLETION_INFINITY }
@@ -468,6 +787,24 @@ private fun unionInto(target: KBitSet, source: KBitSet): Boolean {
     if (union != target.data[index]) { target.data[index] = union; changed = true }
   }
   return changed
+}
+
+/** Convolution of positive lengths encoded at bit d-1, truncated exactly at length 32. */
+private fun concatenateLengthMasks(leftLengths: Int, rightLengths: Int): Int {
+  var left = leftLengths
+  var result = 0
+  while (left != 0) {
+    val shift = left.countTrailingZeroBits() + 1
+    if (shift < Int.SIZE_BITS) result = result or (rightLengths shl shift)
+    left = left and (left - 1)
+  }
+  return result
+}
+
+private fun lowLengthBits(maxLength: Int): Int = when {
+  maxLength <= 0 -> 0
+  maxLength >= Int.SIZE_BITS -> -1
+  else -> (1 shl maxLength) - 1
 }
 
 private fun <T> Sequence<T>.memoized(): Sequence<T> {

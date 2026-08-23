@@ -126,6 +126,111 @@ class CompletionTest {
     )
   }
 
+  @Test
+  fun batchesBoundedSuffixSpectraByFirstTerminal() {
+    val cfg = firstTerminalTailGrammar(
+      "a" to intArrayOf(7, 11, 15),
+      "b" to intArrayOf(8, 14, 17),
+      "c" to intArrayOf(2, 6)
+    )
+
+    assertEquals(
+      mapOf(
+        "a" to listOf(7, 11, 15),
+        "b" to listOf(8, 14, 17),
+        "c" to listOf(2, 6)
+      ),
+      cfg.boundedSuffixLengthsByFirstTerminal(listOf("p"), countPerTerminal = 5, maxLength = 20)
+    )
+  }
+
+  @Test
+  fun boundedSuffixSpectraRespectCountAndLengthCutoffs() {
+    val cfg = firstTerminalTailGrammar(
+      "a" to intArrayOf(7, 11, 15, 19),
+      "b" to intArrayOf(14, 18),
+      "c" to intArrayOf(17)
+    )
+
+    val analysis = cfg.boundedSuffixLengthAnalysis(
+      listOf("p"),
+      countPerTerminal = 2,
+      maxLength = 14
+    )
+    assertEquals(
+      mapOf("a" to listOf(7, 11), "b" to listOf(14)),
+      analysis.lengthsByFirstTerminal,
+      "The batch must stop at both the per-terminal count and the inclusive length bound"
+    )
+    assertEquals(setOf("a", "b", "c"), analysis.nextTerminals)
+    assertEquals(setOf("c"), analysis.terminalsBeyondBound)
+    assertTrue(
+      cfg.boundedSuffixLengthsByFirstTerminal(listOf("p"), countPerTerminal = 0, maxLength = 20).isEmpty()
+    )
+    assertTrue(
+      cfg.boundedSuffixLengthsByFirstTerminal(listOf("bogus"), countPerTerminal = 5, maxLength = 20).isEmpty()
+    )
+
+    val boundaryAnalysis = firstTerminalTailGrammar(
+      "inside" to intArrayOf(DEFAULT_COMPLETION_SPECTRUM_BOUND),
+      "outside" to intArrayOf(DEFAULT_COMPLETION_SPECTRUM_BOUND + 1)
+    ).boundedSuffixLengthAnalysis(listOf("p"), countPerTerminal = 5)
+    assertEquals(
+      mapOf("inside" to listOf(DEFAULT_COMPLETION_SPECTRUM_BOUND)),
+      boundaryAnalysis.lengthsByFirstTerminal,
+      "The sign bit still represents the inclusive upper boundary of the 32-bit spectrum"
+    )
+    assertEquals(setOf("inside", "outside"), boundaryAnalysis.nextTerminals)
+    assertEquals(setOf("outside"), boundaryAnalysis.terminalsBeyondBound)
+  }
+
+  @Test
+  fun boundedSuffixSpectraExcludeEmptyCompletionButRetainPositiveExtensions() {
+    val cfg = linkedSetOf(
+      START_SYMBOL to listOf("p"),
+      START_SYMBOL to listOf("P", "A"),
+      "P" to listOf("p"),
+      "A" to listOf("a")
+    ).freeze()
+
+    assertEquals(
+      mapOf("a" to listOf(1)),
+      cfg.boundedSuffixLengthsByFirstTerminal(listOf("p"), countPerTerminal = 5, maxLength = 20)
+    )
+    assertTrue(
+      linkedSetOf(START_SYMBOL to listOf("p")).freeze()
+        .boundedSuffixLengthsByFirstTerminal(listOf("p"), countPerTerminal = 5, maxLength = 20)
+        .isEmpty(),
+      "An empty completion is not a nonempty first-terminal slice"
+    )
+  }
+
+  @Test
+  fun boundedBatchAgreesWithIndependentResidualLengthQueries() {
+    val cfg = firstTerminalTailGrammar(
+      "a" to intArrayOf(1, 4, 9, 16, 25),
+      "b" to intArrayOf(2, 3, 8, 21),
+      "c" to intArrayOf(5, 13, 24)
+    )
+    val prefix = listOf("p")
+    val count = 4
+    val bound = 20
+    val expected = cfg.terminals.mapNotNull { terminal ->
+      val lengths = cfg.completionSuffixLengths(prefix + terminal, includeEmpty = true)
+        .map { it + 1 }
+        .takeWhile { it <= bound }
+        .take(count)
+        .toList()
+      if (lengths.isEmpty()) null else terminal to lengths
+    }.toMap()
+
+    assertEquals(
+      expected,
+      cfg.boundedSuffixLengthsByFirstTerminal(prefix, count, bound),
+      "The batched spectrum must be equivalent to querying every terminal residual separately"
+    )
+  }
+
   private fun finiteTailGrammar(vararg tailLengths: Int): CFG {
     val grammar = linkedSetOf<Production>(
       "P" to listOf("p"),
@@ -140,6 +245,30 @@ class CompletionTest {
           val lhs = "TAIL_${length}_$remaining"
           val rhs = if (remaining == 2) "X" else "TAIL_${length}_${remaining - 1}"
           grammar += lhs to listOf("X", rhs)
+        }
+      }
+    }
+    return grammar.freeze()
+  }
+
+  /** `p` followed by one of several exact-length tails, grouped by its first token. */
+  private fun firstTerminalTailGrammar(vararg branches: Pair<String, IntArray>): CFG {
+    val grammar = linkedSetOf<Production>("P" to listOf("p"), "X" to listOf("x"))
+    branches.forEachIndexed { branchIndex, (terminal, lengths) ->
+      val first = "FIRST_$branchIndex"
+      grammar += first to listOf(terminal)
+      lengths.forEach { length ->
+        require(length > 0)
+        if (length == 1) grammar += START_SYMBOL to listOf("P", first)
+        else {
+          val root = "BRANCH_${branchIndex}_${length}_$length"
+          grammar += START_SYMBOL to listOf("P", root)
+          grammar += root to listOf(first, "TAIL_${branchIndex}_${length}_${length - 1}")
+          for (remaining in length - 1 downTo 1) {
+            val lhs = "TAIL_${branchIndex}_${length}_$remaining"
+            if (remaining == 1) grammar += lhs to listOf("x")
+            else grammar += lhs to listOf("X", "TAIL_${branchIndex}_${length}_${remaining - 1}")
+          }
         }
       }
     }
