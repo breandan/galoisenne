@@ -3,7 +3,7 @@
 
 \clearpage\section{Method}\label{sec:method}
 
-Our key observation is that repairability can be treated as an instance of CFL reachability. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals can derive the paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives $S$. As long as one of the participants in the language intersection is presented as an acyclic FSA, we show the intersection nonemptiness problem is decidable in linear parallel time in the span of the transition relation. Formally,
+Our key observation is that repairability can be treated as an instance of CFL reachability. Given a CFG \(G\) and an acyclic NFA \(A_\varnothing\), we compute which nonterminals can derive the paths \(p\rightsquigarrow r\) in \(A_\varnothing\), then ask whether some accepting path from \(q_\alpha\) derives $S$. As long as one of the participants in the language intersection is presented as an acyclic FSA, we show the intersection nonemptiness problem is decidable in linear parallel time in the span of the FSA's transition relation. Formally,
 
 \begin{theorem}\label{thm:parallel_decision_complexity}
   Let \(G=\langle \Sigma, V,P,S\rangle\) be a CFG in CNF and let \(A_\varnothing=\langle Q,\Sigma,\delta,q_\alpha,F\rangle\) be an \(\varepsilon\)-free acyclic NFA (ANFA). Define its span as \( |A_\varnothing|=\max\{m\mid A_\varnothing\text{ has an }m\text{-arc path}\}\). There exists a decision procedure \(\Psi: \text{CFG} \rightarrow \text{ANFA} \rightarrow \mathbb{B}\) such that
