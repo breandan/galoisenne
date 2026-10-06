@@ -1,16 +1,23 @@
 package edu.mcgill.cstk.experiments.repair
 
+import ai.hypergraph.kaliningraph.KBitSet
+import ai.hypergraph.kaliningraph.automata.latestLangEditDistance
 import ai.hypergraph.kaliningraph.parsing.*
+import ai.hypergraph.kaliningraph.repair.LED_BUFFER
+import ai.hypergraph.kaliningraph.repair.MAX_RADIUS
 import java.math.BigInteger
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
+import java.util.concurrent.FutureTask
 import java.util.concurrent.RecursiveAction
-import java.util.concurrent.RecursiveTask
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.stream.IntStream
+import kotlin.math.abs
 
 /** Exact size statistics for a fixed-length DFA slice. */
 data class DFASize(val states: Long, val transitions: Long, val languageSize: BigInteger = BigInteger.ZERO)
@@ -21,7 +28,10 @@ data class DFASize(val states: Long, val transitions: Long, val languageSize: Bi
  * The historical name is retained for source compatibility; the returned automaton is not
  * required to be minimal. Determinism, completeness of the represented slice, and exact
  * distinct-word cardinalities are preserved. Structural hash-consing is an optional space/time
- * optimization and can be disabled with `-Dcstk.dfa.structuralSharing=false`.
+ * optimization and can be disabled with `-Dcstk.dfa.structuralSharing=false`. Exact completed
+ * product states are memoized across length waves for the arena's lifetime. An optional completed
+ * result budget can be configured with `-Dcstk.dfa.productMemoBytes=<bytes>` (zero retains only the
+ * active wave); by default the persistent memo is unbounded.
  */
 fun CFG.minimalSliceDFA(length: Int, onSlice: (Int, DFASize) -> Unit = { _, _ -> }): PackedDFA {
   require(length >= 1)
@@ -36,6 +46,433 @@ fun CFG.minimalSliceDFA(length: Int, onSlice: (Int, DFASize) -> Unit = { _, _ ->
     finalSize = size
   }
   return builder.pack(finalSlice!!, finalSize!!)
+}
+
+/**
+ * A compact deterministic acyclic automaton for a finite set of token strings.
+ *
+ * The transition rows are stored in CSR form. States are memoized derivative residuals, which is
+ * sufficient for determinism; equivalent transition rows are deliberately not minimized. This is
+ * therefore a possibly nonminimal DAFSA rather than a parse-forest encoding whose paths may contain
+ * duplicate strings. [finalState] is the canonical final sink, but other states may also be
+ * accepting when one repair is a prefix of another.
+ */
+class PackedDAFSA internal constructor(
+  val terminals: List<String>,
+  val startState: Int,
+  val finalState: Int,
+  private val offsets: IntArray,
+  private val labels: IntArray,
+  private val targets: IntArray,
+  private val accepting: BooleanArray,
+  private val suffixLanguageSizes: Array<BigInteger>,
+  val forestNodeCount: Int,
+  val derivativeComputations: Int
+) {
+  val stateCount: Int get() = offsets.size - 1
+  val transitionCount: Int get() = labels.size
+  val languageSize: BigInteger get() = suffixLanguageSizes[startState]
+  private val terminalIds by lazy(LazyThreadSafetyMode.PUBLICATION) {
+    terminals.withIndex().associate { (index, terminal) -> terminal to index }
+  }
+
+  fun summarize(): String =
+    "(states=$stateCount, transitions=$transitionCount, words=$languageSize, " +
+      "forestNodes=$forestNodeCount, derivatives=$derivativeComputations)"
+
+  fun recognizes(tokens: Iterable<String>): Boolean {
+    var state = startState
+    for (token in tokens) {
+      val label = terminalIds[token] ?: return false
+      state = transition(state, label)
+      if (state < 0) return false
+    }
+    return isFinal(state)
+  }
+
+  fun isFinal(state: Int): Boolean = state in accepting.indices && accepting[state]
+  fun outBegin(state: Int): Int = offsets[state]
+  fun outEnd(state: Int): Int = offsets[state + 1]
+  fun labelAt(edge: Int): Int = labels[edge]
+  fun targetAt(edge: Int): Int = targets[edge]
+
+  /** Enumerates every accepted token string exactly once in terminal-name order. */
+  fun tokenWords(shouldContinue: () -> Boolean = { true }): Sequence<List<String>> = sequence {
+    if (finalState < 0) return@sequence
+    val path = ArrayList<String>()
+
+    suspend fun SequenceScope<List<String>>.visit(state: Int) {
+      if (!shouldContinue()) return
+      if (isFinal(state)) yield(path.toList())
+
+      for (edge in outBegin(state) until outEnd(state)) {
+        val terminal = terminals[labelAt(edge)]
+        if (terminal != "ε") path.add(terminal)
+        visit(targetAt(edge))
+        if (terminal != "ε") path.removeAt(path.lastIndex)
+        if (!shouldContinue()) return
+      }
+    }
+
+    visit(startState)
+  }
+
+  fun words(shouldContinue: () -> Boolean = { true }): Sequence<String> =
+    tokenWords(shouldContinue).map { it.joinToString(" ") }
+
+  /** Maps a zero-based rank to its unique repair in the DAFSA's edge order. */
+  fun unrank(rank: BigInteger): List<String> {
+    require(rank >= BigInteger.ZERO && rank < languageSize) {
+      "Rank $rank is outside [0, $languageSize)"
+    }
+    var remaining = rank
+    var state = startState
+    val word = ArrayList<String>()
+
+    while (true) {
+      if (isFinal(state)) {
+        if (remaining == BigInteger.ZERO) return word
+        remaining -= BigInteger.ONE
+      }
+
+      var selected = false
+      for (edge in outBegin(state) until outEnd(state)) {
+        val branchSize = suffixLanguageSizes[targetAt(edge)]
+        if (remaining < branchSize) {
+          word.add(terminals[labelAt(edge)])
+          state = targetAt(edge)
+          selected = true
+          break
+        }
+        remaining -= branchSize
+      }
+      check(selected) { "No branch contains rank $rank" }
+    }
+  }
+
+  /** Inverse of [unrank] for accepted repairs. */
+  fun rank(tokens: Iterable<String>): BigInteger {
+    var rank = BigInteger.ZERO
+    var state = startState
+
+    for (token in tokens) {
+      if (isFinal(state)) rank += BigInteger.ONE
+      val wanted = terminalIds[token] ?: throw IllegalArgumentException("Unknown terminal: $token")
+      var selected = false
+      for (edge in outBegin(state) until outEnd(state)) {
+        if (labelAt(edge) == wanted) {
+          state = targetAt(edge)
+          selected = true
+          break
+        }
+        rank += suffixLanguageSizes[targetAt(edge)]
+      }
+      require(selected) { "Word is not accepted: no transition for $token" }
+    }
+
+    require(isFinal(state)) { "Word is not accepted: input ended in a non-final state" }
+    return rank
+  }
+
+  /** Returns the target state, or -1 when the partial DAFSA has no such transition. */
+  fun transition(state: Int, wanted: Int): Int {
+    if (state !in 0 until stateCount) return -1
+    for (edge in outBegin(state) until outEnd(state))
+      if (labelAt(edge) == wanted) return targetAt(edge)
+    return -1
+  }
+}
+
+/**
+ * Builds the same bounded CFG/Levenshtein intersection used by sparse-GRE repair. Chart cells hold
+ * shared finite-language expressions; only residuals reachable from the final root are
+ * determinized. This is intentionally a small sequential CPU implementation.
+ */
+fun repairWithPackedDAFSA(brokenTokens: List<String>, cfg: CFG): PackedDAFSA? {
+  val start = cfg.bindex[START_SYMBOL]
+  val leftAdjacency = cfg.leftAdj
+  val nonterminalCount = cfg.nonterminals.size
+
+  fun languageEditDistance(radius: Int): Int? {
+    val levFSA = makeLevFSA(brokenTokens, radius)
+    val stateCount = levFSA.numStates
+    val active = Array(stateCount) { Array(stateCount) { KBitSet(nonterminalCount) } }
+    val activeCounts = Array(stateCount) { IntArray(stateCount) }
+
+    levFSA.allIndexedTxs2(cfg.grpUPs, cfg.bindex).forEach { (p, nonterminal, q) ->
+      if (!active[p][q][nonterminal]) {
+        active[p][q].set(nonterminal)
+        activeCounts[p][q]++
+      }
+    }
+
+    var minimum = Int.MAX_VALUE
+    for (distance in 1 until stateCount) {
+      for (p in 0 until stateCount - distance) {
+        val q = p + distance
+        val midpoints = levFSA.allPairs[p][q] ?: continue
+        val target = active[p][q]
+
+        for (midpoint in midpoints) {
+          if (activeCounts[p][midpoint] == 0 || activeCounts[midpoint][q] == 0) continue
+          val right = active[midpoint][q]
+          active[p][midpoint].forEachSetBit { leftNonterminal ->
+            leftAdjacency[leftNonterminal]?.forEachIfIn(right) { _, parent ->
+              if (!target[parent]) {
+                target.set(parent)
+                activeCounts[p][q]++
+                if (p == 0 && parent == start && levFSA.isFinal[q]) {
+                  val (x, y) = checkNotNull(levFSA.idsToCoords[q])
+                  minimum = minOf(minimum, abs(brokenTokens.size - x + y))
+                }
+              }
+            }
+          }
+          if (minimum == 1) return 1
+        }
+      }
+    }
+
+    return minimum.takeUnless { it == Int.MAX_VALUE }
+  }
+
+  val upperBound = MAX_RADIUS * 3
+  val editDistance = (3 until upperBound).firstNotNullOfOrNull(::languageEditDistance) ?: upperBound
+  val radius = (editDistance + LED_BUFFER).coerceAtMost(MAX_RADIUS + LED_BUFFER)
+  latestLangEditDistance = editDistance
+
+  val levFSA = makeLevFSA(brokenTokens, radius)
+  val stateCount = levFSA.numStates
+  val forest = RepairForest()
+  val active = Array(stateCount) { Array(stateCount) { KBitSet(nonterminalCount) } }
+  val chart = Array(stateCount) { Array(stateCount) { mutableMapOf<Int, Int>() } }
+  val terminalSeeds = Array(stateCount) {
+    Array(stateCount) { mutableMapOf<Int, KBitSet>() }
+  }
+
+  levFSA.allIndexedTxs1(cfg.grpUPs).forEach { (p, terminal, q) ->
+    val terminalIndex = cfg.tmMap[terminal] ?: return@forEach
+    for (parent in cfg.tmToVidx[terminalIndex]) {
+      terminalSeeds[p][q].getOrPut(parent) { KBitSet(cfg.tmLst.size) }.set(terminalIndex)
+    }
+  }
+
+  for (p in 0 until stateCount) {
+    for (q in p + 1 until stateCount) {
+      for ((parent, terminalSet) in terminalSeeds[p][q]) {
+        active[p][q].set(parent)
+        chart[p][q][parent] = forest.terminals(terminalSet.toList(), cfg.tmLst)
+      }
+    }
+  }
+
+  val alternatives = mutableMapOf<Int, MutableList<Int>>()
+  for (distance in 1 until stateCount) {
+    for (p in 0 until stateCount - distance) {
+      val q = p + distance
+      val midpoints = levFSA.allPairs[p][q] ?: continue
+      alternatives.clear()
+
+      for (midpoint in midpoints) {
+        val leftRoots = chart[p][midpoint]
+        val rightRoots = chart[midpoint][q]
+        if (leftRoots.isEmpty() || rightRoots.isEmpty()) continue
+        val rightActive = active[midpoint][q]
+
+        active[p][midpoint].forEachSetBit { leftNonterminal ->
+          val leftRoot = leftRoots[leftNonterminal] ?: return@forEachSetBit
+          leftAdjacency[leftNonterminal]?.forEachIfIn(rightActive) { rightNonterminal, parent ->
+            val rightRoot = rightRoots[rightNonterminal] ?: return@forEachIfIn
+            alternatives.getOrPut(parent) { mutableListOf() }
+              .add(forest.concat(leftRoot, rightRoot))
+          }
+        }
+      }
+
+      val cell = chart[p][q]
+      for ((parent, children) in alternatives) {
+        cell[parent]?.let(children::add)
+        cell[parent] = forest.union(children)
+        active[p][q].set(parent)
+      }
+    }
+  }
+
+  val roots = levFSA.levFinalIdxs.mapNotNull { chart[0][it][start] }
+  if (roots.isEmpty()) return null
+  return forest.determinizeAndPack(forest.union(roots), cfg.tmLst)
+}
+
+/** Shared finite-language expression DAG. Only root-reachable derivatives become DFA states. */
+private class RepairForest {
+  private sealed interface Node
+  private data object Epsilon : Node
+  private class Terminals(val labels: IntArray) : Node
+  private class Union(val children: IntArray) : Node
+  private data class Concat(val left: Int, val right: Int) : Node
+
+  private class IntArrayKey(private val values: IntArray) {
+    override fun hashCode(): Int = values.contentHashCode()
+    override fun equals(other: Any?): Boolean =
+      other is IntArrayKey && values.contentEquals(other.values)
+  }
+
+  private data class DFARow(val accepting: Boolean, val labels: IntArray, val targets: IntArray)
+
+  private val nodes = ArrayList<Node>().apply { add(Epsilon) }
+  private val terminalNodes = HashMap<IntArrayKey, Int>()
+  private val unionNodes = HashMap<IntArrayKey, Int>()
+  private val concatNodes = HashMap<Long, Int>()
+  private val nullableMemo = HashMap<Int, Boolean>()
+  private val derivativeMemo = HashMap<Int, Map<Int, Int>>()
+
+  fun terminals(rawLabels: List<Int>, terminalNames: List<String>): Int {
+    if (rawLabels.isEmpty()) return EMPTY
+    val includesEpsilon = rawLabels.any { terminalNames[it] == "ε" }
+    val labels = rawLabels.filterNot { terminalNames[it] == "ε" }
+      .distinct().sorted().toIntArray()
+    if (labels.isEmpty()) return if (includesEpsilon) EPSILON else EMPTY
+    val key = IntArrayKey(labels)
+    val terminalNode = terminalNodes[key]
+      ?: add(Terminals(labels)).also { terminalNodes[key] = it }
+    return if (includesEpsilon) union(listOf(EPSILON, terminalNode)) else terminalNode
+  }
+
+  fun union(rawChildren: List<Int>): Int {
+    if (rawChildren.isEmpty()) return EMPTY
+    val flattened = ArrayList<Int>()
+    for (child in rawChildren) when {
+      child == EMPTY -> Unit
+      nodes[child] is Union -> flattened.addAll((nodes[child] as Union).children.toList())
+      else -> flattened.add(child)
+    }
+    if (flattened.isEmpty()) return EMPTY
+    val children = flattened.distinct().sorted().toIntArray()
+    if (children.size == 1) return children[0]
+    val key = IntArrayKey(children)
+    return unionNodes[key] ?: add(Union(children)).also { unionNodes[key] = it }
+  }
+
+  fun concat(left: Int, right: Int): Int = when {
+    left == EMPTY || right == EMPTY -> EMPTY
+    left == EPSILON -> right
+    right == EPSILON -> left
+    else -> {
+      val key = pack(left, right)
+      concatNodes[key] ?: add(Concat(left, right)).also { concatNodes[key] = it }
+    }
+  }
+
+  fun determinizeAndPack(root: Int, terminals: List<String>): PackedDAFSA {
+    require(root != EMPTY)
+    val residualIds = mutableMapOf(root to 0)
+    val residuals = arrayListOf(root)
+    val rows = ArrayList<DFARow>()
+    var nextState = 0
+
+    while (nextState < residuals.size) {
+      val residual = residuals[nextState]
+      val transitions = derivatives(residual).entries.sortedBy { terminals[it.key] }
+      val labels = IntArray(transitions.size)
+      val targets = IntArray(transitions.size)
+      transitions.forEachIndexed { edge, (label, targetResidual) ->
+        labels[edge] = label
+        targets[edge] = residualIds.getOrPut(targetResidual) {
+          residuals.add(targetResidual)
+          residuals.lastIndex
+        }
+      }
+      rows.add(DFARow(nullable(residual), labels, targets))
+      nextState++
+    }
+
+    val offsets = IntArray(rows.size + 1)
+    for (state in rows.indices) offsets[state + 1] = offsets[state] + rows[state].labels.size
+    val labels = IntArray(offsets.last())
+    val targets = IntArray(offsets.last())
+    val accepting = BooleanArray(rows.size)
+    for (state in rows.indices) {
+      accepting[state] = rows[state].accepting
+      rows[state].labels.copyInto(labels, offsets[state])
+      rows[state].targets.copyInto(targets, offsets[state])
+    }
+
+    val counts = arrayOfNulls<BigInteger>(rows.size)
+    val visiting = BooleanArray(rows.size)
+    fun count(state: Int): BigInteger {
+      counts[state]?.let { return it }
+      check(!visiting[state]) { "Repair residual graph must be acyclic" }
+      visiting[state] = true
+      var result = if (accepting[state]) BigInteger.ONE else BigInteger.ZERO
+      for (edge in offsets[state] until offsets[state + 1]) result += count(targets[edge])
+      visiting[state] = false
+      counts[state] = result
+      return result
+    }
+    val suffixLanguageSizes = Array(rows.size) { count(it) }
+
+    return PackedDAFSA(
+      terminals = terminals.toList(),
+      startState = 0,
+      finalState = residualIds[EPSILON] ?: -1,
+      offsets = offsets,
+      labels = labels,
+      targets = targets,
+      accepting = accepting,
+      suffixLanguageSizes = suffixLanguageSizes,
+      forestNodeCount = nodes.size,
+      derivativeComputations = derivativeMemo.size
+    )
+  }
+
+  private fun derivatives(expression: Int): Map<Int, Int> {
+    if (expression == EMPTY || expression == EPSILON) return emptyMap()
+    derivativeMemo[expression]?.let { return it }
+
+    val alternatives = mutableMapOf<Int, MutableList<Int>>()
+    fun merge(transitions: Map<Int, Int>, suffix: Int = EPSILON) {
+      for ((label, residual) in transitions) {
+        alternatives.getOrPut(label) { mutableListOf() }.add(concat(residual, suffix))
+      }
+    }
+
+    when (val node = nodes[expression]) {
+      Epsilon -> Unit
+      is Terminals -> for (label in node.labels)
+        alternatives.getOrPut(label) { mutableListOf() }.add(EPSILON)
+      is Union -> for (child in node.children) merge(derivatives(child))
+      is Concat -> {
+        merge(derivatives(node.left), node.right)
+        if (nullable(node.left)) merge(derivatives(node.right))
+      }
+    }
+
+    val result = alternatives.mapValues { (_, residuals) -> union(residuals) }
+    derivativeMemo[expression] = result
+    return result
+  }
+
+  private fun nullable(expression: Int): Boolean {
+    if (expression == EMPTY) return false
+    nullableMemo[expression]?.let { return it }
+    val result = when (val node = nodes[expression]) {
+      Epsilon -> true
+      is Terminals -> false
+      is Union -> node.children.any(::nullable)
+      is Concat -> nullable(node.left) && nullable(node.right)
+    }
+    nullableMemo[expression] = result
+    return result
+  }
+
+  private fun add(node: Node): Int = nodes.size.also { nodes.add(node) }
+
+  companion object {
+    const val EMPTY = -1
+    const val EPSILON = 0
+    private fun pack(left: Int, right: Int): Long =
+      (left.toLong() shl Int.SIZE_BITS) or (right.toLong() and 0xffffffffL)
+  }
 }
 
 /** Lazily enumerates the exact DFA languages L(this) ∩ Σ^[1, maxLength] in token shortlex order. */
@@ -240,10 +677,18 @@ internal data class DFAConstructionStats(
   val latestLength: Int,
   val completedCFGCells: Long,
   val recursiveForks: Long,
-  val parallelism: Int
+  val parallelism: Int,
+  val productMemoEntries: Int,
+  val productMemoHits: Long,
+  val productMemoMisses: Long,
+  val productMemoInFlightHits: Long,
+  val coalescedSiblingProducts: Long,
+  val pendingProductComputations: Long,
+  val productMemoEstimatedBytes: Long,
+  val productMemoEvictions: Long
 )
 
-private data class SliceRoot(val length: Int, val state: Int, val languageSize: BigInteger)
+internal data class SliceRoot(val length: Int, val state: Int, val languageSize: BigInteger)
 
 /** One bounded scheduler is shared by cell construction and recursive determinization. */
 private object DFAConstructionExecutor {
@@ -274,7 +719,7 @@ private object DFAConstructionExecutor {
  * and layer n contains START (plus every cell when n=1). Advancing fills the remainder of n once,
  * then computes only START at n+1.
  */
-private class IncrementalSliceBuilder(private val cfg: CFG) {
+internal class IncrementalSliceBuilder(private val cfg: CFG) {
   private val width = cfg.nonterminals.size
   private val terminalNames = cfg.tmLst.toList()
   private val lexicographicRankByLabel = IntArray(terminalNames.size).also { ranks ->
@@ -295,7 +740,6 @@ private class IncrementalSliceBuilder(private val cfg: CFG) {
   private val completedCFGCells = AtomicLong()
   private var latestLength = 0
   private var latestLayerComplete = false
-  private var context: AcyclicDFAArena.DeterminizationContext? = null
   private var failure: Throwable? = null
 
   init {
@@ -342,7 +786,15 @@ private class IncrementalSliceBuilder(private val cfg: CFG) {
     latestLength = latestLength,
     completedCFGCells = completedCFGCells.get(),
     recursiveForks = arena.recursiveForkCount(),
-    parallelism = DFAConstructionExecutor.parallelism
+    parallelism = DFAConstructionExecutor.parallelism,
+    productMemoEntries = arena.productMemoSize(),
+    productMemoHits = arena.productMemoHitCount(),
+    productMemoMisses = arena.productMemoMissCount(),
+    productMemoInFlightHits = arena.productMemoInFlightHitCount(),
+    coalescedSiblingProducts = arena.coalescedSiblingProductCount(),
+    pendingProductComputations = arena.pendingProductCount(),
+    productMemoEstimatedBytes = arena.productMemoEstimatedBytes(),
+    productMemoEvictions = arena.productMemoEvictionCount()
   )
 
   private fun initializeLengthOne() {
@@ -362,11 +814,10 @@ private class IncrementalSliceBuilder(private val cfg: CFG) {
 
   private fun advanceOneLength() {
     completeLatestLayer()
-    context = arena.newDeterminizationContext()
     latestLength++
     val layer = IntArray(width) { AcyclicDFAArena.UNBUILT }
     layers.add(layer)
-    computeCells(latestLength, intArrayOf(start), context!!)
+    computeCells(latestLength, intArrayOf(start))
     latestLayerComplete = width == 1
   }
 
@@ -375,33 +826,34 @@ private class IncrementalSliceBuilder(private val cfg: CFG) {
       val remaining = IntArray(width - 1)
       var index = 0
       for (a in 0 until width) if (a != start) remaining[index++] = a
-      computeCells(latestLength, remaining, checkNotNull(context))
+      computeCells(latestLength, remaining)
       latestLayerComplete = true
     }
-    // No task can still reference the completed layer's memo after runCells returns.
-    context = null
   }
 
-  private fun computeCells(length: Int, cells: IntArray, determinization: AcyclicDFAArena.DeterminizationContext) = runCells(cells) { a ->
-    val layer = layers[length]
-    check(layer[a] == AcyclicDFAArena.UNBUILT)
-    val rules = binary[a]
-    val capacity = Math.multiplyExact(rules.size / 2, length - 1)
-    val products = LongArray(capacity)
-    var size = 0
-    for (r in rules.indices step 2) {
-      val b = rules[r]
-      val c = rules[r + 1]
-      for (split in 1 until length) {
-        val left = layers[split][b]
-        val right = layers[length - split][c]
-        check(left != AcyclicDFAArena.UNBUILT && right != AcyclicDFAArena.UNBUILT)
-        if (left != AcyclicDFAArena.EMPTY && right != AcyclicDFAArena.EMPTY)
-          products[size++] = AcyclicDFAArena.product(left, right)
+  private fun computeCells(length: Int, cells: IntArray) {
+    runCells(cells) { a ->
+      val layer = layers[length]
+      check(layer[a] == AcyclicDFAArena.UNBUILT)
+      val rules = binary[a]
+      val capacity = Math.multiplyExact(rules.size / 2, length - 1)
+      val products = LongArray(capacity)
+      var size = 0
+      for (r in rules.indices step 2) {
+        val b = rules[r]
+        val c = rules[r + 1]
+        for (split in 1 until length) {
+          val left = layers[split][b]
+          val right = layers[length - split][c]
+          check(left != AcyclicDFAArena.UNBUILT && right != AcyclicDFAArena.UNBUILT)
+          if (left != AcyclicDFAArena.EMPTY && right != AcyclicDFAArena.EMPTY)
+            products[size++] = AcyclicDFAArena.product(left, right)
+        }
       }
+      layer[a] = arena.unionProducts(products, size, length)
+      completedCFGCells.incrementAndGet()
     }
-    layer[a] = arena.unionProducts(products, size, determinization)
-    completedCFGCells.incrementAndGet()
+    arena.finishProductGeneration()
   }
 
   private fun runCells(cells: IntArray, action: (Int) -> Unit) {
@@ -422,42 +874,121 @@ private class IncrementalSliceBuilder(private val cfg: CFG) {
   }
 }
 
-private class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
+internal class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
   // EMPTY=-1; UNBUILT=-2; FINAL=0; every other id names one exact deterministic row.
-  private class LongBuffer {
-    private var values = LongArray(4)
-    var size = 0
-      private set
-    fun add(value: Long) {
-      if (size == values.size) values = values.copyOf(size * 2)
-      values[size++] = value
-    }
-    fun toLongArray() = values.copyOf(size)
+  private class LabelScratch(width: Int) {
+    val counts = IntArray(width)
+    val slots = IntArray(width) { UNBUILT }
+    val cursors = IntArray(width)
+    val touched = IntArray(width)
   }
 
-  private data class Row(val values: IntArray, val languageSize: BigInteger)
+  private data class Row(
+    val values: IntArray,
+    val languageSize: BigInteger,
+    val remainingDepth: Int
+  )
 
   class IntArrayKey(val values: IntArray) {
-    override fun hashCode() = values.contentHashCode()
-    override fun equals(other: Any?) = other is IntArrayKey && values.contentEquals(other.values)
+    private val contentHash = values.contentHashCode()
+    override fun hashCode() = contentHash
+    override fun equals(other: Any?) =
+      other is IntArrayKey && contentHash == other.contentHash && values.contentEquals(other.values)
   }
 
-  data class LongArrayKey(val values: LongArray) {
-    override fun hashCode() = values.contentHashCode()
-    override fun equals(other: Any?) = other is LongArrayKey && values.contentEquals(other.values)
+  class LongArrayKey(
+    val values: LongArray,
+    val size: Int,
+    val remainingDepth: Int,
+    private val contentHash: Int = prefixHash(values, size)
+  ) {
+    init { require(size in 0..values.size) }
+
+    fun owned(): LongArrayKey =
+      if (size == values.size) this
+      else LongArrayKey(values.copyOf(size), size, remainingDepth, contentHash)
+
+    override fun hashCode() = contentHash
+
+    override fun equals(other: Any?): Boolean {
+      if (other !is LongArrayKey || contentHash != other.contentHash ||
+        size != other.size || remainingDepth != other.remainingDepth
+      ) return false
+      for (i in 0 until size) if (values[i] != other.values[i]) return false
+      return true
+    }
+
+    companion object {
+      private fun prefixHash(values: LongArray, size: Int): Int {
+        var result = 1
+        for (i in 0 until size) result = 31 * result + java.lang.Long.hashCode(values[i])
+        return result
+      }
+    }
   }
 
-  class DeterminizationContext {
-    // Completed results only: recursive ForkJoin workers must never block on an owner that may be
-    // suspended below them in the same help/join stack. Concurrent misses may compute equivalent
-    // nonminimal rows; the first completed exact result becomes the shared representative.
-    val memo = ConcurrentHashMap<LongArrayKey, Int>()
+  private sealed interface PreparedProductSet {
+    data class Direct(val state: Int) : PreparedProductSet
+    data class Key(val value: LongArrayKey) : PreparedProductSet
   }
+
+  private sealed interface MemoizedProduct
+  private class CompletedProduct(val state: Int) : MemoizedProduct
+  private class BoundedCompletedProduct(
+    val state: Int,
+    val generation: Int
+  ) : MemoizedProduct
+  private data class FailedProduct(val failure: Throwable) : MemoizedProduct
+  private class PendingProduct(
+    val key: LongArrayKey,
+    val generation: Int
+  ) : MemoizedProduct {
+    lateinit var task: FutureTask<Int>
+    val started = AtomicBoolean()
+    @Volatile var runnerThread: Thread? = null
+  }
+
+  private data class GroupedChildren(
+    val labels: IntArray,
+    val products: Array<PreparedProductSet?>
+  )
+
+  private data class ProductMemoGeneration(
+    val generation: Int,
+    val estimatedBytes: Long
+  )
 
   private val nextId = AtomicInteger(1)
   private val rows = ConcurrentHashMap<Int, Row>().apply {
-    put(FINAL, Row(IntArray(0), BigInteger.ONE))
+    put(FINAL, Row(IntArray(0), BigInteger.ONE, 0))
   }
+  private val labelsInLexicographicOrder = IntArray(lexicographicRankByLabel.size).also { labels ->
+    val seen = BooleanArray(labels.size)
+    lexicographicRankByLabel.forEachIndexed { label, rank ->
+      require(rank in labels.indices && !seen[rank]) {
+        "Lexicographic label ranks must be a permutation of 0 until ${labels.size}"
+      }
+      seen[rank] = true
+      labels[rank] = label
+    }
+  }
+  private val labelScratch = ThreadLocal.withInitial {
+    LabelScratch(lexicographicRankByLabel.size)
+  }
+  private val activeProducts = ThreadLocal.withInitial { ArrayDeque<PendingProduct>() }
+  // Product keys contain arena-local state IDs. Successful entries therefore live for exactly the
+  // arena's lifetime unless the completed-result budget evicts an old generation. Pending entries
+  // are never evicted, and eviction only permits exact recomputation; it never removes DFA rows.
+  private val productMemo = ConcurrentHashMap<LongArrayKey, MemoizedProduct>()
+  private val maximumProductMemoBytes = System.getProperty(PRODUCT_MEMO_BYTES_PROPERTY)
+    ?.toLongOrNull()?.also { require(it >= 0L) {
+      "$PRODUCT_MEMO_BYTES_PROPERTY must be a nonnegative byte count"
+    } }
+  private val completedGenerations = ArrayDeque<ProductMemoGeneration>()
+  private val currentGenerationBytes = AtomicLong()
+  private val productMemoBytes = AtomicLong()
+  private val productMemoEvictions = AtomicLong()
+  @Volatile private var currentProductGeneration = 0
   // Incremental layers revisit many identical residuals, so structural hash-consing is enabled by
   // default to keep the persistent representation tractable. It is only a sharing optimization:
   // disabling it produces a nonminimal but equally complete DFA with identical rank/unrank results.
@@ -469,14 +1000,18 @@ private class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
     else -> throw IllegalArgumentException("$STRUCTURAL_SHARING_PROPERTY must be true or false, found: $configured")
   }
   private val recursiveForks = AtomicLong()
-
-  fun newDeterminizationContext() = DeterminizationContext()
+  private val productMemoHits = AtomicLong()
+  private val productMemoMisses = AtomicLong()
+  private val productMemoInFlightHits = AtomicLong()
+  private val coalescedSiblingProducts = AtomicLong()
+  private val pendingProducts = AtomicLong()
 
   /** Allocates a deterministic row without merging it with equivalent row signatures. */
   fun allocateRow(row: IntArray): Int {
     require(row.isNotEmpty() && row.size and 1 == 0)
     var languageSize = BigInteger.ZERO
     var previousLexicographicRank = -1
+    var childDepth = UNBUILT
     for (i in row.indices step 2) {
       val label = row[i]
       require(label in lexicographicRankByLabel.indices)
@@ -485,20 +1020,33 @@ private class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
         "DFA row labels must be unique and lexicographically ordered"
       }
       previousLexicographicRank = lexicographicRank
-      languageSize += rows.getValue(row[i + 1]).languageSize
+      val child = rows.getValue(row[i + 1])
+      if (childDepth == UNBUILT) childDepth = child.remainingDepth
+      else require(childDepth == child.remainingDepth) {
+        "A fixed-length DFA row cannot mix depths $childDepth and ${child.remainingDepth}"
+      }
+      languageSize += child.languageSize
     }
     val id = nextId.getAndIncrement()
     check(id > FINAL) { "DFA arena exhausted its positive Int state identifiers" }
-    rows[id] = Row(row, languageSize)
+    rows[id] = Row(row, languageSize, Math.incrementExact(childDepth))
     return id
   }
 
   fun shareStructuralRow(row: IntArray): Int =
     sharedRowIds?.computeIfAbsent(IntArrayKey(row)) { allocateRow(row) } ?: allocateRow(row)
 
-  /** Exact subset-style determinization of a union of concatenated DFA languages. */
-  fun unionProducts(raw: LongArray, inputSize: Int, context: DeterminizationContext): Int {
+  /** Exact, persistent, single-flight determinization of concatenated DFA-language unions. */
+  fun unionProducts(raw: LongArray, inputSize: Int, remainingDepth: Int): Int =
+    resultOf(resolve(prepareProducts(raw, inputSize, remainingDepth)))
+
+  private fun prepareProducts(
+    raw: LongArray,
+    inputSize: Int,
+    remainingDepth: Int
+  ): PreparedProductSet {
     require(inputSize in 0..raw.size)
+    require(remainingDepth >= 0)
     var size = 0
     for (rawIndex in 0 until inputSize) {
       val packed = raw[rawIndex]
@@ -508,106 +1056,387 @@ private class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
       if (prefix == FINAL) prefix = suffix.also { suffix = FINAL }
       raw[size++] = product(prefix, suffix)
     }
-    if (size == 0) return EMPTY
+    if (size == 0) return PreparedProductSet.Direct(EMPTY)
     Arrays.sort(raw, 0, size)
     var unique = 1
     for (i in 1 until size) if (raw[i] != raw[unique - 1]) raw[unique++] = raw[i]
-    if (unique == 1 && right(raw[0]) == FINAL) return left(raw[0])
-
-    val frozen = raw.copyOf(unique)
-    val key = LongArrayKey(frozen)
-    context.memo[key]?.let { return it }
-    val result = determinize(frozen, context)
-    return context.memo.putIfAbsent(key, result) ?: result
-  }
-
-  private fun determinize(frozen: LongArray, context: DeterminizationContext): Int {
-    val byLabel = HashMap<Int, LongBuffer>()
-    frozen.forEach { packed ->
-      val prefix = left(packed)
-      val suffix = right(packed)
-      require(prefix != FINAL)
-      val row = rows.getValue(prefix).values
-      for (i in row.indices step 2)
-        byLabel.getOrPut(row[i]) { LongBuffer() }.add(product(row[i + 1], suffix))
+    if (unique == 1 && right(raw[0]) == FINAL) {
+      val state = left(raw[0])
+      require(rows.getValue(state).remainingDepth == remainingDepth)
+      return PreparedProductSet.Direct(state)
     }
 
-    val labels = byLabel.keys.sortedBy(lexicographicRankByLabel::get)
-    val children = Array(labels.size) { byLabel.getValue(labels[it]).toLongArray() }
-    val targets = computeChildren(children, context)
-    return shareStructuralRow(IntArray(labels.size * 2) { index ->
-      if (index and 1 == 0) labels[index / 2] else targets[index / 2]
+    val first = raw[0]
+    require(
+      rows.getValue(left(first)).remainingDepth + rows.getValue(right(first)).remainingDepth ==
+        remainingDepth
+    ) { "Product alternatives do not have the expected remaining depth $remainingDepth" }
+    return PreparedProductSet.Key(LongArrayKey(raw, unique, remainingDepth))
+  }
+
+  private fun resolve(prepared: PreparedProductSet): MemoizedProduct = when (prepared) {
+    is PreparedProductSet.Direct -> CompletedProduct(prepared.state)
+    is PreparedProductSet.Key -> resolve(prepared.value)
+  }
+
+  private fun resolve(probe: LongArrayKey): MemoizedProduct {
+    productMemo[probe]?.let { existing ->
+      productMemoHits.incrementAndGet()
+      if (existing is PendingProduct) productMemoInFlightHits.incrementAndGet()
+      return existing
+    }
+
+    val owned = probe.owned()
+    val pending = PendingProduct(owned, currentProductGeneration)
+    pending.task = FutureTask { computePending(pending) }
+    pendingProducts.incrementAndGet()
+    val existing = productMemo.putIfAbsent(owned, pending)
+    if (existing != null) {
+      pendingProducts.decrementAndGet()
+      productMemoHits.incrementAndGet()
+      if (existing is PendingProduct) productMemoInFlightHits.incrementAndGet()
+      return existing
+    }
+    productMemoMisses.incrementAndGet()
+    return pending
+  }
+
+  private fun computePending(pending: PendingProduct): Int {
+    val stack = activeProducts.get()
+    var pushed = false
+    var result = EMPTY
+    var computationFailure: Throwable? = null
+    try {
+      stack.peekLast()?.let { parent ->
+        require(pending.key.remainingDepth == parent.key.remainingDepth - 1) {
+          "Nested product depth ${pending.key.remainingDepth} must follow ${parent.key.remainingDepth}"
+        }
+      }
+      check(stack.none { it === pending }) {
+        "Recursive product dependency at depth ${pending.key.remainingDepth}"
+      }
+      stack.addLast(pending)
+      pushed = true
+      pending.runnerThread = Thread.currentThread()
+      result = determinize(pending.key)
+    } catch (failure: Throwable) {
+      computationFailure = failure
+    } finally {
+      pending.runnerThread = null
+      if (pushed) check(stack.removeLast() === pending)
+    }
+
+    try {
+      computationFailure?.let { failure ->
+        check(productMemo.replace(pending.key, pending, FailedProduct(failure))) {
+          "Single-flight product memo lost its failed pending owner"
+        }
+        throw failure
+      }
+      val completed = maximumProductMemoBytes?.let {
+        BoundedCompletedProduct(result, pending.generation)
+      } ?: CompletedProduct(result)
+      check(productMemo.replace(pending.key, pending, completed)) {
+        "Single-flight product memo lost its pending owner"
+      }
+      if (maximumProductMemoBytes != null) {
+        val estimatedBytes = estimatedProductMemoBytes(pending.key)
+        currentGenerationBytes.addAndGet(estimatedBytes)
+        productMemoBytes.addAndGet(estimatedBytes)
+      }
+      return result
+    } finally {
+      pendingProducts.decrementAndGet()
+    }
+  }
+
+  private fun determinize(frozen: LongArrayKey): Int {
+    require(frozen.remainingDepth > 0)
+    val grouped = groupChildren(frozen)
+    val targets = resolveChildren(grouped, frozen.remainingDepth)
+    return shareStructuralRow(IntArray(grouped.labels.size * 2) { index ->
+      if (index and 1 == 0) grouped.labels[index / 2] else targets[index / 2]
     })
   }
 
-  private fun computeChildren(children: Array<LongArray>, context: DeterminizationContext): IntArray {
-    val targets = IntArray(children.size)
-    if (children.size < 2 ||
-      children.sumOf { it.size.toLong() } < RECURSIVE_FORK_THRESHOLD ||
-      ForkJoinTask.getPool() !== DFAConstructionExecutor.pool ||
-      ForkJoinTask.getSurplusQueuedTaskCount() > MAX_SURPLUS_TASKS
-    ) {
-      children.indices.forEach { i ->
-        targets[i] = unionProducts(children[i], children[i].size, context)
+  /** Two primitive passes replace HashMap<Int, LongBuffer> and emit labels in lexical order. */
+  private fun groupChildren(frozen: LongArrayKey): GroupedChildren {
+    val scratch = labelScratch.get()
+    var touchedCount = 0
+    try {
+      for (productIndex in 0 until frozen.size) {
+        val packed = frozen.values[productIndex]
+        val prefix = left(packed)
+        require(prefix != FINAL)
+        val row = rows.getValue(prefix).values
+        for (i in row.indices step 2) {
+          val label = row[i]
+          if (scratch.counts[label] == 0) scratch.touched[touchedCount++] = label
+          scratch.counts[label] = Math.incrementExact(scratch.counts[label])
+        }
       }
-      return targets
-    }
 
-    val inline = children.indices.maxBy { children[it].size }
-    val tasks = arrayOfNulls<RecursiveTask<Int>>(children.size)
-    var schedulingFailure: Throwable? = null
-    for (child in children.indices) {
-      if (child != inline && DFAConstructionExecutor.tryAcquireFork()) {
-        var taskOwnsPermit = false
-        try {
-          val task = object : RecursiveTask<Int>() {
-            override fun compute(): Int = try {
-              unionProducts(children[child], children[child].size, context)
-            } finally {
-              DFAConstructionExecutor.releaseFork()
-            }
+      var activeLabels = 0
+      for (label in labelsInLexicographicOrder)
+        if (scratch.counts[label] != 0) activeLabels++
+      check(activeLabels > 0)
+
+      val labels = IntArray(activeLabels)
+      val rawChildren = arrayOfNulls<LongArray>(activeLabels)
+      var slot = 0
+      for (label in labelsInLexicographicOrder) {
+        val count = scratch.counts[label]
+        if (count == 0) continue
+        labels[slot] = label
+        scratch.slots[label] = slot
+        rawChildren[slot] = LongArray(count)
+        slot++
+      }
+
+      for (productIndex in 0 until frozen.size) {
+        val packed = frozen.values[productIndex]
+        val prefix = left(packed)
+        val suffix = right(packed)
+        val row = rows.getValue(prefix).values
+        for (i in row.indices step 2) {
+          val label = row[i]
+          val childSlot = scratch.slots[label]
+          rawChildren[childSlot]!![scratch.cursors[label]++] = product(row[i + 1], suffix)
+        }
+      }
+
+      val prepared = arrayOfNulls<PreparedProductSet>(activeLabels)
+      for (child in 0 until activeLabels) {
+        val raw = checkNotNull(rawChildren[child])
+        prepared[child] = prepareProducts(raw, raw.size, frozen.remainingDepth - 1)
+        rawChildren[child] = null
+      }
+      return GroupedChildren(labels, prepared)
+    } finally {
+      for (i in 0 until touchedCount) {
+        val label = scratch.touched[i]
+        scratch.counts[label] = 0
+        scratch.slots[label] = UNBUILT
+        scratch.cursors[label] = 0
+      }
+    }
+  }
+
+  /** Coalesces exact sibling keys before scheduling and scatters one result to every label edge. */
+  private fun resolveChildren(grouped: GroupedChildren, parentDepth: Int): IntArray {
+    val childCount = grouped.labels.size
+    val targets = IntArray(childCount) { UNBUILT }
+    val representatives = IntArray(childCount) { UNBUILT }
+    val resolutions = arrayOfNulls<MemoizedProduct>(childCount)
+    var buckets = 1
+    val desiredBuckets = minOf(1L shl 30, childCount.toLong() * 2L)
+    while (buckets.toLong() < desiredBuckets) buckets = buckets shl 1
+    val heads = IntArray(buckets) { UNBUILT }
+    val next = IntArray(childCount) { UNBUILT }
+
+    for (child in 0 until childCount) {
+      when (val prepared = checkNotNull(grouped.products[child])) {
+        is PreparedProductSet.Direct -> {
+          require(prepared.state != EMPTY)
+          require(rows.getValue(prepared.state).remainingDepth == parentDepth - 1)
+          targets[child] = prepared.state
+          grouped.products[child] = null
+        }
+        is PreparedProductSet.Key -> {
+          require(prepared.value.remainingDepth == parentDepth - 1)
+          val bucket = (prepared.value.hashCode() xor
+            (prepared.value.hashCode() ushr 16)) and (buckets - 1)
+          var representative = heads[bucket]
+          while (representative != UNBUILT) {
+            val candidate = grouped.products[representative] as PreparedProductSet.Key
+            if (prepared.value == candidate.value) break
+            representative = next[representative]
           }
-          tasks[child] = task
-          task.fork()
-          taskOwnsPermit = true
-          recursiveForks.incrementAndGet()
-        } catch (t: Throwable) {
-          tasks[child] = null
-          if (!taskOwnsPermit) DFAConstructionExecutor.releaseFork()
-          schedulingFailure = t
-          break
+          if (representative == UNBUILT) {
+            representatives[child] = child
+            next[child] = heads[bucket]
+            heads[bucket] = child
+          } else {
+            representatives[child] = representative
+            grouped.products[child] = null
+            coalescedSiblingProducts.incrementAndGet()
+          }
         }
       }
     }
 
-    var firstFailure = schedulingFailure
-    if (firstFailure == null) {
+    var uniqueWork = 0L
+    for (child in 0 until childCount) {
+      if (representatives[child] != child) continue
+      val key = (checkNotNull(grouped.products[child]) as PreparedProductSet.Key).value
+      resolutions[child] = resolve(key)
+      uniqueWork += key.size
+      grouped.products[child] = null
+    }
+
+    val canFork = childCount >= 2 && uniqueWork >= RECURSIVE_FORK_THRESHOLD &&
+      ForkJoinTask.getPool() === DFAConstructionExecutor.pool &&
+      ForkJoinTask.getSurplusQueuedTaskCount() <= MAX_SURPLUS_TASKS
+    var inline = UNBUILT
+    var firstFailure: Throwable? = null
+    fun collect(child: Int) {
       try {
-        targets[inline] = unionProducts(children[inline], children[inline].size, context)
-        children.indices.forEach { child ->
-          if (child != inline && tasks[child] == null)
-            targets[child] = unionProducts(children[child], children[child].size, context)
-        }
-      } catch (t: Throwable) {
-        firstFailure = t
+        targets[child] = resultOf(checkNotNull(resolutions[child]))
+      } catch (failure: Throwable) {
+        val first = firstFailure
+        if (first == null) firstFailure = failure
+        else if (first !== failure) first.addSuppressed(failure)
       }
     }
 
-    tasks.indices.forEach { child ->
-      val task = tasks[child] ?: return@forEach
-      try {
-        targets[child] = task.join()
-      } catch (t: Throwable) {
-        val priorFailure = firstFailure
-        if (priorFailure == null) firstFailure = t
-        else if (t !== priorFailure) priorFailure.addSuppressed(t)
+    if (canFork) {
+      for (child in 0 until childCount) {
+        val pending = resolutions[child] as? PendingProduct ?: continue
+        if (inline == UNBUILT || pending.key.size >
+          (resolutions[inline] as PendingProduct).key.size
+        ) inline = child
       }
+      for (child in 0 until childCount) {
+        if (child == inline) continue
+        val pending = resolutions[child] as? PendingProduct ?: continue
+        trySchedule(pending)
+      }
+      if (inline != UNBUILT) collect(inline)
+    }
+
+    for (child in 0 until childCount) {
+      if (representatives[child] == child && targets[child] == UNBUILT)
+        collect(child)
     }
     firstFailure?.let { throw it }
+    for (child in 0 until childCount) {
+      val representative = representatives[child]
+      if (representative != UNBUILT && representative != child)
+        targets[child] = targets[representative]
+      check(targets[child] != UNBUILT)
+    }
     return targets
   }
 
+  private fun trySchedule(pending: PendingProduct): Boolean {
+    if (!DFAConstructionExecutor.tryAcquireFork()) return false
+    if (!pending.started.compareAndSet(false, true)) {
+      DFAConstructionExecutor.releaseFork()
+      return true
+    }
+    return try {
+      DFAConstructionExecutor.pool.execute(object : RecursiveAction() {
+        override fun compute() = try {
+          pending.task.run()
+        } finally {
+          DFAConstructionExecutor.releaseFork()
+        }
+      })
+      recursiveForks.incrementAndGet()
+      true
+    } catch (_: Throwable) {
+      DFAConstructionExecutor.releaseFork()
+      pending.task.run()
+      false
+    }
+  }
+
+  private fun resultOf(product: MemoizedProduct): Int = when (product) {
+    is CompletedProduct -> product.state
+    is BoundedCompletedProduct -> product.state
+    is FailedProduct -> throw product.failure
+    is PendingProduct -> await(pending = product)
+  }
+
+  private fun await(pending: PendingProduct): Int {
+    activeProducts.get().peekLast()?.let { parent ->
+      check(parent !== pending) { "A product computation cannot await itself" }
+      require(pending.key.remainingDepth == parent.key.remainingDepth - 1) {
+        "Product wait depth ${pending.key.remainingDepth} must follow ${parent.key.remainingDepth}"
+      }
+    }
+    pending.started.compareAndSet(false, true)
+    // FutureTask.run is exact cooperative help: it claims an unstarted/merely queued task, or is
+    // a no-op when another worker already owns it. No ForkJoin join/help operation occurs here.
+    pending.task.run()
+    check(pending.runnerThread !== Thread.currentThread() || pending.task.isDone) {
+      "Product owner attempted to wait on its own incomplete computation"
+    }
+    return getUninterruptibly(pending.task)
+  }
+
+  private fun getUninterruptibly(task: FutureTask<Int>): Int {
+    var interrupted = Thread.interrupted()
+    try {
+      while (true) {
+        try {
+          if (!task.isDone && ForkJoinTask.inForkJoinPool())
+            ForkJoinPool.managedBlock(object : ForkJoinPool.ManagedBlocker {
+              override fun isReleasable() = task.isDone
+              override fun block(): Boolean {
+                if (!task.isDone) try {
+                  task.get()
+                } catch (_: ExecutionException) {
+                  // The nonblocking get below unwraps the original cause.
+                }
+                return true
+              }
+            })
+          return task.get()
+        } catch (_: InterruptedException) {
+          interrupted = true
+        } catch (failure: ExecutionException) {
+          throw failure.cause ?: failure
+        }
+      }
+    } finally {
+      if (interrupted) Thread.currentThread().interrupt()
+    }
+  }
+
   fun recursiveForkCount(): Long = recursiveForks.get()
+  fun productMemoSize(): Int = productMemo.size
+  fun productMemoHitCount(): Long = productMemoHits.get()
+  fun productMemoMissCount(): Long = productMemoMisses.get()
+  fun productMemoInFlightHitCount(): Long = productMemoInFlightHits.get()
+  fun coalescedSiblingProductCount(): Long = coalescedSiblingProducts.get()
+  fun pendingProductCount(): Long = pendingProducts.get()
+  fun productMemoEstimatedBytes(): Long =
+    if (maximumProductMemoBytes == null) -1L else productMemoBytes.get()
+  fun productMemoEvictionCount(): Long = productMemoEvictions.get()
+
+  /** Seals one completed length wave and bounds only its reusable completed-result index. */
+  @Synchronized
+  fun finishProductGeneration() {
+    check(pendingProducts.get() == 0L) {
+      "Cannot finish a product generation with ${pendingProducts.get()} computations pending"
+    }
+    val maximumBytes = maximumProductMemoBytes ?: return
+    val generation = currentProductGeneration
+    currentProductGeneration = Math.incrementExact(currentProductGeneration)
+    val generationBytes = currentGenerationBytes.getAndSet(0L)
+    if (generationBytes != 0L)
+      completedGenerations.addLast(ProductMemoGeneration(generation, generationBytes))
+
+    if (productMemoBytes.get() <= maximumBytes) return
+    val targetBytes = maximumBytes - maximumBytes / 4L
+    var cutoffGeneration = -1
+    while (productMemoBytes.get() > targetBytes && completedGenerations.isNotEmpty()) {
+      val evicted = completedGenerations.removeFirst()
+      cutoffGeneration = evicted.generation
+      productMemoBytes.addAndGet(-evicted.estimatedBytes)
+    }
+    if (cutoffGeneration >= 0) {
+      productMemo.forEach { (key, value) ->
+        if (value is BoundedCompletedProduct && value.generation <= cutoffGeneration &&
+          productMemo.remove(key, value)
+        ) productMemoEvictions.incrementAndGet()
+      }
+    }
+  }
+
+  private fun estimatedProductMemoBytes(key: LongArrayKey): Long =
+    PRODUCT_MEMO_ENTRY_OVERHEAD_BYTES + java.lang.Long.BYTES.toLong() * key.size
 
   fun languageSize(root: Int): BigInteger =
     if (root == EMPTY) BigInteger.ZERO else rows.getValue(root).languageSize
@@ -787,6 +1616,8 @@ private class AcyclicDFAArena(private val lexicographicRankByLabel: IntArray) {
     private const val RECURSIVE_FORK_THRESHOLD = 256L
     private const val MAX_SURPLUS_TASKS = 2
     private const val STRUCTURAL_SHARING_PROPERTY = "cstk.dfa.structuralSharing"
+    private const val PRODUCT_MEMO_BYTES_PROPERTY = "cstk.dfa.productMemoBytes"
+    private const val PRODUCT_MEMO_ENTRY_OVERHEAD_BYTES = 128L
     fun product(left: Int, right: Int) = (left.toLong() shl 32) or (right.toLong() and 0xffffffffL)
     private fun left(product: Long) = (product shr 32).toInt()
     private fun right(product: Long) = product.toInt()
